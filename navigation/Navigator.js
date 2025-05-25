@@ -13,11 +13,14 @@ import MessageScreen from "../Screen/MessageScreen/MessageScreen";
 import ScheduleScreen from "../Screen/ScheduleScreen/ScheduleScreen";
 import ProfileScreen from "../Screen/ProfileScreen/ProfileScreen";
 import SearchScreen from "../Screen/SearchScreen/SearchScreen";
+import LoginScreen from "../Screen/LoginScreen/LoginScreen";
+import LoginForJS from "../Screen/LoginScreen/LoginForJS/LoginForJS";
+import LoginForEmployer from "../Screen/LoginScreen/LogineForEmployer/LoginForEmployer";
 
 
 export default function Navigator() {
   const Tab = createBottomTabNavigator();
-  const Stack = createNativeStackNavigator();
+  const Stack = createNativeStackNavigator(); 
 
   const HomeStack = () => {
     return (
@@ -74,9 +77,29 @@ export default function Navigator() {
     );
   }
 
+  const LoginStack = () => {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name='loginforJS'
+          component={LoginForJS}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name='loginforemployer'
+          component={LoginForEmployer}
+          options={{ headerShown: false }}
+        />
+         
+      </Stack.Navigator>
+    );
+  }
 
-
-  
 
   const MainTab = () => {
     return (
@@ -144,9 +167,28 @@ export default function Navigator() {
       </Tab.Navigator>
     );
   };
+
+  // Define the RootStack Navigator
+  const RootStackNav = () => {
+    return (
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen 
+          name="Login" 
+          component={LoginStack} 
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen 
+          name="MainApp" 
+          component={MainTab} 
+          options={{ headerShown: false }} 
+        />
+      </Stack.Navigator>
+    );
+  };
+
   return (
     <NavigationContainer>
-      <MainTab />
+      <RootStackNav />
     </NavigationContainer>
   );
 }
