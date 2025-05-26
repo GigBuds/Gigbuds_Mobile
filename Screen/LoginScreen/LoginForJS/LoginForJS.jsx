@@ -4,7 +4,8 @@ import logo from "../../../assets/logo.png";
 import mainBg from "../../../assets/main-bg.png";
 import { SegmentedButtons } from "react-native-paper";
 import LoginSection from "./LoginSection";
-import RegisterSecion from "./RegisterSecion";
+import RegisterSection from "./RegisterSection";
+
 const LoginForJS = () => {
   const [value, setValue] = useState("Đăng nhập");
   return (
@@ -57,7 +58,7 @@ const LoginForJS = () => {
         {value === "Đăng nhập" ? (
           <LoginSection />
         ) : (
-          <RegisterSecion />
+          <RegisterSection />
         )}
         </View>
       </View>

@@ -15,7 +15,8 @@ import ProfileScreen from "../Screen/ProfileScreen/ProfileScreen";
 import SearchScreen from "../Screen/SearchScreen/SearchScreen";
 import LoginScreen from "../Screen/LoginScreen/LoginScreen";
 import LoginForJS from "../Screen/LoginScreen/LoginForJS/LoginForJS";
-import LoginForEmployer from "../Screen/LoginScreen/LogineForEmployer/LoginForEmployer";
+
+import OTPScreen from "../Screen/LoginScreen/OTPScreen/OTPScreen";
 
 
 export default function Navigator() {
@@ -91,8 +92,8 @@ export default function Navigator() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name='loginforemployer'
-          component={LoginForEmployer}
+          name='otpscreen'
+          component={OTPScreen}
           options={{ headerShown: false }}
         />
          

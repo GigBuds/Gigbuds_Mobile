@@ -1,4 +1,4 @@
-import { View, Text, TextInput, StyleSheet, Alert } from "react-native";
+import { View, Text, TextInput, StyleSheet, Alert, ScrollView } from "react-native";
 import React, { useState } from "react";
 import { TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -47,6 +47,10 @@ const LoginSection = () => {
 
   return (
     <View style={styles.container}>
+    <ScrollView
+            contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 10 }}
+            showsVerticalScrollIndicator={false}
+          >
       <View style={styles.inputGroup}>
         <Text style={styles.label}>Email</Text>
         <TextInput
@@ -114,6 +118,7 @@ const LoginSection = () => {
       <TouchableOpacity style={styles.googleButton}>
         <Text style={styles.googleButtonText}>Tiếp tục với Google</Text>
       </TouchableOpacity>
+      </ScrollView>
     </View>
   );
 };
