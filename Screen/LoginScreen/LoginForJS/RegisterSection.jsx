@@ -400,7 +400,7 @@ const RegisterSection = () => {
             style={styles.eyeIcon}
           >
             <Ionicons
-              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              name={showPassword ? "eye-outline" : "eye-off-outline"}
               size={24}
               color="black"
             />
@@ -441,7 +441,7 @@ const RegisterSection = () => {
             style={styles.eyeIcon}
           >
             <Ionicons
-              name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+              name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
               size={24}
               color="black"
             />

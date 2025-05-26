@@ -85,7 +85,7 @@ const LoginSection = () => {
             style={styles.eyeIcon}
           >
             <Ionicons
-              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              name={showPassword ? "eye-outline" : "eye-off-outline"}
               size={24}
               color="black"
             />
@@ -96,6 +96,7 @@ const LoginSection = () => {
         <View style={styles.extraOptionsContainer}>
           <View style={styles.rememberMeContainer}>
             <Checkbox
+              theme={{ colors: { primary: "black" } }}
               status={rememberMe ? "checked" : "unchecked"}
               onPress={() => setRememberMe(!rememberMe)}
               color="#FF7345"
