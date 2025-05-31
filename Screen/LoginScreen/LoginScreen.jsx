@@ -72,13 +72,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     width: "100%",
-    height: "50%",
+    height: "60%",
     justifyContent: "center",
     paddingTop: "20%",
   },
   logo: {
-    width: "30%",
-    height: "50%",
+    width: "40%",
+    height: "60%",
   },
   buttonSectionContainer: {
     flex: 1,

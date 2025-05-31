@@ -1,8 +1,10 @@
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView } from "react-native";
 import React, { useState } from "react";
 import { TouchableOpacity } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Checkbox } from "react-native-paper";
+import api from "../../../Services/api";
 
 const LoginSection = () => {
   const [email, setEmail] = useState("");
@@ -10,6 +12,8 @@ const LoginSection = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
+  const navigation = useNavigation();
+  const navigator = useNavigation();
 
   const validate = () => {
     let newErrors = {};
@@ -35,13 +39,28 @@ const LoginSection = () => {
     return isValid;
   };
 
+  const login = async () => {
+    try {
+      // Simulate an API call
+      const response = await api.post("identities/login", {
+        identifier: email,
+        password,
+      });
+      if (response.status === 200) {
+        navigation.navigate("MainApp"); // Navigate to the home screen or another screen after login
+      } else {
+        Alert.alert("Lỗi đăng nhập", "Vui lòng kiểm tra thông tin đăng nhập của bạn.");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      Alert.alert("Lỗi đăng nhập", "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.");
+    }
+  };
   const handleLogin = () => {
     if (validate()) {
       // Proceed with login logic
       Alert.alert("Đăng nhập", `Email: ${email}, Password: ${password}, Remember Me: ${rememberMe}`);
-      // TODO: Implement actual login logic (e.g., API call)
-      // On success, you might navigate or clear fields
-      // On failure, you might set an error message from the server
+     login();
     }
   };
 

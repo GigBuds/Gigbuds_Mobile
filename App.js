@@ -1,12 +1,20 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import Navigator from './navigation/Navigator';
 
 export default function App() {
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={{flex: 1}}>
+      <SafeAreaView forceInset={{bottom: 'never'}} style={{flex: 1}}>
+        <Image
+          source={require('./assets/main-bg.png')}
+          style={{width: '100%', height: '100%', position: 'absolute'}}
+          resizeMethod="resize"
+          resizeMode="cover"
+        />
+
+
         <Navigator />
       </SafeAreaView>
     </SafeAreaProvider>

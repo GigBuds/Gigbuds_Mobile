@@ -1,22 +1,22 @@
 export default {
     HomeScreen: {
         name: 'HomeScreen',
-        title: 'Trang Chủ',
+        title: 'HomeScreen',
     },
     ScheduleScreen: {
         name: 'ScheduleScreen',
-        title: 'Lịch Trình',
+        title: 'ScheduleScreen',
     },
     ProfileScreen: {
         name: 'ProfileScreen',
-        title: 'Tài Khoản',
+        title: 'ProfileScreen',
     },
     SearchScreen: {
         name: 'SearchScreen',
-        title: 'Tìm Kiếm',
+        title: 'SearchScreen',
     },
     MessageScreen: {
         name: 'MessageScreen',
-        title: 'Tin Nhắn',
+        title: 'MessageScreen',
     },
     }
