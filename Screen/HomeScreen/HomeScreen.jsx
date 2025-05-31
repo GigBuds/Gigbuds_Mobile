@@ -29,7 +29,7 @@ const HomeScreen = () => {
         <TouchableOpacity
           onPress={() =>
             navigation.navigate("MainApp", {
-              screen: 'SearchScreen',
+              screen: 'Tìm Kiếm',
             })
           }
         >

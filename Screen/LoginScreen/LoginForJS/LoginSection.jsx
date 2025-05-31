@@ -4,7 +4,7 @@ import { TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Checkbox } from "react-native-paper";
-import api from "../../../Services/api";
+import LoginService from "../../../Services/LoginService/LoginService";
 
 const LoginSection = () => {
   const [email, setEmail] = useState("");
@@ -12,8 +12,8 @@ const LoginSection = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
-  const navigator = useNavigation();
 
   const validate = () => {
     let newErrors = {};
@@ -33,111 +33,120 @@ const LoginSection = () => {
       newErrors.password = "Vui lòng nhập mật khẩu của bạn.";
       isValid = false;
     }
-    // Add more password rules if needed (e.g., length)
 
     setErrors(newErrors);
     return isValid;
   };
 
-  const login = async () => {
+  const handleLogin = async () => {
+    if (!validate()) {
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // Simulate an API call
-      const response = await api.post("identities/login", {
-        identifier: email,
-        password,
-      });
-      if (response.status === 200) {
-        navigation.navigate("MainApp"); // Navigate to the home screen or another screen after login
+      const result = await LoginService.login(email, password);
+      
+      if (result.success) {
+        // Handle successful login
+        console.log("Login successful:", result.data);
+        navigation.navigate("MainApp");
       } else {
-        Alert.alert("Lỗi đăng nhập", "Vui lòng kiểm tra thông tin đăng nhập của bạn.");
+        // Handle login error
+        Alert.alert("Lỗi đăng nhập", result.error);
       }
     } catch (error) {
-      console.error("Login error:", error);
-      Alert.alert("Lỗi đăng nhập", "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.");
-    }
-  };
-  const handleLogin = () => {
-    if (validate()) {
-      // Proceed with login logic
-      Alert.alert("Đăng nhập", `Email: ${email}, Password: ${password}, Remember Me: ${rememberMe}`);
-     login();
+      console.error("Unexpected login error:", error);
+      Alert.alert("Lỗi đăng nhập", "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-    <ScrollView
-            contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 10 }}
-            showsVerticalScrollIndicator={false}
-          >
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Email</Text>
-        <TextInput
-          style={[styles.input, errors.email ? styles.inputError : null]}
-          placeholder="Nhập email của bạn"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            if (errors.email) setErrors(prevErrors => ({ ...prevErrors, email: null }));
-          }}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-      </View>
-
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Mật khẩu</Text>
-        <View style={styles.passwordContainer}>
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 100, paddingHorizontal: 10 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Email</Text>
           <TextInput
-            secureTextEntry={!showPassword}
-            style={[styles.input, styles.passwordInput, errors.password ? styles.inputError : null]}
-            placeholder="Nhập mật khẩu của bạn"
-            value={password}
+            style={[styles.input, errors.email ? styles.inputError : null]}
+            placeholder="Nhập email của bạn"
+            value={email}
             onChangeText={(text) => {
-              setPassword(text);
-              if (errors.password) setErrors(prevErrors => ({ ...prevErrors, password: null }));
+              setEmail(text);
+              if (errors.email) setErrors(prevErrors => ({ ...prevErrors, email: null }));
             }}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            editable={!isLoading}
           />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}
-          >
-            <Ionicons
-              name={showPassword ? "eye-outline" : "eye-off-outline"}
-              size={24}
-              color="black"
-            />
-          </TouchableOpacity>
+          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
         </View>
-        {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-        <View style={styles.extraOptionsContainer}>
-          <View style={styles.rememberMeContainer}>
-            <Checkbox
-              theme={{ colors: { primary: "black" } }}
-              status={rememberMe ? "checked" : "unchecked"}
-              onPress={() => setRememberMe(!rememberMe)}
-              color="#FF7345"
-              uncheckedColor="black"
+        <View style={styles.inputGroup}>
+          <Text style={styles.label}>Mật khẩu</Text>
+          <View style={styles.passwordContainer}>
+            <TextInput
+              secureTextEntry={!showPassword}
+              style={[styles.input, styles.passwordInput, errors.password ? styles.inputError : null]}
+              placeholder="Nhập mật khẩu của bạn"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (errors.password) setErrors(prevErrors => ({ ...prevErrors, password: null }));
+              }}
+              editable={!isLoading}
             />
-            <Text style={styles.rememberMeText}>Ghi nhớ mật khẩu</Text>
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+              disabled={isLoading}
+            >
+              <Ionicons
+                name={showPassword ? "eye-outline" : "eye-off-outline"}
+                size={24}
+                color="black"
+              />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity>
-            <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
-          </TouchableOpacity>
+          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+
+          <View style={styles.extraOptionsContainer}>
+            <View style={styles.rememberMeContainer}>
+              <Checkbox
+                theme={{ colors: { primary: "black" } }}
+                status={rememberMe ? "checked" : "unchecked"}
+                onPress={() => setRememberMe(!rememberMe)}
+                color="#FF7345"
+                uncheckedColor="black"
+                disabled={isLoading}
+              />
+              <Text style={styles.rememberMeText}>Ghi nhớ mật khẩu</Text>
+            </View>
+            <TouchableOpacity disabled={isLoading}>
+              <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.loginButtonText}>Đăng nhập</Text>
-      </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          <Text style={styles.loginButtonText}>
+            {isLoading ? "Đang đăng nhập..." : "Đăng nhập"}
+          </Text>
+        </TouchableOpacity>
 
-      <Text style={styles.orText}>Hoặc đăng nhập bằng</Text>
+        <Text style={styles.orText}>Hoặc đăng nhập bằng</Text>
 
-      <TouchableOpacity style={styles.googleButton}>
-        <Text style={styles.googleButtonText}>Tiếp tục với Google</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.googleButton} disabled={isLoading}>
+          <Text style={styles.googleButtonText}>Tiếp tục với Google</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -211,6 +220,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 24, // More space before the primary action
     alignItems: "center",
+  },
+  loginButtonDisabled: {
+    backgroundColor: "#ccc",
   },
   loginButtonText: {
     color: "white",
