@@ -3,6 +3,7 @@ import api from "../api";
 class LoginService {
   // Login with email and password
   static async login(email, password) {
+    
     try {
       const response = await api.post("identities/login", {
         identifier: email,

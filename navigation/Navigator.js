@@ -17,6 +17,8 @@ import LoginForJS from "../Screen/LoginScreen/LoginForJS/LoginForJS";
 
 import OTPScreen from "../Screen/LoginScreen/OTPScreen/OTPScreen";
 import UserLayout from "../layout/UserLayout";
+import FilterBySalary from "../Screen/FilterScreen/FilterBySalary";
+import FilterLayout from "../layout/FilterLayout";
 
 export default function Navigator() {
   const Tab = createBottomTabNavigator();
@@ -41,6 +43,7 @@ export default function Navigator() {
   const SearchStack = () => {
     return (
       <Stack.Navigator>
+      
         <Stack.Screen
           name="Search"
           options={{ headerShown: false }}
@@ -48,6 +51,15 @@ export default function Navigator() {
             <UserLayout>
               <SearchScreen />
             </UserLayout>
+          )}
+        />
+        <Stack.Screen
+          name="Mức Lương"
+          options={{ headerShown: false }}
+          children={() => (
+            <FilterLayout page = {"Mức Lương"}>
+              <FilterBySalary  />
+            </FilterLayout>
           )}
         />
       </Stack.Navigator>
