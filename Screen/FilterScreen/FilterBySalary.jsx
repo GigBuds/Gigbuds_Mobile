@@ -47,8 +47,6 @@ const FilterBySalary = () => {
         setIsMale(parsedParams.isMale !== undefined ? parsedParams.isMale : "");
         setSelectedCity(parsedParams.cityId ? parsedParams.cityId.toString() : "");
         setSelectedDistricts(parsedParams.districtCodeList || []);
-        
-        // Load datetime values
         setJobTimeFrom(parsedParams.jobTimeFrom ? new Date(parsedParams.jobTimeFrom) : null);
         setJobTimeTo(parsedParams.jobTimeTo ? new Date(parsedParams.jobTimeTo) : null);
       }

@@ -2,17 +2,39 @@ import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import JobPostService from "../../Services/JobPostService/JobPostService";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searchParams}) => {
+const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searchParams, selectedTab}) => {
   const [jobData, setJobData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
+  const [jobSeekerId, setJobSeekerId] = React.useState(null);
 
-  console.log("JobCard rendered with searchParams:", searchParams);
+  // Get jobSeekerId from AsyncStorage
+  React.useEffect(() => {
+    const getUserId = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        setJobSeekerId(userId);
+      } catch (error) {
+        console.error("Error getting userId:", error);
+      }
+    };
+    getUserId();
+  }, []);
+
   const fetchJobPosts = async (searchPar) => {
     setLoading(true);
     try {
-      const result = await JobPostService.searchJobPosts(searchPar);
-      console.log("Search results:", result.data.items);
+      let result;
+      
+      if (selectedTab === "Gợi Ý") {
+        console.log("Fetching recommended job posts for jobSeekerId:", jobSeekerId);
+        result = await JobPostService.getRecommendedJobPosts(jobSeekerId);
+      } else {
+        result = await JobPostService.searchJobPosts(searchPar);
+      }
+      
+      console.log("Search results:", result.data?.items);
       setJobData(result.success ? result.data.items || [] : []);
 
       if (!result.success) {
@@ -28,10 +50,15 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
 
   React.useEffect(() => {
     console.log("useEffect triggered with searchParams:", searchParams);
+    console.log("Selected tab:", selectedTab);
     
-    // Always fetch from API with current searchParams
-    fetchJobPosts(searchParams);
-  }, [searchParams]); // Only depend on searchParams
+    // Only fetch if we have jobSeekerId for recommendation tab, or always for search tab
+    if (selectedTab === "Gợi Ý" && jobSeekerId) {
+      fetchJobPosts(searchParams);
+    } else {
+      fetchJobPosts(searchParams);
+    }
+  }, [searchParams, selectedTab, jobSeekerId]);
 
   // Use external loading state if provided, otherwise use internal loading
   const isLoading = externalLoading !== undefined ? externalLoading : loading;
@@ -64,7 +91,7 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
         }}
       >
         <Text style={{ fontSize: 16, color: "gray" }}>
-          Không có dữ liệu công việc.
+          {selectedTab === "Gợi Ý" ? "Không có gợi ý công việc." : "Không có dữ liệu công việc."}
         </Text>
       </View>
     );

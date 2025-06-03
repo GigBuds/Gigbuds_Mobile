@@ -9,7 +9,7 @@ import { jwtDecode } from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LoginSection = () => {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // Changed from email to identifier
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -27,7 +27,7 @@ const LoginSection = () => {
         setUserInfo(decodedUserInfo);
         console.log("Decoded idToken:", decodedUserInfo);
         storeUserInfo(decodedUserInfo);
-          navigation.navigate("MainApp");
+        navigation.navigate("MainApp");
       } catch (e) {
         console.error("Error decoding idToken:", e);
         Alert.alert("Lỗi", "Không thể giải mã token. Vui lòng đăng nhập lại.");
@@ -37,23 +37,35 @@ const LoginSection = () => {
 
   const storeUserInfo = async (userInfo) => {
     try {
+      console.log("Storing user info:", userInfo);
       await AsyncStorage.setItem("userName", `${userInfo.family_name} ${userInfo.name}`);
+      await AsyncStorage.setItem("userId", userInfo.sub);
       console.log("User info stored successfully.");
     } catch (error) {
       console.error("Error storing user info:", error);
     }
   };
 
+  // Helper function to detect if input is email or phone
+  const isEmail = (input) => {
+    return /\S+@\S+\.\S+/.test(input);
+  };
+
+  const isPhoneNumber = (input) => {
+    // Vietnamese phone number pattern: starts with 0 and has 9-10 digits
+    return /^0[3-9]\d{8,9}$/.test(input);
+  };
+
   const validate = () => {
     let newErrors = {};
     let isValid = true;
 
-    // Email validation
-    if (!email) {
-      newErrors.email = "Vui lòng nhập email của bạn.";
+    // Identifier validation (email or phone)
+    if (!identifier) {
+      newErrors.identifier = "Vui lòng nhập email hoặc số điện thoại.";
       isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Địa chỉ email không hợp lệ.";
+    } else if (!isEmail(identifier) && !isPhoneNumber(identifier)) {
+      newErrors.identifier = "Vui lòng nhập email hợp lệ hoặc số điện thoại hợp lệ.";
       isValid = false;
     }
 
@@ -74,7 +86,7 @@ const LoginSection = () => {
 
     setIsLoading(true);
     try {
-      const result = await LoginService.login(email, password);
+      const result = await LoginService.login(identifier, password);
       
       if (result.success) {
         // Handle successful login
@@ -101,20 +113,20 @@ const LoginSection = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Email</Text>
+          <Text style={styles.label}>Email hoặc Số điện thoại</Text>
           <TextInput
-            style={[styles.input, errors.email ? styles.inputError : null]}
-            placeholder="Nhập email của bạn"
-            value={email}
+            style={[styles.input, errors.identifier ? styles.inputError : null]}
+            placeholder="Nhập email hoặc số điện thoại"
+            value={identifier}
             onChangeText={(text) => {
-              setEmail(text);
-              if (errors.email) setErrors(prevErrors => ({ ...prevErrors, email: null }));
+              setIdentifier(text);
+              if (errors.identifier) setErrors(prevErrors => ({ ...prevErrors, identifier: null }));
             }}
-            keyboardType="email-address"
+            keyboardType={isPhoneNumber(identifier) ? "phone-pad" : "email-address"}
             autoCapitalize="none"
             editable={!isLoading}
           />
-          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+          {errors.identifier && <Text style={styles.errorText}>{errors.identifier}</Text>}
         </View>
 
         <View style={styles.inputGroup}>

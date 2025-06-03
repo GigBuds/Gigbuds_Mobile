@@ -2,12 +2,16 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
-const FilterSection = ({ onFilterPress, filterType, appliedFilters }) => {
-  console.log("Applied Filters:", appliedFilters);
+const FilterSection = ({
+  onFilterPress,
+  filterType,
+  appliedFilters,
+  selectedTab,
+  setSelectedTab,
+}) => {
+  console.log("Selected Tab:", selectedTab);
   // Define the filter options with labels and values
-  const filterOptions = [
-    { label: "Bộ Lọc", value: "Mức Lương" },
-  ];
+  const filterOptions = [{ label: "Bộ Lọc", value: "Mức Lương" }];
 
   const isFilterActive = (filterValue) => {
     // Check if this filter type is currently active
@@ -20,7 +24,42 @@ const FilterSection = ({ onFilterPress, filterType, appliedFilters }) => {
   return (
     <View style={styles.filterContainer}>
       <View style={styles.filterRow}>
-        {filterOptions.map((option) => (
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === "Mới Nhất" && styles.tabButtonActive,
+            ]}
+            onPress={() => setSelectedTab("Mới Nhất")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "Mới Nhất" && styles.tabTextActive,
+              ]}
+            >
+              Mới nhất
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[
+              styles.tabButton,
+              selectedTab === "Gợi Ý" && styles.tabButtonActive,
+            ]}
+            onPress={() => setSelectedTab("Gợi Ý")}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                selectedTab === "Gợi Ý" && styles.tabTextActive,
+              ]}
+            >
+              Gợi ý cho bạn
+            </Text>
+          </TouchableOpacity>
+        </View>
+        {selectedTab === "Mới Nhất" && filterOptions.map((option) => (
           <TouchableOpacity
             key={option.value}
             style={[
@@ -52,12 +91,44 @@ const FilterSection = ({ onFilterPress, filterType, appliedFilters }) => {
 
 const styles = StyleSheet.create({
   filterContainer: {
-    paddingVertical: 10,
+
+  },
+  tabContainer: {
+    flexDirection: "row",
+  },
+  tabButton: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 15,
+    borderRadius: 8,
+  },
+  tabButtonActive: {
+    borderBottomColor: "#FF7345",
+    borderBottomWidth: 3,
+    shadowOpacity: 0.3,
+    elevation: 4,
+  },
+  tabText: {
+    color: "#333",
+    fontSize: 20,
+
+  },
+  tabTextActive: {
+    color: "#2558B6",
+    fontWeight: "bold",
   },
   filterRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 10,
+    borderBottomColor: "#D2D2D2",
+    borderBottomWidth: 1,
+    paddingTop: 10,
   },
   filterButton: {
     borderWidth: 2,

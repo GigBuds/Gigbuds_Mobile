@@ -2,11 +2,11 @@ import api from "../api";
 
 class LoginService {
   // Login with email and password
-  static async login(email, password) {
+  static async login(identifier, password) {
     
     try {
       const response = await api.post("identities/login", {
-        identifier: email,
+        identifier: identifier,
         password,
       });
       return {

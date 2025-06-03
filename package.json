@@ -24,6 +24,7 @@
     "react-native-dotenv": "^3.4.11",
     "react-native-ios-picker": "^1.0.0",
     "react-native-modal-datetime-picker": "^18.0.0",
+    "react-native-pager-view": "^6.8.1",
     "react-native-paper": "^5.14.5",
     "react-native-picker": "^4.3.7",
     "react-native-safe-area-context": "5.4.0",

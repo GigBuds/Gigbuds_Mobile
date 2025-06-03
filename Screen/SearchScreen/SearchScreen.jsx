@@ -14,17 +14,14 @@ const SearchScreen = () => {
   const [filterType, setFilterType] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [searchParams, setSearchParams] = React.useState({}); // Add this state
+  const [selectedTab, setSelectedTab] = React.useState("Mới Nhất"); // Fixed typo here
 
   const loadAppliedFilters = async () => {
     try {
       const salaryFilter = await AsyncStorage.getItem('isSalaryFilterApplied');
-      const positionFilter = await AsyncStorage.getItem('isPositionFilterApplied');
-      const experienceFilter = await AsyncStorage.getItem('isExperienceFilterApplied');
       
       setAppliedFilters({
         salary: salaryFilter === 'true',
-        position: positionFilter === 'true',
-        experience: experienceFilter === 'true'
       });
     } catch (error) {
       console.error("Error loading applied filters:", error);
@@ -47,28 +44,7 @@ const SearchScreen = () => {
           Object.assign(searchParams, parsedSalaryFilter);
         }
       }
-      
-      // Get position filter
-      const positionFilterApplied = await AsyncStorage.getItem('isPositionFilterApplied');
-      if (positionFilterApplied === 'true') {
-        const positionFilter = await AsyncStorage.getItem('positionFilter');
-        if (positionFilter) {
-          const parsedPositionFilter = JSON.parse(positionFilter);
-          Object.assign(searchParams, parsedPositionFilter);
-        }
-      }
-      
-      // Get experience filter
-      const experienceFilterApplied = await AsyncStorage.getItem('isExperienceFilterApplied');
-      if (experienceFilterApplied === 'true') {
-        const experienceFilter = await AsyncStorage.getItem('experienceFilter');
-        if (experienceFilter) {
-          const parsedExperienceFilter = JSON.parse(experienceFilter);
-          Object.assign(searchParams, parsedExperienceFilter);
-        }
-      }
 
-      console.log('Searching with params:', searchParams);
       setSearchParams(searchParams); // Store searchParams in state
     } catch (error) {
       console.error("Error performing search:", error);
@@ -91,12 +67,6 @@ const SearchScreen = () => {
     if (filterValue === "Mức Lương") {
       navigation.navigate("Mức Lương");
     }
-    if (filterValue === "Vị trí") {
-      navigation.navigate("Vị trí");
-    }
-    if (filterValue === "Kinh nghiệm") {
-      navigation.navigate("Kinh nghiệm");
-    }
   };
 
   return (
@@ -106,8 +76,11 @@ const SearchScreen = () => {
         onFilterPress={handleFilterPress} 
         filterType={filterType} 
         appliedFilters={appliedFilters} 
+        setSelectedTab={setSelectedTab}
+        selectedTab={selectedTab} // Fixed prop name here
       />
       <JobCard 
+        selectedTab={selectedTab}
         searchParams={searchParams}
         appliedFilters={appliedFilters}
         loading={loading}
