@@ -3,14 +3,16 @@ import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import JobPostService from "../../Services/JobPostService/JobPostService";
 
-const JobCard = ({ searchResults, appliedFilters, marginBottom, loading: externalLoading }) => {
+const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searchParams}) => {
   const [jobData, setJobData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
 
-  const fetchJobPosts = async () => {
+  console.log("JobCard rendered with searchParams:", searchParams);
+  const fetchJobPosts = async (searchPar) => {
     setLoading(true);
     try {
-      const result = await JobPostService.searchJobPosts({});
+      const result = await JobPostService.searchJobPosts(searchPar);
+      console.log("Search results:", result.data.items);
       setJobData(result.success ? result.data.items || [] : []);
 
       if (!result.success) {
@@ -25,30 +27,11 @@ const JobCard = ({ searchResults, appliedFilters, marginBottom, loading: externa
   };
 
   React.useEffect(() => {
-    console.log("useEffect triggered:", { 
-      hasSearchResults: !!searchResults, 
-      hasItems: !!searchResults?.items,
-      itemsLength: searchResults?.items?.length 
-    });
+    console.log("useEffect triggered with searchParams:", searchParams);
     
-    // If searchResults is explicitly provided and has items, use them
-    if (searchResults?.items && Array.isArray(searchResults.items)) {
-      console.log("Using searchResults items");
-      setJobData(searchResults.items);
-      setLoading(false);
-    } 
-    // Only fetch from API when searchResults is null/undefined (initial load)
-    else if (searchResults === null || searchResults === undefined) {
-      console.log("No searchResults provided, fetching from API");
-      fetchJobPosts();
-    }
-    // If searchResults exists but is empty array, show empty state
-    else {
-      console.log("SearchResults provided but empty");
-      setJobData([]);
-      setLoading(false);
-    }
-  }, [searchResults]);
+    // Always fetch from API with current searchParams
+    fetchJobPosts(searchParams);
+  }, [searchParams]); // Only depend on searchParams
 
   // Use external loading state if provided, otherwise use internal loading
   const isLoading = externalLoading !== undefined ? externalLoading : loading;
@@ -179,7 +162,7 @@ const JobCard = ({ searchResults, appliedFilters, marginBottom, loading: externa
                 </Text>
                 <Text style={{ color: "gray", fontSize: 10 }}> - </Text>
                 <Text style={{ color: "gray", fontSize: 10 }}>
-                  {getTimeAgo(job.updateTime)}
+                  {getTimeAgo(job.updatedAt)}
                 </Text>
               </View>
             </View>

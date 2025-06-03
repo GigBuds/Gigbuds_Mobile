@@ -6,20 +6,12 @@ const FilterSection = ({ onFilterPress, filterType, appliedFilters }) => {
   console.log("Applied Filters:", appliedFilters);
   // Define the filter options with labels and values
   const filterOptions = [
-    { label: "Vị trí", value: "Vị trí" },
-    { label: "Kinh nghiệm", value: "Kinh nghiệm" },
-    { label: "Mức lương", value: "Mức Lương" },
+    { label: "Bộ Lọc", value: "Mức Lương" },
   ];
 
   const isFilterActive = (filterValue) => {
     // Check if this filter type is currently active
     if (filterValue === "Mức Lương" && appliedFilters.salary === true) {
-      return true;
-    }
-    if (filterValue === "Vị trí" && appliedFilters.position === true) {
-      return true;
-    }
-    if (filterValue === "Kinh nghiệm" && appliedFilters.experience === true) {
       return true;
     }
     return false;
@@ -64,7 +56,7 @@ const styles = StyleSheet.create({
   },
   filterRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "flex-end",
     marginBottom: 10,
   },
   filterButton: {

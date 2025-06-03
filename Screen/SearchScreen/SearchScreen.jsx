@@ -5,7 +5,6 @@ import JobCard from "../../components/JobCard/JobCard";
 import FilterSection from "../../components/FilterSection/FilterSection";
 import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import JobPostService from "../../Services/JobPostService/JobPostService";
 
 const SearchScreen = () => {
   const navigation = useNavigation();
@@ -14,6 +13,7 @@ const SearchScreen = () => {
   const [appliedFilters, setAppliedFilters] = React.useState({});
   const [filterType, setFilterType] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
+  const [searchParams, setSearchParams] = React.useState({}); // Add this state
 
   const loadAppliedFilters = async () => {
     try {
@@ -30,7 +30,6 @@ const SearchScreen = () => {
       console.error("Error loading applied filters:", error);
     }
   };
-
 
   const performSearch = async () => {
     try {
@@ -49,7 +48,7 @@ const SearchScreen = () => {
         }
       }
       
-      // Get position filter (add similar logic for other filters)
+      // Get position filter
       const positionFilterApplied = await AsyncStorage.getItem('isPositionFilterApplied');
       if (positionFilterApplied === 'true') {
         const positionFilter = await AsyncStorage.getItem('positionFilter');
@@ -59,7 +58,7 @@ const SearchScreen = () => {
         }
       }
       
-      // Get experience filter (add similar logic for other filters)
+      // Get experience filter
       const experienceFilterApplied = await AsyncStorage.getItem('isExperienceFilterApplied');
       if (experienceFilterApplied === 'true') {
         const experienceFilter = await AsyncStorage.getItem('experienceFilter');
@@ -70,19 +69,7 @@ const SearchScreen = () => {
       }
 
       console.log('Searching with params:', searchParams);
-      
-      // Perform search
-      const result = await JobPostService.searchJobPosts(searchParams);
-      
-      if (result.success) {
-        setSearchResults({
-          items: result.data.items || [],
-          totalCount: result.data.totalCount || 0
-        });
-      } else {
-        console.error("Search failed:", result.error);
-        setSearchResults({ items: [], totalCount: 0 });
-      }
+      setSearchParams(searchParams); // Store searchParams in state
     } catch (error) {
       console.error("Error performing search:", error);
       setSearchResults({ items: [], totalCount: 0 });
@@ -121,7 +108,7 @@ const SearchScreen = () => {
         appliedFilters={appliedFilters} 
       />
       <JobCard 
-        searchResults={searchResults} 
+        searchParams={searchParams}
         appliedFilters={appliedFilters}
         loading={loading}
       />

@@ -11,6 +11,7 @@ class JobPostService {
         jobTimeFrom,
         jobTimeTo,
         salaryUnit,
+        districtCodeList,
         jobPositionId
     } = {}) {  // Add default empty object
         try {
@@ -25,6 +26,9 @@ class JobPostService {
             if (jobTimeTo) params.append('jobTimeTo', jobTimeTo);
             if (salaryUnit) params.append('salaryUnit', salaryUnit);
             if (jobPositionId) params.append('jobPositionId', jobPositionId);
+            if (districtCodeList && Array.isArray(districtCodeList) && districtCodeList.length > 0) {
+                params.append('districtCodeList', districtCodeList.join(','));
+            }
             
             const response = await api.get(`job-posts/search?${params.toString()}`);
             return {

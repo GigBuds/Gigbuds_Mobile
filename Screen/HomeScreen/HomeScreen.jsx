@@ -9,26 +9,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const HomeScreen = () => {
   const navigation = useNavigation();
 
-  // Clear all filter storage when home screen is focused
-  useFocusEffect(
-    React.useCallback(() => {
-      const clearFilterStorage = async () => {
-        try {
-          await AsyncStorage.multiRemove([
-            "salaryFilter",
-            "locationFilter",
-            "experienceFilter",
-            "searchParams",
-          ]);
-          console.log("Cleared all filter storage on home screen focus");
-        } catch (error) {
-          console.error("Error clearing filter storage:", error);
-        }
-      };
 
-      clearFilterStorage();
-    }, [])
-  );
 
   return (
     <View>
