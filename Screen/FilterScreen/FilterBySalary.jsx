@@ -7,6 +7,7 @@ import FilterActionButton from "../../components/FilterActionButton/FilterAction
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { vietnamCities, getDistrictsByCity } from "./districtandprovince";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 const FilterBySalary = () => {
   const navigation = useNavigation();
@@ -17,6 +18,13 @@ const FilterBySalary = () => {
   const [selectedCity, setSelectedCity] = React.useState("");
   const [selectedDistricts, setSelectedDistricts] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
+  
+  // New datetime states
+  const [jobTimeFrom, setJobTimeFrom] = React.useState(null);
+  const [jobTimeTo, setJobTimeTo] = React.useState(null);
+  const [isDateTimePickerVisible, setDateTimePickerVisibility] = React.useState(false);
+  const [dateTimePickerMode, setDateTimePickerMode] = React.useState('date');
+  const [currentDateTimeField, setCurrentDateTimeField] = React.useState(null);
   
   const salaryOptions = [
     { label: "Trả theo giờ", value: "Hour" },
@@ -39,6 +47,10 @@ const FilterBySalary = () => {
         setIsMale(parsedParams.isMale !== undefined ? parsedParams.isMale : "");
         setSelectedCity(parsedParams.cityId ? parsedParams.cityId.toString() : "");
         setSelectedDistricts(parsedParams.districtCodeList || []);
+        
+        // Load datetime values
+        setJobTimeFrom(parsedParams.jobTimeFrom ? new Date(parsedParams.jobTimeFrom) : null);
+        setJobTimeTo(parsedParams.jobTimeTo ? new Date(parsedParams.jobTimeTo) : null);
       }
     } catch (error) {
       console.error('Error loading saved filters:', error);
@@ -60,7 +72,9 @@ const FilterBySalary = () => {
         salaryUnit: salaryUnit || undefined,
         isMale: isMale === "" ? undefined : isMale,
         cityId: selectedCity ? parseInt(selectedCity) : undefined,
-        districtCodeList: selectedDistricts.length > 0 ? selectedDistricts : undefined
+        districtCodeList: selectedDistricts.length > 0 ? selectedDistricts : undefined,
+        jobTimeFrom: jobTimeFrom ? jobTimeFrom.toISOString() : undefined,
+        jobTimeTo: jobTimeTo ? jobTimeTo.toISOString() : undefined
       };
       
       await AsyncStorage.setItem('salaryFilter', JSON.stringify(searchParams));
@@ -87,6 +101,8 @@ const FilterBySalary = () => {
       setIsMale("");
       setSelectedCity("");
       setSelectedDistricts([]);
+      setJobTimeFrom(null);
+      setJobTimeTo(null);
       AsyncStorage.removeItem('isSalaryFilterApplied');
       AsyncStorage.removeItem('salaryFilter');
       navigation.goBack();
@@ -201,8 +217,141 @@ const FilterBySalary = () => {
     return `${selectedDistricts.length} quận/huyện đã chọn`;
   };
 
+  // DateTime picker handlers
+  const showDateTimePicker = (field, mode) => {
+    setCurrentDateTimeField(field);
+    setDateTimePickerMode(mode);
+    setDateTimePickerVisibility(true);
+  };
+
+  const hideDateTimePicker = () => {
+    setDateTimePickerVisibility(false);
+    setCurrentDateTimeField(null);
+  };
+
+  const handleDateTimeConfirm = (selectedDate) => {
+    const currentDateTime = currentDateTimeField === 'from' ? jobTimeFrom : jobTimeTo;
+    let newDateTime;
+    
+    if (dateTimePickerMode === 'date') {
+      // Update date, keep existing time if any
+      if (currentDateTime) {
+        newDateTime = new Date(selectedDate);
+        newDateTime.setHours(currentDateTime.getHours());
+        newDateTime.setMinutes(currentDateTime.getMinutes());
+      } else {
+        newDateTime = selectedDate;
+      }
+    } else {
+      // Update time, keep existing date if any
+      if (currentDateTime) {
+        newDateTime = new Date(currentDateTime);
+        newDateTime.setHours(selectedDate.getHours());
+        newDateTime.setMinutes(selectedDate.getMinutes());
+      } else {
+        newDateTime = selectedDate;
+      }
+    }
+    
+    if (currentDateTimeField === 'from') {
+      setJobTimeFrom(newDateTime);
+    } else {
+      setJobTimeTo(newDateTime);
+    }
+    
+    hideDateTimePicker();
+  };
+
+  const selectDateTime = (field) => {
+    if (Platform.OS === 'ios') {
+      const options = [
+        'Chọn ngày',
+        'Chọn giờ',
+        'Xóa thời gian',
+        'Hủy'
+      ];
+      
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: options,
+          cancelButtonIndex: 3,
+          destructiveButtonIndex: 2,
+          title: field === 'from' ? 'Thời gian bắt đầu' : 'Thời gian kết thúc'
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 0) {
+            // Select date
+            showDateTimePicker(field, 'date');
+          } else if (buttonIndex === 1) {
+            // Select time
+            showDateTimePicker(field, 'time');
+          } else if (buttonIndex === 2) {
+            // Clear time
+            if (field === 'from') {
+              setJobTimeFrom(null);
+            } else {
+              setJobTimeTo(null);
+            }
+          }
+        }
+      );
+    } else {
+      // Android - show options
+      Alert.alert(
+        field === 'from' ? 'Thời gian bắt đầu' : 'Thời gian kết thúc',
+        'Chọn loại thời gian',
+        [
+          {
+            text: 'Chọn ngày',
+            onPress: () => showDateTimePicker(field, 'date')
+          },
+          {
+            text: 'Chọn giờ',
+            onPress: () => showDateTimePicker(field, 'time')
+          },
+          {
+            text: 'Xóa thời gian',
+            onPress: () => {
+              if (field === 'from') {
+                setJobTimeFrom(null);
+              } else {
+                setJobTimeTo(null);
+              }
+            }
+          },
+          { text: 'Hủy', style: 'cancel' }
+        ]
+      );
+    }
+  };
+
+  const formatDateTime = (dateTime) => {
+    if (!dateTime) return '';
+    
+    const date = dateTime.toLocaleDateString('vi-VN');
+    const time = dateTime.toLocaleTimeString('vi-VN', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    return `${date} ${time}`;
+  };
+
   return (
     <ScrollView style={styles.container}>
+      {/* DateTime Picker Modal */}
+      <DateTimePickerModal
+        isVisible={isDateTimePickerVisible}
+        mode={dateTimePickerMode}
+        isDarkModeEnabled={false}
+        date={
+          currentDateTimeField === 'from' 
+            ? jobTimeFrom || new Date()
+            : jobTimeTo || new Date()
+        }
+        onConfirm={handleDateTimeConfirm}
+        onCancel={hideDateTimePicker}
+      />
+
       <View style={styles.filterCard}>
         {/* Salary Type Section */}
         <Text style={styles.sectionTitle}>Loại Lương</Text>
@@ -371,7 +520,51 @@ const FilterBySalary = () => {
             />
           </View>
         </View>
+
+        {/* DateTime Range Section */}
+        <View style={styles.dateTimeRangeContainer}>
+          <Text style={styles.sectionTitle}>Thời gian làm việc</Text>
+          <View style={styles.dateTimeInputContainer}>
+            <TouchableOpacity 
+              onPress={() => selectDateTime('from')}
+              style={[
+                styles.dateTimeInput,
+                styles.datePickerInput
+              ]}
+              disabled={loading}
+            >
+              <Text style={[
+                jobTimeFrom ? styles.datePickerText : styles.datePickerPlaceholder
+              ]}>
+                {jobTimeFrom ? formatDateTime(jobTimeFrom) : 'Thời gian bắt đầu'}
+              </Text>
+            </TouchableOpacity>
+            
+            <Ionicons
+              name="arrow-forward"
+              size={24}
+              color="#FF7345"
+              style={styles.arrowIcon}
+            />
+            
+            <TouchableOpacity 
+              onPress={() => selectDateTime('to')}
+              style={[
+                styles.dateTimeInput,
+                styles.datePickerInput
+              ]}
+              disabled={loading}
+            >
+              <Text style={[
+                jobTimeTo ? styles.datePickerText : styles.datePickerPlaceholder
+              ]}>
+                {jobTimeTo ? formatDateTime(jobTimeTo) : 'Thời gian kết thúc'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
+      
       <FilterActionButton
         onClear={handleClearFilter}
         onApply={handleApplyFilter}
@@ -505,6 +698,41 @@ const styles = StyleSheet.create({
   },
   arrowIcon: {
     alignSelf: "center",
+  },
+  dateTimeRangeContainer: {
+    marginTop: 20,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e0e0",
+  },
+  dateTimeInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  dateTimeInput: {
+    width: "40%",
+    borderWidth: 1,
+    borderColor: "#ccc",
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "white",
+    minHeight: 48,
+    justifyContent: 'center',
+  },
+  datePickerInput: {
+    justifyContent: "center",
+  },
+  datePickerText: {
+    fontSize: 14,
+    color: "#000",
+    textAlign: "center",
+  },
+  datePickerPlaceholder: {
+    fontSize: 14,
+    color: "#a9a9a9",
+    textAlign: "center",
   },
 });
 
