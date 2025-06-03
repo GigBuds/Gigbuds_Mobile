@@ -1,10 +1,12 @@
 import { View, Text, TextInput, StyleSheet, Alert, ScrollView } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Checkbox } from "react-native-paper";
 import LoginService from "../../../Services/LoginService/LoginService";
+import { jwtDecode } from "jwt-decode";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LoginSection = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +16,33 @@ const LoginSection = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
+  const [idToken, setIdToken] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [userInfo, setUserInfo] = useState({});
+
+  useEffect(() => {
+    if (idToken) {
+      try {
+        const decodedUserInfo = jwtDecode(idToken);
+        setUserInfo(decodedUserInfo);
+        console.log("Decoded idToken:", decodedUserInfo);
+        storeUserInfo(decodedUserInfo);
+          navigation.navigate("MainApp");
+      } catch (e) {
+        console.error("Error decoding idToken:", e);
+        Alert.alert("Lỗi", "Không thể giải mã token. Vui lòng đăng nhập lại.");
+      }
+    }
+  }, [idToken]);
+
+  const storeUserInfo = async (userInfo) => {
+    try {
+      await AsyncStorage.setItem("userName", `${userInfo.family_name} ${userInfo.name}`);
+      console.log("User info stored successfully.");
+    } catch (error) {
+      console.error("Error storing user info:", error);
+    }
+  };
 
   const validate = () => {
     let newErrors = {};
@@ -50,7 +79,9 @@ const LoginSection = () => {
       if (result.success) {
         // Handle successful login
         console.log("Login successful:", result.data);
-        navigation.navigate("MainApp");
+        setAccessToken(result.data.access_token);
+        setIdToken(result.data.id_token);
+        
       } else {
         // Handle login error
         Alert.alert("Lỗi đăng nhập", result.error);

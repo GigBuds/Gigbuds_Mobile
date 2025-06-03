@@ -1,13 +1,12 @@
-import React from "react";
+import React, { use } from "react";
 import { View, StyleSheet, ImageBackground, Image, Text } from "react-native";
 import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Badge } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export default function LoginLayout({ children , introTitle, introSubtitle}) {
+  
+
   return (
-    // Use ImageBackground for an image, or View for a color
-    // <ImageBackground source={require("../assets/bg.png")} style={styles.background}>
     <View style={styles.container}>
       <Image
         source={mainBg}

@@ -1,12 +1,16 @@
 import { View, Text, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import SearchBar from "../../components/SearchBar/SearchBar";
 import JobCard from "../../components/JobCard/JobCard";
 import AdBanner from "../../components/AdBanner/AdBanner";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+
+
+
   return (
     <View>
       <AdBanner />
@@ -29,7 +33,7 @@ const HomeScreen = () => {
         <TouchableOpacity
           onPress={() =>
             navigation.navigate("MainApp", {
-              screen: 'Tìm Kiếm',
+              screen: "Tìm Kiếm",
             })
           }
         >
@@ -44,8 +48,7 @@ const HomeScreen = () => {
           </Text>
         </TouchableOpacity>
       </View>
-
-      <JobCard />
+      <JobCard marginBottom={250} />
     </View>
   );
 };

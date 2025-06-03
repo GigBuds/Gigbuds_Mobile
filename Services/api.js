@@ -3,13 +3,13 @@ import axios from "axios";
 
 
 // const baseUrl = process.env.EXPO_PUBLIC_LOCAL_API_URL || "locahttps://localhost:53460/api/v1/"
-const baseUrl = process.env.EXPO_PUBLIC_DEPLOY_API_URL || "https://localhost:53460/api/v1/"
+const baseURL = process.env.EXPO_PUBLIC_DEPLOY_API_URL || "https://localhost:53460/api/v1/"
 const config = {
-  baseUrl,
+  baseURL,
   timeout: 3000000,
 };
 const api = axios.create(config);
-api.defaults.baseURL = baseUrl;
+api.defaults.baseURL = baseURL;
 
 const handleBefore = async (config) => {
   try {

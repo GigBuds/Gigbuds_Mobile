@@ -1,13 +1,31 @@
-import React from "react";
-import { View, StyleSheet, ImageBackground, Image, Text } from "react-native";
+import React, { useEffect, useState } from "react";
+import { View, StyleSheet, Image, Text } from "react-native";
 import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Badge } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function UserLayout({ children }) {
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    const fetchUserName = async () => {
+      try {
+        const storedUserName = await AsyncStorage.getItem("userName");
+        console.log("Stored User Name:", storedUserName);
+        if (storedUserName !== null) {
+          setUserName(storedUserName);
+        }
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+      }
+    };
+
+      fetchUserName();
+  }, []);
+
   return (
-    // Use ImageBackground for an image, or View for a color
-    // <ImageBackground source={require("../assets/bg.png")} style={styles.background}>
     <View style={styles.container}>
       <Image
         source={mainBg}
@@ -24,12 +42,14 @@ export default function UserLayout({ children }) {
           }}
         >
           <Text style={{ fontSize: 18, color: "white" }}>Xin chào, </Text>
-          <Text style={styles.headerText}>Nguyen Quang Giap</Text>
+          <Text style={styles.headerText}>
+            {userName || "Người dùng"}
+          </Text>
         </View>
         <View style={{ width: "20%", alignItems: "center", position: "relative" }}>
-        <Badge style={{left:39, top: -8, position:'absolute', zIndex: 1}}>
+          <Badge style={{left: 39, top: -8, position: 'absolute', zIndex: 1}}>
             2
-        </Badge>
+          </Badge>
           <Ionicons
             name="notifications"
             size={30}
@@ -39,7 +59,6 @@ export default function UserLayout({ children }) {
       </View>
       <View style={styles.formContainer}>{children}</View>
     </View>
-    // </ImageBackground>
   );
 }
 
