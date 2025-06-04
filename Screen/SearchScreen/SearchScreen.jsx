@@ -15,7 +15,7 @@ const SearchScreen = () => {
   const [loading, setLoading] = React.useState(false);
   const [searchParams, setSearchParams] = React.useState({}); // Add this state
   const [selectedTab, setSelectedTab] = React.useState("Mới Nhất"); // Fixed typo here
-
+  const [searchInput, setSearchInput] = React.useState("");
   const loadAppliedFilters = async () => {
     try {
       const salaryFilter = await AsyncStorage.getItem('isSalaryFilterApplied');
@@ -71,7 +71,7 @@ const SearchScreen = () => {
 
   return (
     <View style={styles.container}>
-      <SearchBar />
+      <SearchBar setSearchInput={setSearchInput} />
       <FilterSection 
         onFilterPress={handleFilterPress} 
         filterType={filterType} 
@@ -80,6 +80,7 @@ const SearchScreen = () => {
         selectedTab={selectedTab} // Fixed prop name here
       />
       <JobCard 
+        searchInput={searchInput}
         selectedTab={selectedTab}
         searchParams={searchParams}
         appliedFilters={appliedFilters}

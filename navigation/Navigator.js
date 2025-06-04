@@ -19,6 +19,10 @@ import OTPScreen from "../Screen/LoginScreen/OTPScreen/OTPScreen";
 import UserLayout from "../layout/UserLayout";
 import FilterBySalary from "../Screen/FilterScreen/FilterBySalary";
 import FilterLayout from "../layout/FilterLayout";
+import ProfileLayout from "../layout/ProfileLayout";
+import MyProfile from "../Screen/ProfileScreen/MyProfile/MyProfile";
+import MyProfileLayout from "../layout/MyProfileLayout";
+import JobDetailScreen from "../Screen/JobDetailScreen/JobDetailScreen";
 
 export default function Navigator() {
   const Tab = createBottomTabNavigator();
@@ -36,6 +40,15 @@ export default function Navigator() {
             </UserLayout>
           )}
         />
+         <Stack.Screen
+          name="JobDetail"
+          options={{ headerShown: false }}
+          children={() => (
+            <UserLayout>
+              <JobDetailScreen />
+            </UserLayout>
+          )}
+        />
       </Stack.Navigator>
     );
   };
@@ -43,7 +56,6 @@ export default function Navigator() {
   const SearchStack = () => {
     return (
       <Stack.Navigator>
-      
         <Stack.Screen
           name="Search"
           options={{ headerShown: false }}
@@ -57,9 +69,18 @@ export default function Navigator() {
           name="Mức Lương"
           options={{ headerShown: false }}
           children={() => (
-            <FilterLayout page = {"Mức Lương"}>
-              <FilterBySalary  />
+            <FilterLayout page={"Mức Lương"}>
+              <FilterBySalary />
             </FilterLayout>
+          )}
+        />
+        <Stack.Screen
+          name="JobDetail"
+          options={{ headerShown: false }}
+          children={() => (
+            <UserLayout>
+              <JobDetailScreen />
+            </UserLayout>
           )}
         />
       </Stack.Navigator>
@@ -71,7 +92,7 @@ export default function Navigator() {
       <Stack.Navigator>
         <Stack.Screen
           name="Message"
-           options={{ headerShown: false }}
+          options={{ headerShown: false }}
           children={() => (
             <UserLayout>
               <MessageScreen />
@@ -86,7 +107,7 @@ export default function Navigator() {
       <Stack.Navigator>
         <Stack.Screen
           name="Schedule"
-           options={{ headerShown: false }}
+          options={{ headerShown: false }}
           children={() => (
             <UserLayout>
               <ScheduleScreen />
@@ -102,11 +123,20 @@ export default function Navigator() {
       <Stack.Navigator>
         <Stack.Screen
           name="Profile"
-           options={{ headerShown: false }}
+          options={{ headerShown: false }}
           children={() => (
-            <UserLayout>
+            <ProfileLayout>
               <ProfileScreen />
-            </UserLayout>
+            </ProfileLayout>
+          )}
+        />
+        <Stack.Screen
+          name="MyProfile"
+          options={{ headerShown: false }}
+          children={() => (
+            <MyProfileLayout>
+              <MyProfile />
+            </MyProfileLayout>
           )}
         />
       </Stack.Navigator>
@@ -139,7 +169,7 @@ export default function Navigator() {
     return (
       <Tab.Navigator safeAreaInsets={{ bottom: 0 }}>
         <Tab.Screen
-          name='Trang chủ'
+          name="Trang chủ"
           component={HomeStack}
           options={{
             headerShown: false,
@@ -155,7 +185,7 @@ export default function Navigator() {
         />
 
         <Tab.Screen
-          name='Tìm Kiếm'
+          name="Tìm Kiếm"
           component={SearchStack}
           options={{
             headerShown: false,
@@ -171,7 +201,7 @@ export default function Navigator() {
         />
 
         <Tab.Screen
-          name='Lịch Trình'
+          name="Lịch Trình"
           component={ScheduleStack}
           options={{
             headerShown: false,
@@ -187,7 +217,7 @@ export default function Navigator() {
         />
 
         <Tab.Screen
-          name='Tin Nhắn'
+          name="Tin Nhắn"
           component={MessageStack}
           options={{
             headerShown: false,
@@ -203,7 +233,7 @@ export default function Navigator() {
         />
 
         <Tab.Screen
-          name='Tài khoản'
+          name="Tài khoản"
           component={ProfileStack}
           options={{
             headerShown: false,

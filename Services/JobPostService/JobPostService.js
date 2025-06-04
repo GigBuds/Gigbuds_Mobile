@@ -1,4 +1,5 @@
 import api from "../api";
+import * as Location from 'expo-location';
 
 class JobPostService {
 
@@ -46,23 +47,74 @@ class JobPostService {
         }
     }
 
-    // Fixed method signature to accept jobSeekerId as a string parameter
+    // Helper method to get current location
+    static async getCurrentLocation() {
+        try {
+            // Request location permissions
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            
+            if (status !== 'granted') {
+                console.warn('Location permission not granted');
+                return 'S205 Vinhome Grand Park, Quận 9, Thành phố Hồ Chí Minh'; // Fallback location
+            }
+
+            // Get current position
+            const location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced,
+                timeout: 10000,
+            });
+
+            // Reverse geocode to get address
+            const reverseGeocode = await Location.reverseGeocodeAsync({
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+            });
+
+            if (reverseGeocode.length > 0) {
+                const address = reverseGeocode[0];
+                // Format Vietnamese address
+                const formattedAddress = [
+                    address.streetNumber,
+                    address.street,
+                    address.district,
+                    address.city || address.region,
+                ].filter(Boolean).join(', ');
+                
+                console.log('Current location:', formattedAddress);
+                return formattedAddress || 'S205 Vinhome Grand Park, Quận 9, Thành phố Hồ Chí Minh';
+            }
+
+            return 'S205 Vinhome Grand Park, Quận 9, Thành phố Hồ Chí Minh'; // Fallback
+        } catch (error) {
+            console.error('Error getting current location:', error);
+            return 'S205 Vinhome Grand Park, Quận 9, Thành phố Hồ Chí Minh'; // Fallback location
+        }
+    }
+
+    // Updated method to use expo-location
     static async getRecommendedJobPosts(jobSeekerId, options = {}) {
         try {
+            // jobSeekerId is required
+            if (!jobSeekerId) {
+                throw new Error('jobSeekerId is required');
+            }
+
+            // Get current location or use provided location
+            let currentLocation = options.currentLocation;
+            
+            if (!currentLocation) {
+                console.log('Getting current location...');
+                currentLocation = await this.getCurrentLocation();
+            }
+
             const {
-                currentLocation = ' Quận 9, Thành phố Hồ Chí Minh',
                 pageIndex = 0,
-                pageSize = 10,
+                pageSize = 20,
                 includeScheduleMatching = true,
                 includeDistanceCalculation = true
             } = options;
 
             const params = new URLSearchParams();
-            
-            // jobSeekerId is required
-            if (!jobSeekerId) {
-                throw new Error('jobSeekerId is required');
-            }
             
             if (currentLocation) params.append('currentLocation', currentLocation);
             if (pageIndex !== undefined) params.append('pageIndex', pageIndex);
@@ -71,6 +123,7 @@ class JobPostService {
             if (includeDistanceCalculation !== undefined) params.append('includeDistanceCalculation', includeDistanceCalculation);
 
             console.log('Recommendation API URL:', `job-posts/recommendations/${jobSeekerId}?${params.toString()}`);
+            console.log('Using location:', currentLocation);
             
             const response = await api.get(`job-posts/recommendations/${jobSeekerId}?${params.toString()}`);
             return {

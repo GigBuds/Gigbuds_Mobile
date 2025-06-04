@@ -1,7 +1,12 @@
 import { View, Text, TextInput } from "react-native";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
-const SearchBar = () => {
+const SearchBar = ({setSearchInput}) => {
+  const handleOnchangeText = (event) => {
+    const text = event.nativeEvent.text;
+    setSearchInput(text);
+    console.log("Search input changed:", text);
+  };
   return (
     <View>
       <TextInput
@@ -18,10 +23,8 @@ const SearchBar = () => {
         autoCapitalize="none"
         autoCorrect={false}
         returnKeyType="search"
-        onSubmitEditing={(event) => {
-          console.log("Search query:", event.nativeEvent.text);
-          // Handle search logic here
-        }}
+        clearButtonMode="while-editing"
+        onChange={handleOnchangeText}
       />
       <Ionicons
         name="search"

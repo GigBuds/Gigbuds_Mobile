@@ -9,7 +9,6 @@ const FilterSection = ({
   selectedTab,
   setSelectedTab,
 }) => {
-  console.log("Selected Tab:", selectedTab);
   // Define the filter options with labels and values
   const filterOptions = [{ label: "Bộ Lọc", value: "Mức Lương" }];
 
