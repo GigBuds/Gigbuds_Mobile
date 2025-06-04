@@ -141,6 +141,28 @@ class JobPostService {
             };
         }
     }
+
+   static async getJobPostById(jobPostId) {
+        try {
+            if (!jobPostId) {
+                throw new Error('jobPostId is required');
+            }
+
+            const response = await api.get(`job-posts/${jobPostId}`);
+            return {
+                success: true,
+                data: response.data,
+                status: response.status
+            };
+        } catch (error) {
+            console.error('Error in getJobPostById:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || error.message || "Đã xảy ra lỗi khi lấy thông tin công việc.",
+                status: error.response?.status
+            };
+        }
+    }
 }
 
 export default JobPostService;

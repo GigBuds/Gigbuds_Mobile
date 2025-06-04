@@ -23,6 +23,7 @@ import ProfileLayout from "../layout/ProfileLayout";
 import MyProfile from "../Screen/ProfileScreen/MyProfile/MyProfile";
 import MyProfileLayout from "../layout/MyProfileLayout";
 import JobDetailScreen from "../Screen/JobDetailScreen/JobDetailScreen";
+import JobDetailLayout from "../layout/JobDetailLayout";
 
 export default function Navigator() {
   const Tab = createBottomTabNavigator();
@@ -44,9 +45,9 @@ export default function Navigator() {
           name="JobDetail"
           options={{ headerShown: false }}
           children={() => (
-            <UserLayout>
+            <JobDetailLayout>
               <JobDetailScreen />
-            </UserLayout>
+            </JobDetailLayout>
           )}
         />
       </Stack.Navigator>
@@ -78,9 +79,9 @@ export default function Navigator() {
           name="JobDetail"
           options={{ headerShown: false }}
           children={() => (
-            <UserLayout>
+            <JobDetailLayout>
               <JobDetailScreen />
-            </UserLayout>
+            </JobDetailLayout>
           )}
         />
       </Stack.Navigator>

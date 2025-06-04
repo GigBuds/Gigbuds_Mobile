@@ -285,16 +285,7 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
           }}
           onPress={() => {
             navigate.navigate("JobDetail", {
-              jobId: job.id,
-              jobTitle: job.jobTitle,
-              companyName: job.companyName,
-              companyLogo: job.companyLogo,
-              jobLocation: job.jobLocation,
-              salary: job.salary,
-              salaryUnit: job.salaryUnit,
-              experienceRequirement: job.experienceRequirement,
-              isOutstandingPost: job.isOutstandingPost,
-              vacancyCount: job.vacancyCount,
+              jobId: job.accountId,
             });
           }}
         >
