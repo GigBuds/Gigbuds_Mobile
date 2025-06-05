@@ -92,6 +92,7 @@ const LoginSection = () => {
         // Handle successful login
         console.log("Login successful:", result.data);
         setAccessToken(result.data.access_token);
+        await AsyncStorage.setItem("accessToken", result.data.access_token);
         setIdToken(result.data.id_token);
         
       } else {

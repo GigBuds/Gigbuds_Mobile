@@ -135,7 +135,6 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
       
       const sortedData = sortJobData(titleFilteredData);
       setJobData(sortedData);
-
       if (!result.success) {
         console.error("Error fetching search results:", result.error);
       }
@@ -285,7 +284,7 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
           }}
           onPress={() => {
             navigate.navigate("JobDetail", {
-              jobId: job.accountId,
+              jobId: job.jobPostId,
             });
           }}
         >

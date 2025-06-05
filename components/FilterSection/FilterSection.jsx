@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
@@ -30,6 +30,8 @@ const FilterSection = ({
               selectedTab === "Mới Nhất" && styles.tabButtonActive,
             ]}
             onPress={() => setSelectedTab("Mới Nhất")}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text
               style={[
@@ -47,6 +49,8 @@ const FilterSection = ({
               selectedTab === "Gợi Ý" && styles.tabButtonActive,
             ]}
             onPress={() => setSelectedTab("Gợi Ý")}
+            activeOpacity={0.7}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Text
               style={[
@@ -66,6 +70,8 @@ const FilterSection = ({
               isFilterActive(option.value) && styles.filterButtonActive,
             ]}
             onPress={() => onFilterPress(option.value)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
           >
             <Text
               style={[
@@ -90,10 +96,13 @@ const FilterSection = ({
 
 const styles = StyleSheet.create({
   filterContainer: {
-
+    // Added background to ensure proper rendering
+    backgroundColor: 'transparent',
   },
   tabContainer: {
     flexDirection: "row",
+    // Added gap for better spacing on Android
+    gap: Platform.OS === 'android' ? 8 : 0,
   },
   tabButton: {
     shadowColor: "#000",
@@ -104,17 +113,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 15,
     borderRadius: 8,
+    // Added minimum dimensions for better touch target
+    minWidth: 80,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // Android-specific improvements
+    ...Platform.select({
+      android: {
+        elevation: 3,
+        overflow: 'hidden',
+      },
+    }),
   },
   tabButtonActive: {
     borderBottomColor: "#FF7345",
     borderBottomWidth: 3,
     shadowOpacity: 0.3,
     elevation: 4,
+    // Enhanced active state for Android
+    ...Platform.select({
+      android: {
+        elevation: 6,
+        backgroundColor: 'rgba(255, 115, 69, 0.1)',
+      },
+    }),
   },
   tabText: {
     color: "#333",
     fontSize: 20,
-
+    textAlign: 'center',
+    // Android text rendering improvements
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+        textAlignVertical: 'center',
+      },
+    }),
   },
   tabTextActive: {
     color: "#2558B6",
@@ -128,6 +163,12 @@ const styles = StyleSheet.create({
     borderBottomColor: "#D2D2D2",
     borderBottomWidth: 1,
     paddingTop: 10,
+    // Improved Android layout
+    ...Platform.select({
+      android: {
+        paddingBottom: 5,
+      },
+    }),
   },
   filterButton: {
     borderWidth: 2,
@@ -139,14 +180,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: "white",
+    // Better touch target for Android
+    minHeight: 36,
+    ...Platform.select({
+      android: {
+        elevation: 1,
+      },
+    }),
   },
   filterButtonActive: {
     backgroundColor: "#FF7345",
     borderColor: "#FF7345",
+    ...Platform.select({
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   filterText: {
     fontSize: 14,
     color: "#333",
+    ...Platform.select({
+      android: {
+        includeFontPadding: false,
+      },
+    }),
   },
   filterTextActive: {
     color: "#FFFFFF",

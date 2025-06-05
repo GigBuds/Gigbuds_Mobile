@@ -34,18 +34,6 @@ export default function MyProfileLayout({ children }) {
         style={styles.backgroundImage}
         resizeMode="cover"
       />
-        <Image source={logo} resizeMode="center" style={styles.logo} />        <TouchableOpacity
-          style={{
-            color: "white",
-            fontSize: 16,
-            color: "#FF7345",
-            marginTop: 5,
-            alignContent: "center",
-            flexDirection: "row",
-            alignItems: "center",
-          }}
-        />
-        <Ionicons name="camera" style={{position:'absolute', zIndex:1, top:120, right:178}} size={35} color="#FF7345" />
       <View style={styles.formContainer}>{children}</View>
     </View>
   );
@@ -56,7 +44,7 @@ const styles = StyleSheet.create({
     height: "100%",
     width: "100%",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "flex-end",
   },
   backgroundImage: {
     width: "100%",

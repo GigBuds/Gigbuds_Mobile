@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "MMA301-PE-SE182480",
-    "slug": "MMA301-PE-SE182480",
+    "name": "Gigbuds",
+    "slug": "Gigbuds",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,6 +14,18 @@
     },
     "assetBundlePatterns": [
       "**/*"
+    ],
+     "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "locationAlwaysPermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ]
     ],
     "ios": {
       "bundleIdentifier": "Gigbuds",

@@ -14,7 +14,6 @@ api.defaults.baseURL = baseURL;
 const handleBefore = async (config) => {
   try {
     const accessToken = await AsyncStorage.getItem("accessToken");
-
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
