@@ -88,7 +88,7 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
       return sortedJobs.sort((a, b) => {
         const dateA = new Date(a.updatedAt || 0);
         const dateB = new Date(b.updatedAt || 0);
-        return dateB - dateA;
+        return dateA - dateB;
       });
     }
   };
@@ -307,7 +307,7 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
               style={{
                 width: "17%",
                 height: "100%",
-                borderRadius: "100%",
+                borderRadius: 100,
                 marginBottom: 10,
                 backgroundColor: "black",
               }}
