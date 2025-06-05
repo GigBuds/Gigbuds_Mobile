@@ -3,13 +3,14 @@ import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import JobPostService from "../../Services/JobPostService/JobPostService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 
-const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searchParams, selectedTab}) => {
+const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searchParams, selectedTab, searchInput}) => {
   const [jobData, setJobData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [jobSeekerId, setJobSeekerId] = React.useState(null);
-
-  // Get jobSeekerId from AsyncStorage
+  const [locationLoading, setLocationLoading] = React.useState(false);
+  const navigate = useNavigation();
   React.useEffect(() => {
     const getUserId = async () => {
       try {
@@ -22,21 +23,118 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
     getUserId();
   }, []);
 
+
+  // Helper function to extract distance in km
+  const getDistanceInKm = (formattedDistance) => {
+    if (!formattedDistance) return Infinity;
+    
+    // Remove all non-numeric and non-decimal characters, keep the number
+    const numericValue = parseFloat(formattedDistance.replace(/[^\d.]/g, ''));
+    
+    // Check if the distance is in meters (contains 'm' but not 'km')
+    if (formattedDistance.includes('m') && !formattedDistance.includes('km')) {
+      return numericValue / 1000; // Convert meters to kilometers
+    }
+    
+    // Otherwise assume it's in kilometers
+    return numericValue || Infinity;
+  };
+
+  // Filter function to get jobs within 50km (only for "Gợi Ý" tab)
+  const filterJobsByDistance = (jobs) => {
+    if (!jobs || !Array.isArray(jobs)) return [];
+    
+    // Only filter for "Gợi Ý" tab
+    if (selectedTab !== "Gợi Ý") {
+      return jobs;
+    }
+    
+    return jobs.filter(job => {
+      const distanceKm = getDistanceInKm(job.formattedDistance);
+      return distanceKm <= 50;
+    });
+  };
+
+  // Filter function for search input (jobTitle)
+  const filterJobsByTitle = (jobs) => {
+    if (!jobs || !Array.isArray(jobs) || !searchInput || !searchInput.trim()) {
+      return jobs;
+    }
+    
+    const searchTerm = searchInput.trim().toLowerCase();
+    
+    return jobs.filter(job => {
+      // Check if jobTitle contains the search term (case insensitive)
+      const jobTitle = job.jobTitle?.toLowerCase() || '';
+      return jobTitle.includes(searchTerm);
+    });
+  };
+
+  // Sort function based on selected tab
+  const sortJobData = (jobs) => {
+    if (!jobs || !Array.isArray(jobs)) return [];
+    
+    const sortedJobs = [...jobs]; // Create a copy to avoid mutating original array
+    
+    if (selectedTab === "Gợi Ý") {
+      // Sort by formattedDistance (ascending - closest first)
+      return sortedJobs.sort((a, b) => {
+        const distanceA = getDistanceInKm(a.formattedDistance);
+        const distanceB = getDistanceInKm(b.formattedDistance);
+        return distanceA - distanceB;
+      });
+    } else {
+      // Sort by updatedAt (descending - newest first)
+      return sortedJobs.sort((a, b) => {
+        const dateA = new Date(a.updatedAt || 0);
+        const dateB = new Date(b.updatedAt || 0);
+        return dateA - dateB;
+      });
+    }
+  };
+
   const fetchJobPosts = async (searchPar) => {
-    setLoading(true);
     try {
       let result;
       
       if (selectedTab === "Gợi Ý") {
-        console.log("Fetching recommended job posts for jobSeekerId:", jobSeekerId);
-        result = await JobPostService.getRecommendedJobPosts(jobSeekerId);
+        setLoading(true);
+        setLocationLoading(true);
+
+        result = await JobPostService.getRecommendedJobPosts(jobSeekerId, {
+          pageIndex: 0,
+          pageSize: 50, // Increased to get more results before filtering
+          includeScheduleMatching: true,
+          includeDistanceCalculation: true
+        });
+        
+        setLocationLoading(false);
       } else {
+        setLoading(true);
         result = await JobPostService.searchJobPosts(searchPar);
       }
       
       console.log("Search results:", result.data?.items);
-      setJobData(result.success ? result.data.items || [] : []);
-
+      
+      // Process the data: filter by distance (only for "Gợi Ý"), then filter by title, then sort
+      let rawData = result.success ? result.data.items || [] : [];
+      
+      // Filter jobs within 50km only for "Gợi Ý" tab
+      const distanceFilteredData = filterJobsByDistance(rawData);
+      
+      // Filter by job title if searchInput is provided
+      const titleFilteredData = filterJobsByTitle(distanceFilteredData);
+      
+      if (selectedTab === "Gợi Ý") {
+        console.log(`Filtered to ${distanceFilteredData.length} jobs within 50km`);
+      }
+      
+      if (searchInput && searchInput.trim()) {
+        console.log(`Filtered to ${titleFilteredData.length} jobs matching "${searchInput}"`);
+      }
+      
+      const sortedData = sortJobData(titleFilteredData);
+      setJobData(sortedData);
       if (!result.success) {
         console.error("Error fetching search results:", result.error);
       }
@@ -45,42 +143,26 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
       setJobData([]);
     } finally {
       setLoading(false);
+      setLocationLoading(false);
     }
   };
 
   React.useEffect(() => {
-    console.log("useEffect triggered with searchParams:", searchParams);
-    console.log("Selected tab:", selectedTab);
-    
-    // Only fetch if we have jobSeekerId for recommendation tab, or always for search tab
     if (selectedTab === "Gợi Ý" && jobSeekerId) {
       fetchJobPosts(searchParams);
     } else {
       fetchJobPosts(searchParams);
     }
-  }, [searchParams, selectedTab, jobSeekerId]);
+  }, [searchParams, selectedTab, jobSeekerId, searchInput]); // Added searchInput to dependencies
 
-  // Use external loading state if provided, otherwise use internal loading
-  const isLoading = externalLoading !== undefined ? externalLoading : loading;
+  React.useEffect(() => {
+    if (jobData && jobData.length > 0) {
+      fetchJobPosts(searchParams);
+    }
+  }, [selectedTab, searchInput]);
 
   // Loading state
-  if (isLoading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 20,
-        }}
-      >
-        <Text style={{ fontSize: 16, color: "gray" }}>Đang tải dữ liệu...</Text>
-      </View>
-    );
-  }
-
-  // No data state
-  if (!jobData || !Array.isArray(jobData) || jobData.length === 0) {
+  if (loading) {
     return (
       <View
         style={{
@@ -91,7 +173,34 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
         }}
       >
         <Text style={{ fontSize: 16, color: "gray" }}>
-          {selectedTab === "Gợi Ý" ? "Không có gợi ý công việc." : "Không có dữ liệu công việc."}
+          {locationLoading ? "Đang lấy vị trí hiện tại..." : "Đang tải dữ liệu..."}
+        </Text>
+      </View>
+    );
+  }
+
+  // No data state
+  if (!jobData || !Array.isArray(jobData) || jobData.length === 0) {
+    const noDataMessage = () => {
+      if (searchInput && searchInput.trim()) {
+        return `Không tìm thấy công việc với từ khóa "${searchInput}"`;
+      }
+      return selectedTab === "Gợi Ý" 
+        ? "Không có công việc gợi ý trong vòng 50km." 
+        : "Không có dữ liệu công việc.";
+    };
+
+    return (
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 20,
+        }}
+      >
+        <Text style={{ fontSize: 16, color: "gray", textAlign: "center" }}>
+          {noDataMessage()}
         </Text>
       </View>
     );
@@ -130,6 +239,33 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
     return parts.length > 1 ? parts[parts.length - 1].trim() : "";
   };
 
+  // Highlight search term in job title
+  const highlightSearchTerm = (text, searchTerm) => {
+    if (!searchTerm || !searchTerm.trim()) {
+      return text;
+    }
+    
+    const regex = new RegExp(`(${searchTerm.trim()})`, 'gi');
+    const parts = text.split(regex);
+    
+    return (
+      <Text style={{ fontWeight: "bold", fontSize: 18, width: "80%" }} numberOfLines={1} ellipsizeMode="tail">
+        {parts.map((part, index) => (
+          <Text 
+            key={index} 
+            style={{ 
+              backgroundColor: regex.test(part) ? '#ffeb3b' : 'transparent',
+              fontWeight: "bold", 
+              fontSize: 18 
+            }}
+          >
+            {part}
+          </Text>
+        ))}
+      </Text>
+    );
+  };
+
   return (
     <ScrollView bouncesZoom={true} style={{ marginBottom: marginBottom }}>
       {jobData.map((job, index) => (
@@ -145,6 +281,11 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
             borderRadius: 20,
             borderLeftWidth: 3,
             borderLeftColor: "#2558B6",
+          }}
+          onPress={() => {
+            navigate.navigate("JobDetail", {
+              jobId: job.jobPostId,
+            });
           }}
         >
           <Ionicons
@@ -165,20 +306,24 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
               style={{
                 width: "17%",
                 height: "100%",
-                borderRadius: "100%",
+                borderRadius: 100,
                 marginBottom: 10,
                 backgroundColor: "black",
               }}
               resizeMode="cover"
             />
             <View style={{ marginLeft: 10, width: "84%" }}>
-              <Text
-                style={{ fontWeight: "bold", fontSize: 18, width: "80%" }}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {job.jobTitle}
-              </Text>
+              {/* Highlight search term in job title */}
+              {searchInput && searchInput.trim() ? 
+                highlightSearchTerm(job.jobTitle, searchInput) :
+                <Text
+                  style={{ fontWeight: "bold", fontSize: 18, width: "80%" }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {job.jobTitle}
+                </Text>
+              }
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text style={{ color: "gray", fontSize: 10 }}>
                   {job.companyName}
@@ -189,7 +334,9 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
                 </Text>
                 <Text style={{ color: "gray", fontSize: 10 }}> - </Text>
                 <Text style={{ color: "gray", fontSize: 10 }}>
-                  {getTimeAgo(job.updatedAt)}
+                {selectedTab === "Gợi Ý"
+                  ? job.formattedDistance
+                  : getTimeAgo(job.updatedAt)}
                 </Text>
               </View>
             </View>
