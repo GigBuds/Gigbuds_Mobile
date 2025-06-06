@@ -26,9 +26,9 @@ const ProfileHeader = ({ userProfile }) => {
         <Text style={styles.userName}>
           {userProfile?.lastName} {userProfile?.firstName}
         </Text>
-        <Text style={styles.jobPosition}>
+        {/* <Text style={styles.jobPosition}>
           {getJobPosition()}
-        </Text>
+        </Text> */}
         
         {/* Stats */}
         <View style={styles.statsContainer}>

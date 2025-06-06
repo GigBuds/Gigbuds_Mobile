@@ -382,7 +382,7 @@ const FilterBySalary = () => {
         </RadioButton.Group>
 
         {/* Gender Picker Section */}
-        <View style={styles.genderContainer}>
+        {/* <View style={styles.genderContainer}>
           <Text style={styles.sectionTitle}>Giới tính</Text>
           <View style={styles.pickerContainer}>
             {Platform.OS === "ios" ? (
@@ -416,7 +416,7 @@ const FilterBySalary = () => {
               </Picker>
             )}
           </View>
-        </View>
+        </View> */}
 
         {/* City Picker Section */}
         <View style={styles.locationContainer}>

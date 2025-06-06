@@ -46,7 +46,7 @@ const MyProfile = () => {
       console.log("User Profile:", userProfile);
       setTimeout(() => {
         setLoading(false);
-      }, 1000);
+      }, 4500);
     }
   };
 

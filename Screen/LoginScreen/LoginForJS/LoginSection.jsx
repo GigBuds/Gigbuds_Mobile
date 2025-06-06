@@ -7,6 +7,7 @@ import { Checkbox } from "react-native-paper";
 import LoginService from "../../../Services/LoginService/LoginService";
 import { jwtDecode } from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import LoadingComponent from "../../../components/Common/LoadingComponent";
 
 const LoginSection = () => {
   const [identifier, setIdentifier] = useState(""); // Changed from email to identifier
@@ -106,6 +107,8 @@ const LoginSection = () => {
       setIsLoading(false);
     }
   };
+
+
 
   return (
     <View style={styles.container}>

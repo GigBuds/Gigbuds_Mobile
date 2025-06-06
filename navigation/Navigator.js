@@ -145,6 +145,8 @@ export default function Navigator() {
   };
 
   const LoginStack = () => {
+      const [isLoading, setIsLoading] = useState(false);
+    
     return (
       <Stack.Navigator>
         <Stack.Screen
