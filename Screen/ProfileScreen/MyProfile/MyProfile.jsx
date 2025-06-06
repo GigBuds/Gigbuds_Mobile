@@ -1,14 +1,21 @@
-import { View, SafeAreaView, StyleSheet, TouchableOpacity, ScrollView } from "react-native";
+import {
+  View,
+  SafeAreaView,
+  StyleSheet,
+  ScrollView,
+} from "react-native";
 import React from "react";
 import JobSeekerService from "../../../Services/JobSeekerService/JobSeekerService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  GestureHandlerRootView,
-} from "react-native-gesture-handler";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import ProfileHeader from "../../../components/Profile/ProfileHeader";
 import LoadingComponent from "../../../components/Common/LoadingComponent";
 import ErrorComponent from "../../../components/Common/ErrorComponent";
-import { Text } from "react-native";
+import ProfileButtons from "../../../components/Profile/ProfileButtons";
+import SkillsSection from "../../../components/Profile/SkillsSection";
+import ExperienceSection from "../../../components/Profile/ExperienceSection";
+import EducationSection from "../../../components/Profile/EducationSection";
+import PersonalInfoSection from "../../../components/Profile/PersonalInfoSection";
 
 const MyProfile = () => {
   const [userProfile, setUserProfile] = React.useState(null);
@@ -20,14 +27,13 @@ const MyProfile = () => {
       setLoading(true);
       setError(null);
       const accountId = await AsyncStorage.getItem("userId");
-      console.log("Account ID:", accountId);
-      
+
       if (!accountId) {
         throw new Error("Không tìm thấy thông tin người dùng");
       }
 
       const response = await JobSeekerService.getJobSeekerById(accountId);
-      
+
       if (response.success) {
         setUserProfile(response.data);
       } else {
@@ -37,16 +43,23 @@ const MyProfile = () => {
       console.error("Error fetching user profile:", err);
       setError(err.message || "Đã xảy ra lỗi khi tải thông tin profile");
     } finally {
-      // Remove the artificial delay for production, keep it for testing if needed
+      console.log("User Profile:", userProfile);
       setTimeout(() => {
         setLoading(false);
-      }, 5000);
-
+      }, 1000);
     }
   };
 
   const handleRetry = () => {
     fetchUserProfile();
+  };
+
+  const handleEditProfile = () => {
+    console.log("Edit Profile Pressed");
+  };
+
+  const handleUpdateSchedule = () => {
+    console.log("Update Schedule Pressed");
   };
 
   React.useEffect(() => {
@@ -56,7 +69,7 @@ const MyProfile = () => {
   if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
-        <LoadingComponent 
+        <LoadingComponent
           size={80}
           speed={2000}
           showText={true}
@@ -82,39 +95,23 @@ const MyProfile = () => {
     <GestureHandlerRootView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ProfileHeader userProfile={userProfile} />
-        
-        <ScrollView 
+
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Add more profile content here */}
-          <View style={{flexDirection: 'column', alignItems: 'center'}}>
-            <TouchableOpacity 
-              style={{ 
-                backgroundColor: '#2558B6', 
-                padding: 15, 
-                borderRadius: 8, 
-                marginBottom: 10, 
-                width: '100%',
-              }}
-              onPress={() => console.log("Edit Profile Pressed")}
-            >
-              <Text style={{ color: 'white', fontSize: 16,  textAlign:'center' }}>Cập nhật thông tin cơ bản</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={{ 
-                backgroundColor: '#FF6B6B', 
-                padding: 15, 
-                borderRadius: 8, 
-                marginBottom: 10, 
-                width: '100%',
-              }}
-              onPress={() => console.log("Logout Pressed")}
-            >
-              <Text style={{ color: 'white', fontSize: 16, textAlign:'center' }}>Cập nhật lịch cá nhân</Text>
-            </TouchableOpacity>
-            
-          </View>
+          <ProfileButtons 
+            onEditProfile={handleEditProfile}
+            onUpdateSchedule={handleUpdateSchedule}
+          />
+          
+          <SkillsSection skills={userProfile.skillTags} />
+          
+          <ExperienceSection experiences={userProfile.accountExperienceTags} />
+          
+          <EducationSection educations={userProfile.educationalLevels} />
+          
+          <PersonalInfoSection userProfile={userProfile} />
         </ScrollView>
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -124,11 +121,11 @@ const MyProfile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: "#f8f9fa",
   },
   safeArea: {
     width: "100%",
@@ -137,10 +134,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 10,
     paddingBottom: 20,
-  },
-  additionalContent: {
-    marginTop: 20,
-    paddingHorizontal: 16,
   },
 });
 
