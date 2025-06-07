@@ -1,4 +1,11 @@
-import { View, Text, TextInput, StyleSheet, Alert, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  Alert,
+  ScrollView,
+} from "react-native";
 import React, { useEffect, useState } from "react";
 import { TouchableOpacity } from "react-native";
 import { useNavigation } from "@react-navigation/native";
@@ -39,7 +46,10 @@ const LoginSection = () => {
   const storeUserInfo = async (userInfo) => {
     try {
       console.log("Storing user info:", userInfo);
-      await AsyncStorage.setItem("userName", `${userInfo.family_name} ${userInfo.name}`);
+      await AsyncStorage.setItem(
+        "userName",
+        `${userInfo.family_name} ${userInfo.name}`
+      );
       await AsyncStorage.setItem("userId", userInfo.sub);
       console.log("User info stored successfully.");
     } catch (error) {
@@ -66,7 +76,8 @@ const LoginSection = () => {
       newErrors.identifier = "Vui lòng nhập email hoặc số điện thoại.";
       isValid = false;
     } else if (!isEmail(identifier) && !isPhoneNumber(identifier)) {
-      newErrors.identifier = "Vui lòng nhập email hợp lệ hoặc số điện thoại hợp lệ.";
+      newErrors.identifier =
+        "Vui lòng nhập email hợp lệ hoặc số điện thoại hợp lệ.";
       isValid = false;
     }
 
@@ -88,21 +99,24 @@ const LoginSection = () => {
     setIsLoading(true);
     try {
       const result = await LoginService.login(identifier, password);
-      
+
+      console.log("result", result);
       if (result.success) {
         // Handle successful login
         console.log("Login successful:", result.data);
         setAccessToken(result.data.access_token);
         await AsyncStorage.setItem("accessToken", result.data.access_token);
         setIdToken(result.data.id_token);
-        
       } else {
         // Handle login error
         Alert.alert("Lỗi đăng nhập", result.error);
       }
     } catch (error) {
       console.error("Unexpected login error:", error);
-      Alert.alert("Lỗi đăng nhập", "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau.");
+      Alert.alert(
+        "Lỗi đăng nhập",
+        "Đã xảy ra lỗi không mong muốn. Vui lòng thử lại sau."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -124,13 +138,21 @@ const LoginSection = () => {
             value={identifier}
             onChangeText={(text) => {
               setIdentifier(text);
-              if (errors.identifier) setErrors(prevErrors => ({ ...prevErrors, identifier: null }));
+              if (errors.identifier)
+                setErrors((prevErrors) => ({
+                  ...prevErrors,
+                  identifier: null,
+                }));
             }}
-            keyboardType={isPhoneNumber(identifier) ? "phone-pad" : "email-address"}
+            keyboardType={
+              isPhoneNumber(identifier) ? "phone-pad" : "email-address"
+            }
             autoCapitalize="none"
             editable={!isLoading}
           />
-          {errors.identifier && <Text style={styles.errorText}>{errors.identifier}</Text>}
+          {errors.identifier && (
+            <Text style={styles.errorText}>{errors.identifier}</Text>
+          )}
         </View>
 
         <View style={styles.inputGroup}>
@@ -138,12 +160,20 @@ const LoginSection = () => {
           <View style={styles.passwordContainer}>
             <TextInput
               secureTextEntry={!showPassword}
-              style={[styles.input, styles.passwordInput, errors.password ? styles.inputError : null]}
+              style={[
+                styles.input,
+                styles.passwordInput,
+                errors.password ? styles.inputError : null,
+              ]}
               placeholder="Nhập mật khẩu của bạn"
               value={password}
               onChangeText={(text) => {
                 setPassword(text);
-                if (errors.password) setErrors(prevErrors => ({ ...prevErrors, password: null }));
+                if (errors.password)
+                  setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    password: null,
+                  }));
               }}
               editable={!isLoading}
             />
@@ -159,7 +189,9 @@ const LoginSection = () => {
               />
             </TouchableOpacity>
           </View>
-          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+          {errors.password && (
+            <Text style={styles.errorText}>{errors.password}</Text>
+          )}
 
           <View style={styles.extraOptionsContainer}>
             <View style={styles.rememberMeContainer}>
@@ -179,8 +211,8 @@ const LoginSection = () => {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]} 
+        <TouchableOpacity
+          style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
           onPress={handleLogin}
           disabled={isLoading}
         >

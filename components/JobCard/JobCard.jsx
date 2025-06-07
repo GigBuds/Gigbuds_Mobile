@@ -5,7 +5,14 @@ import JobPostService from "../../Services/JobPostService/JobPostService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 
-const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searchParams, selectedTab, searchInput}) => {
+const JobCard = ({
+  appliedFilters,
+  marginBottom,
+  loading: externalLoading,
+  searchParams,
+  selectedTab,
+  searchInput,
+}) => {
   const [jobData, setJobData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
   const [jobSeekerId, setJobSeekerId] = React.useState(null);
@@ -23,19 +30,18 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
     getUserId();
   }, []);
 
-
   // Helper function to extract distance in km
   const getDistanceInKm = (formattedDistance) => {
     if (!formattedDistance) return Infinity;
-    
+
     // Remove all non-numeric and non-decimal characters, keep the number
-    const numericValue = parseFloat(formattedDistance.replace(/[^\d.]/g, ''));
-    
+    const numericValue = parseFloat(formattedDistance.replace(/[^\d.]/g, ""));
+
     // Check if the distance is in meters (contains 'm' but not 'km')
-    if (formattedDistance.includes('m') && !formattedDistance.includes('km')) {
+    if (formattedDistance.includes("m") && !formattedDistance.includes("km")) {
       return numericValue / 1000; // Convert meters to kilometers
     }
-    
+
     // Otherwise assume it's in kilometers
     return numericValue || Infinity;
   };
@@ -43,13 +49,13 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
   // Filter function to get jobs within 50km (only for "Gợi Ý" tab)
   const filterJobsByDistance = (jobs) => {
     if (!jobs || !Array.isArray(jobs)) return [];
-    
+
     // Only filter for "Gợi Ý" tab
     if (selectedTab !== "Gợi Ý") {
       return jobs;
     }
-    
-    return jobs.filter(job => {
+
+    return jobs.filter((job) => {
       const distanceKm = getDistanceInKm(job.formattedDistance);
       return distanceKm <= 50;
     });
@@ -60,12 +66,12 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
     if (!jobs || !Array.isArray(jobs) || !searchInput || !searchInput.trim()) {
       return jobs;
     }
-    
+
     const searchTerm = searchInput.trim().toLowerCase();
-    
-    return jobs.filter(job => {
+
+    return jobs.filter((job) => {
       // Check if jobTitle contains the search term (case insensitive)
-      const jobTitle = job.jobTitle?.toLowerCase() || '';
+      const jobTitle = job.jobTitle?.toLowerCase() || "";
       return jobTitle.includes(searchTerm);
     });
   };
@@ -73,9 +79,9 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
   // Sort function based on selected tab
   const sortJobData = (jobs) => {
     if (!jobs || !Array.isArray(jobs)) return [];
-    
+
     const sortedJobs = [...jobs]; // Create a copy to avoid mutating original array
-    
+
     if (selectedTab === "Gợi Ý") {
       // Sort by formattedDistance (ascending - closest first)
       return sortedJobs.sort((a, b) => {
@@ -96,7 +102,7 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
   const fetchJobPosts = async (searchPar) => {
     try {
       let result;
-      
+
       if (selectedTab === "Gợi Ý") {
         setLoading(true);
         setLocationLoading(true);
@@ -105,34 +111,38 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
           pageIndex: 0,
           pageSize: 50, // Increased to get more results before filtering
           includeScheduleMatching: true,
-          includeDistanceCalculation: true
+          includeDistanceCalculation: true,
         });
-        
+
         setLocationLoading(false);
       } else {
         setLoading(true);
         result = await JobPostService.searchJobPosts(searchPar);
       }
-      
-      console.log("Search results:", result.data?.items);
-      
+
+      // console.log("Search results:", result.data?.items);
+
       // Process the data: filter by distance (only for "Gợi Ý"), then filter by title, then sort
       let rawData = result.success ? result.data.items || [] : [];
-      
+
       // Filter jobs within 50km only for "Gợi Ý" tab
       const distanceFilteredData = filterJobsByDistance(rawData);
-      
+
       // Filter by job title if searchInput is provided
       const titleFilteredData = filterJobsByTitle(distanceFilteredData);
-      
+
       if (selectedTab === "Gợi Ý") {
-        console.log(`Filtered to ${distanceFilteredData.length} jobs within 50km`);
+        console.log(
+          `Filtered to ${distanceFilteredData.length} jobs within 50km`
+        );
       }
-      
+
       if (searchInput && searchInput.trim()) {
-        console.log(`Filtered to ${titleFilteredData.length} jobs matching "${searchInput}"`);
+        console.log(
+          `Filtered to ${titleFilteredData.length} jobs matching "${searchInput}"`
+        );
       }
-      
+
       const sortedData = sortJobData(titleFilteredData);
       setJobData(sortedData);
       if (!result.success) {
@@ -173,7 +183,9 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
         }}
       >
         <Text style={{ fontSize: 16, color: "gray" }}>
-          {locationLoading ? "Đang lấy vị trí hiện tại..." : "Đang tải dữ liệu..."}
+          {locationLoading
+            ? "Đang lấy vị trí hiện tại..."
+            : "Đang tải dữ liệu..."}
         </Text>
       </View>
     );
@@ -185,8 +197,8 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
       if (searchInput && searchInput.trim()) {
         return `Không tìm thấy công việc với từ khóa "${searchInput}"`;
       }
-      return selectedTab === "Gợi Ý" 
-        ? "Không có công việc gợi ý trong vòng 50km." 
+      return selectedTab === "Gợi Ý"
+        ? "Không có công việc gợi ý trong vòng 50km."
         : "Không có dữ liệu công việc.";
     };
 
@@ -244,19 +256,23 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
     if (!searchTerm || !searchTerm.trim()) {
       return text;
     }
-    
-    const regex = new RegExp(`(${searchTerm.trim()})`, 'gi');
+
+    const regex = new RegExp(`(${searchTerm.trim()})`, "gi");
     const parts = text.split(regex);
-    
+
     return (
-      <Text style={{ fontWeight: "bold", fontSize: 18, width: "80%" }} numberOfLines={1} ellipsizeMode="tail">
+      <Text
+        style={{ fontWeight: "bold", fontSize: 18, width: "80%" }}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
         {parts.map((part, index) => (
-          <Text 
-            key={index} 
-            style={{ 
-              backgroundColor: regex.test(part) ? '#ffeb3b' : 'transparent',
-              fontWeight: "bold", 
-              fontSize: 18 
+          <Text
+            key={index}
+            style={{
+              backgroundColor: regex.test(part) ? "#ffeb3b" : "transparent",
+              fontWeight: "bold",
+              fontSize: 18,
             }}
           >
             {part}
@@ -314,8 +330,9 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
             />
             <View style={{ marginLeft: 10, width: "84%" }}>
               {/* Highlight search term in job title */}
-              {searchInput && searchInput.trim() ? 
-                highlightSearchTerm(job.jobTitle, searchInput) :
+              {searchInput && searchInput.trim() ? (
+                highlightSearchTerm(job.jobTitle, searchInput)
+              ) : (
                 <Text
                   style={{ fontWeight: "bold", fontSize: 18, width: "80%" }}
                   numberOfLines={1}
@@ -323,7 +340,7 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
                 >
                   {job.jobTitle}
                 </Text>
-              }
+              )}
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <Text style={{ color: "gray", fontSize: 10 }}>
                   {job.companyName}
@@ -334,9 +351,9 @@ const JobCard = ({ appliedFilters, marginBottom, loading: externalLoading, searc
                 </Text>
                 <Text style={{ color: "gray", fontSize: 10 }}> - </Text>
                 <Text style={{ color: "gray", fontSize: 10 }}>
-                {selectedTab === "Gợi Ý"
-                  ? job.formattedDistance
-                  : getTimeAgo(job.updatedAt)}
+                  {selectedTab === "Gợi Ý"
+                    ? job.formattedDistance
+                    : getTimeAgo(job.updatedAt)}
                 </Text>
               </View>
             </View>
