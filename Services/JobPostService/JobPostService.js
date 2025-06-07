@@ -8,7 +8,6 @@ class JobPostService {
         jobName,
         salaryFrom,
         salaryTo,
-        isMale,
         jobTimeFrom,
         jobTimeTo,
         salaryUnit,
@@ -22,7 +21,6 @@ class JobPostService {
             if (jobName) params.append('jobName', jobName);
             if (salaryFrom) params.append('salaryFrom', salaryFrom);
             if (salaryTo) params.append('salaryTo', salaryTo);
-            if (isMale !== undefined) params.append('isMale', isMale);
             if (jobTimeFrom) params.append('jobTimeFrom', jobTimeFrom);
             if (jobTimeTo) params.append('jobTimeTo', jobTimeTo);
             if (salaryUnit) params.append('salaryUnit', salaryUnit);
