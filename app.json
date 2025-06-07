@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Gigbuds",
-    "slug": "Gigbuds",
+    "slug": "gigbuds",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -15,7 +15,7 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-     "plugins": [
+    "plugins": [
       [
         "expo-location",
         {
@@ -34,14 +34,19 @@
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app uses location to find nearby job opportunities.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app uses location to find nearby job opportunities."
-    }
-  },
+      }
+    },
     "android": {
       "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "INTERNET"
+        "INTERNET",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_LOCATION"
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -50,6 +55,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "b8a6a536-264a-4187-b7e2-78b31252e315"
+      }
+    },
+    "owner": "oranged_cat"
   }
 }
