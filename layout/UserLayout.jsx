@@ -2,9 +2,8 @@ import React, { useEffect, useState } from "react";
 import { View, StyleSheet, Image, Text } from "react-native";
 import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { Badge } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Notification from "../components/Common/Notification";
 
 export default function UserLayout({ children }) {
   const [userName, setUserName] = useState("");
@@ -22,7 +21,7 @@ export default function UserLayout({ children }) {
       }
     };
 
-      fetchUserName();
+    fetchUserName();
   }, []);
 
   return (
@@ -42,20 +41,9 @@ export default function UserLayout({ children }) {
           }}
         >
           <Text style={{ fontSize: 18, color: "white" }}>Xin chào, </Text>
-          <Text style={styles.headerText}>
-            {userName || "Người dùng"}
-          </Text>
+          <Text style={styles.headerText}>{userName || "Người dùng"}</Text>
         </View>
-        <View style={{ width: "20%", alignItems: "center", position: "relative" }}>
-          <Badge style={{left: 39, top: -8, position: 'absolute', zIndex: 1}}>
-            2
-          </Badge>
-          <Ionicons
-            name="notifications"
-            size={30}
-            color={"white"}
-          />
-        </View>
+        <Notification />
       </View>
       <View style={styles.formContainer}>{children}</View>
     </View>

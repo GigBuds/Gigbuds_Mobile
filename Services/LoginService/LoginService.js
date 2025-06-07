@@ -3,27 +3,26 @@ import api from "../api";
 class LoginService {
   // Login with email and password
   static async login(identifier, password) {
-    
     try {
       const response = await api.post("identities/login", {
         identifier: identifier,
-        password,
+        password: password,
       });
       return {
         success: true,
         data: response.data,
-        status: response.status
+        status: response.status,
       };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.",
-        status: error.response?.status
+        error:
+          error.response?.data?.message ||
+          "Đã xảy ra lỗi khi đăng nhập. Vui lòng thử lại sau.",
+        status: error.response?.status,
       };
     }
   }
-
-  
 
   // Forgot password
   static async forgotPassword(email) {
@@ -34,13 +33,15 @@ class LoginService {
       return {
         success: true,
         data: response.data,
-        status: response.status
+        status: response.status,
       };
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || "Đã xảy ra lỗi khi gửi yêu cầu đặt lại mật khẩu.",
-        status: error.response?.status
+        error:
+          error.response?.data?.message ||
+          "Đã xảy ra lỗi khi gửi yêu cầu đặt lại mật khẩu.",
+        status: error.response?.status,
       };
     }
   }
