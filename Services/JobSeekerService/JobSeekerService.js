@@ -22,6 +22,28 @@ class JobSeekerService {
             };
         }
     }
+
+    static async updateJobSeeker(id, data) {
+        try {
+            if (!id || !data) {
+                throw new Error('Job Seeker ID and data are required');
+            }
+
+            const response = await api.put(`job-seekers/${id}`, data);
+            return {
+                success: true,
+                data: response.data,
+                status: response.status
+            };
+        } catch (error) {
+            console.error('Error in updateJobSeeker:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || error.message || "Đã xảy ra lỗi khi cập nhật thông tin người tìm việc.",
+                status: error.response?.status
+            };
+        }
+    }
 }
 
 export default JobSeekerService;

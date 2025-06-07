@@ -1,14 +1,34 @@
-import React, { useEffect, useState } from "react";
-import { View, StyleSheet, Image, Text, TouchableOpacity } from "react-native";
+import { View, StyleSheet, Image, Text, TouchableOpacity, SafeAreaView } from "react-native";
 import mainBg from "../assets/main-bg.png";
-import logo from "../assets/logo.png";
-import Ionicons from "@expo/vector-icons/Ionicons";
+
+import { useLoading } from "../context/LoadingContext";
+import LoadingComponent from "../components/Common/LoadingComponent";
 
 
 export default function JobDetailLayout({ children }) {
+  const { isLoading } = useLoading();
 
   return (
     <View style={styles.container}>
+     {isLoading && (
+        <SafeAreaView
+          style={{
+            zIndex: 1000,
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <LoadingComponent
+            size={80}
+            speed={2000}
+            showText={true}
+            loadingText="Đang tải thông tin công việc..."
+            animationType="outline"
+            strokeWidth={2.5}
+          />
+        </SafeAreaView>
+      )}
       <Image
         source={mainBg}
         style={styles.backgroundImage}
