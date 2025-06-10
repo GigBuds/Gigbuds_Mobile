@@ -1,14 +1,25 @@
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import { setupSignalRLifeCycleHandler } from "./setupSignalRLifeCycleHandler";
+import { setupNotificationHandlers } from "./setupNotificationHandlers";
+/**
+ * SignalRService class for managing SignalR connection and events.
+ */
 class SignalRService {
   constructor() {
+    // Connection object for SignalR when connected to the server
     this.connection = null;
+
+    // Connection status
     this.isConnected = false;
     this.isConnecting = false;
+
+    // Reconnect attempts
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectDelay = 5000; // 5 seconds
+
+    // Notification callbacks
     this.notificationCallbacks = new Map();
     this.connectionCallbacks = new Map();
   }
@@ -57,11 +68,14 @@ class SignalRService {
         .configureLogging(LogLevel.Information)
         .build();
 
-      // Set up connection event handlers
-      this.setupConnectionHandlers();
+      // Set up connection lifecycle event handlers
+      setupSignalRLifeCycleHandler(this);
 
       // Set up notification handlers
-      this.setupNotificationHandlers();
+      setupNotificationHandlers(
+        this.connection,
+        this.handleNotification.bind(this)
+      );
 
       // Start the connection
       await this.connection.start();
@@ -83,146 +97,6 @@ class SignalRService {
   }
 
   /**
-   * Set up connection lifecycle handlers
-   */
-  setupConnectionHandlers() {
-    if (!this.connection) return;
-
-    this.connection.onclose(async (error) => {
-      this.isConnected = false;
-      console.log("SignalR: Connection closed", error);
-      this.triggerCallback("onDisconnected", error);
-
-      // Attempt reconnection if not manually closed
-      if (error) {
-        await this.handleReconnection();
-      }
-    });
-
-    this.connection.onreconnecting((error) => {
-      console.log("SignalR: Reconnecting...", error);
-      this.triggerCallback("onReconnecting", error);
-    });
-
-    this.connection.onreconnected((connectionId) => {
-      this.isConnected = true;
-      this.reconnectAttempts = 0;
-      console.log("SignalR: Reconnected", connectionId);
-      this.triggerCallback("onReconnected", connectionId);
-    });
-  }
-
-  /**
-   * Set up all notification handlers from the server
-   */
-  setupNotificationHandlers() {
-    if (!this.connection) return;
-
-    // Job seeker notifications
-    this.connection.on("NotifyNewPostFromFollowedEmployer", (data) => {
-      console.log("SignalR: New post from followed employer", data);
-      this.handleNotification("job", {
-        title: "Có việc làm mới từ nhà tuyển dụng theo dõi",
-        message:
-          data?.message || "Nhà tuyển dụng bạn theo dõi vừa đăng công việc mới",
-        data: data,
-        type: "job",
-      });
-    });
-
-    this.connection.on("NotifyJobFeedbackReceived", (data) => {
-      console.log("SignalR: Job feedback received", data);
-      this.handleNotification("feedback", {
-        title: "Nhận được đánh giá công việc",
-        message:
-          data?.message || "Bạn vừa nhận được đánh giá từ nhà tuyển dụng",
-        data: data,
-        type: "feedback",
-      });
-    });
-
-    this.connection.on("NotifyJobFeedbackSent", (data) => {
-      console.log("SignalR: Job feedback sent", data);
-      this.handleNotification("feedback", {
-        title: "Đánh giá đã được gửi",
-        message: data?.message || "Đánh giá của bạn đã được gửi thành công",
-        data: data,
-        type: "feedback",
-      });
-    });
-
-    this.connection.on("NotifyJobApplicationAccepted", (data) => {
-      console.log("SignalR: Job application accepted", data);
-      this.handleNotification("application", {
-        title: "Đơn ứng tuyển được chấp nhận",
-        message:
-          data?.message || "Chúc mừng! Đơn ứng tuyển của bạn đã được chấp nhận",
-        data: data,
-        type: "application",
-      });
-    });
-
-    this.connection.on("NotifyJobApplicationRejected", (data) => {
-      console.log("SignalR: Job application rejected", data);
-      this.handleNotification("application", {
-        title: "Đơn ứng tuyển bị từ chối",
-        message:
-          data?.message || "Đơn ứng tuyển của bạn không được chấp nhận lần này",
-        data: data,
-        type: "application",
-      });
-    });
-
-    this.connection.on("NotifyJobApplicationRemovedFromApproved", (data) => {
-      console.log("SignalR: Job application removed from approved", data);
-      this.handleNotification("application", {
-        title: "Đơn ứng tuyển bị hủy phê duyệt",
-        message: data?.message || "Đơn ứng tuyển của bạn đã bị hủy phê duyệt",
-        data: data,
-        type: "application",
-      });
-    });
-
-    this.connection.on("NotifyJobCompleted", (data) => {
-      console.log("SignalR: Job completed", data);
-      this.handleNotification("schedule", {
-        title: "Công việc hoàn thành",
-        message:
-          data?.message || "Công việc của bạn đã được đánh dấu hoàn thành",
-        data: data,
-        type: "schedule",
-      });
-    });
-
-    this.connection.on(
-      "NotifyNewJobPostMatching",
-      (payload, additionalPayload) => {
-        console.log(
-          "SignalR: New job post matching",
-          payload,
-          additionalPayload
-        );
-        this.handleNotification("job", {
-          title: "Có việc làm phù hợp",
-          message: payload || "Có công việc mới phù hợp với hồ sơ của bạn",
-          data: payload,
-          type: "job",
-        });
-      }
-    );
-
-    this.connection.on("NotifyProfileViewedByEmployer", (data) => {
-      console.log("SignalR: Profile viewed by employer", data);
-      this.handleNotification("profile", {
-        title: "Hồ sơ được xem",
-        message: data?.message || "Nhà tuyển dụng đã xem hồ sơ của bạn",
-        data: data,
-        type: "profile",
-      });
-    });
-  }
-
-  /**
    * Handle incoming notifications and trigger callbacks
    */
   handleNotification(type, notificationData) {
@@ -234,6 +108,7 @@ class SignalRService {
       timestamp: new Date(),
       isRead: false,
       data: notificationData.data,
+      additionalPayload: notificationData.additionalPayload || null,  
     };
 
     // Trigger notification callback

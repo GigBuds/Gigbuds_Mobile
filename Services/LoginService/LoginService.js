@@ -14,6 +14,7 @@ class LoginService {
         status: response.status,
       };
     } catch (error) {
+      console.log("error", error);
       return {
         success: false,
         error:
