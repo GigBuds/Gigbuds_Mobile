@@ -25,6 +25,7 @@ import MyProfileLayout from "../layout/MyProfileLayout";
 import JobDetailScreen from "../Screen/JobDetailScreen/JobDetailScreen";
 import JobDetailLayout from "../layout/JobDetailLayout";
 import EditProfile from "../Screen/ProfileScreen/EditProfile/EditProfile";
+import MyJob from "../Screen/ProfileScreen/MyJob/MyJob";
 
 export default function Navigator() {
   const Tab = createBottomTabNavigator();
@@ -111,9 +112,8 @@ export default function Navigator() {
           name="Schedule"
           options={{ headerShown: false }}
           children={() => (
-            <UserLayout>
               <ScheduleScreen />
-            </UserLayout>
+
           )}
         />
       </Stack.Navigator>
@@ -147,6 +147,15 @@ export default function Navigator() {
           children={() => (
 
               <EditProfile />
+          )}
+        />
+        <Stack.Screen
+          name="MyJobs"
+          options={{ headerShown: false }}
+          children={() => (
+            <MyProfileLayout>
+              <MyJob />
+            </MyProfileLayout>
           )}
         />
       </Stack.Navigator>
