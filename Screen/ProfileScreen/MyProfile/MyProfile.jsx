@@ -16,15 +16,19 @@ import SkillsSection from "../../../components/Profile/SkillsSection";
 import ExperienceSection from "../../../components/Profile/ExperienceSection";
 import EducationSection from "../../../components/Profile/EducationSection";
 import PersonalInfoSection from "../../../components/Profile/PersonalInfoSection";
+import { useNavigation, useFocusEffect } from "@react-navigation/native"; // Add useFocusEffect
+import { useLoading } from "../../../context/LoadingContext";
 
 const MyProfile = () => {
+    const { showLoading, hideLoading } = useLoading();
   const [userProfile, setUserProfile] = React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
+  const navigate = useNavigation();
 
   const fetchUserProfile = async () => {
     try {
-      setLoading(true);
+      showLoading();
       setError(null);
       const accountId = await AsyncStorage.getItem("userId");
 
@@ -36,6 +40,7 @@ const MyProfile = () => {
 
       if (response.success) {
         setUserProfile(response.data);
+        console.log("Updated User Profile:", response.data); // Move console.log here
       } else {
         setError(response.error || "Không thể tải thông tin profile");
       }
@@ -43,10 +48,8 @@ const MyProfile = () => {
       console.error("Error fetching user profile:", err);
       setError(err.message || "Đã xảy ra lỗi khi tải thông tin profile");
     } finally {
-      console.log("User Profile:", userProfile);
-      setTimeout(() => {
-        setLoading(false);
-      }, 4500);
+      // Remove the setTimeout delay
+      showLoading();
     }
   };
 
@@ -55,31 +58,21 @@ const MyProfile = () => {
   };
 
   const handleEditProfile = () => {
-    console.log("Edit Profile Pressed");
+    navigate.navigate("EditProfile", {
+      userProfile: userProfile,
+    });
   };
 
   const handleUpdateSchedule = () => {
     console.log("Update Schedule Pressed");
   };
 
-  React.useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <LoadingComponent
-          size={80}
-          speed={2000}
-          showText={true}
-          loadingText="Đang tải thông tin profile..."
-          animationType="outline"
-          strokeWidth={2.5}
-        />
-      </SafeAreaView>
-    );
-  }
+  // Replace useEffect with useFocusEffect to refetch data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserProfile();
+    }, [])
+  );
 
   if (error) {
     return (
@@ -105,11 +98,11 @@ const MyProfile = () => {
             onUpdateSchedule={handleUpdateSchedule}
           />
           
-          <SkillsSection skills={userProfile.skillTags} />
+          <SkillsSection skills={userProfile?.skillTags || []} />
           
-          <ExperienceSection experiences={userProfile.accountExperienceTags} />
+          <ExperienceSection experiences={userProfile?.accountExperienceTags || []} />
           
-          <EducationSection educations={userProfile.educationalLevels} />
+          <EducationSection educations={userProfile?.educationalLevels || []} />
           
           <PersonalInfoSection userProfile={userProfile} />
         </ScrollView>

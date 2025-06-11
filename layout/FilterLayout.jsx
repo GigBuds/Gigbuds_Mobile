@@ -1,14 +1,37 @@
 import React from "react";
-import { View, StyleSheet, ImageBackground, Image, Text } from "react-native";
+import { View, StyleSheet, ImageBackground, Image, Text, SafeAreaView } from "react-native";
 import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Badge } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
+import { useLoading } from "../context/LoadingContext";
+import LoadingComponent from "../components/Common/LoadingComponent";
 export default function FilterLayout({ children, page }) {
   const navigation = useNavigation();
+    const { showLoading, isLoading, hideLoading } = useLoading();
+
   return (
     <View style={styles.container}> 
+     {isLoading && (
+        <SafeAreaView
+          style={{
+            zIndex: 1000,
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <LoadingComponent
+            size={80}
+            speed={2000}
+            showText={true}
+            loadingText="Đang tải thông tin ..."
+            animationType="outline"
+            strokeWidth={2.5}
+          />
+        </SafeAreaView>
+      )}
       <Image
         source={mainBg}
         style={styles.backgroundImage}

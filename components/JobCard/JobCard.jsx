@@ -4,17 +4,18 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import JobPostService from "../../Services/JobPostService/JobPostService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import { useLoading } from "../../context/LoadingContext";
 
 const JobCard = ({
   appliedFilters,
   marginBottom,
-  loading: externalLoading,
   searchParams,
   selectedTab,
   searchInput,
 }) => {
+    const { showLoading, hideLoading } = useLoading();
+
   const [jobData, setJobData] = React.useState(null);
-  const [loading, setLoading] = React.useState(false);
   const [jobSeekerId, setJobSeekerId] = React.useState(null);
   const [locationLoading, setLocationLoading] = React.useState(false);
   const navigate = useNavigation();
@@ -104,7 +105,7 @@ const JobCard = ({
       let result;
 
       if (selectedTab === "Gợi Ý") {
-        setLoading(true);
+        showLoading();
         setLocationLoading(true);
 
         result = await JobPostService.getRecommendedJobPosts(jobSeekerId, {
@@ -116,7 +117,7 @@ const JobCard = ({
 
         setLocationLoading(false);
       } else {
-        setLoading(true);
+        showLoading();
         result = await JobPostService.searchJobPosts(searchPar);
       }
 
@@ -152,7 +153,7 @@ const JobCard = ({
       console.error("Error fetching job posts:", error);
       setJobData([]);
     } finally {
-      setLoading(false);
+      hideLoading();
       setLocationLoading(false);
     }
   };
@@ -171,25 +172,6 @@ const JobCard = ({
     }
   }, [selectedTab, searchInput]);
 
-  // Loading state
-  if (loading) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 20,
-        }}
-      >
-        <Text style={{ fontSize: 16, color: "gray" }}>
-          {locationLoading
-            ? "Đang lấy vị trí hiện tại..."
-            : "Đang tải dữ liệu..."}
-        </Text>
-      </View>
-    );
-  }
 
   // No data state
   if (!jobData || !Array.isArray(jobData) || jobData.length === 0) {

@@ -17,7 +17,7 @@ const PersonalInfoSection = ({ userProfile }) => {
           />
           <View>
             <Text style={styles.labelText}>Ngày sinh</Text>
-            <Text style={styles.valueText}>{userProfile.dob}</Text>
+            <Text style={styles.valueText}>{userProfile?.dob}</Text>
           </View>
         </View>
 
@@ -29,7 +29,7 @@ const PersonalInfoSection = ({ userProfile }) => {
           />
           <View>
             <Text style={styles.labelText}>Giới tính</Text>
-            <Text style={styles.valueText}>{userProfile.isMale ? "Nam" : "Nữ"}</Text>
+            <Text style={styles.valueText}>{userProfile?.isMale ? "Nam" : "Nữ"}</Text>
           </View>
         </View>
 
@@ -41,7 +41,7 @@ const PersonalInfoSection = ({ userProfile }) => {
           />
           <View>
             <Text style={styles.labelText}>Email</Text>
-            <Text style={styles.valueText}>{userProfile.email}</Text>
+            <Text style={styles.valueText}>{userProfile?.email}</Text>
           </View>
         </View>
 
@@ -53,7 +53,7 @@ const PersonalInfoSection = ({ userProfile }) => {
           />
           <View>
             <Text style={styles.labelText}>Số điện thoại</Text>
-            <Text style={styles.valueText}>{userProfile.phoneNumber}</Text>
+            <Text style={styles.valueText}>{userProfile?.phoneNumber}</Text>
           </View>
         </View>
 
@@ -65,7 +65,7 @@ const PersonalInfoSection = ({ userProfile }) => {
           />
           <View>
             <Text style={styles.labelText}>Địa chỉ</Text>
-            <Text style={styles.valueText}>{userProfile.currentLocation}</Text>
+            <Text style={styles.valueText}>{userProfile?.currentLocation}</Text>
           </View>
         </View>
       </View>

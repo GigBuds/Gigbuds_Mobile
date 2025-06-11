@@ -2,7 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 // const baseUrl = process.env.EXPO_PUBLIC_LOCAL_API_URL || "locahttps://localhost:53460/api/v1/"
-const baseURL = "https://usefully-electric-termite.ngrok-free.app/api/v1/";
+const baseURL = "https://gigbuds-c3fagtfwe2brewha.eastasia-01.azurewebsites.net/api/v1/";
 const config = {
   baseURL,
   timeout: 3000000,

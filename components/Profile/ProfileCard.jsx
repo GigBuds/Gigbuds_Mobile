@@ -25,25 +25,13 @@ const ProfileCard = ({ title, subTitle, startDate, endDate }) => {
         elevation: 2,
         marginBottom: 5,
         paddingVertical: 20,
-        gap: 15,
+        gap: 25,
         borderLeftColor: "#2558B6",
         borderRadius: 10,
         borderLeftWidth: 5,
       }}
     >
-      <View
-        style={{
-          width: 50,
-          height: 50,
-          borderRadius: 25,
-          backgroundColor: "#FF7345",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Text>.</Text>
-      </View>
-      <View style={{}}>
+      <View style={{gap:5}}>
         <Text style={{ fontSize: 14, fontWeight: "bold", color: "#2558B6" }}>
           {title}
         </Text>
