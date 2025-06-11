@@ -117,7 +117,7 @@ const JobCard = ({
 
         setLocationLoading(false);
       } else {
-        hideLoading();
+        showLoading();
         result = await JobPostService.searchJobPosts(searchPar);
       }
 

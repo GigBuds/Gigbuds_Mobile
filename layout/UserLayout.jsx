@@ -42,7 +42,7 @@ export default function UserLayout({ children }) {
             size={80}
             speed={2000}
             showText={true}
-            loadingText="Đang tải thông tin người dùng..."
+            loadingText="Đang tải thông tin ..."
             animationType="outline"
             strokeWidth={2.5}
           />

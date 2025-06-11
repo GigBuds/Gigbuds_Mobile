@@ -52,7 +52,7 @@ export default function MyProfileLayout({ children }) {
             size={80}
             speed={2000}
             showText={true}
-            loadingText="Đang tải thông tin profile..."
+            loadingText="Đang tải thông tin người dùng..."
             animationType="outline"
             strokeWidth={2.5}
           />

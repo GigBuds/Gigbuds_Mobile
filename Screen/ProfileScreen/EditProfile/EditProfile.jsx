@@ -48,9 +48,6 @@ const EditProfile = ({ route }) => {
     accountExperienceTags: initialProfile?.accountExperienceTags || []
   });
 
-  const [newSkill, setNewSkill] = React.useState("");
-  const [newSkillName, setNewSkillName] = React.useState("");
-
   const educationLevels = ["High", "Primary", "University"];
 
   // Update form data when initialProfile changes
@@ -176,36 +173,26 @@ const EditProfile = ({ route }) => {
     return new Date();
   };
 
-  // Skills management
-  const addSkill = () => {
-    if (newSkill.trim() && newSkillName.trim()) {
-      const newSkillObject = {
-        id: parseInt(newSkill),
-        skillName: newSkillName.trim()
-      };
-      const updatedSkills = [...formData.skillTags, newSkillObject];
-      handleInputChange('skillTags', updatedSkills);
-      setNewSkill("");
-      setNewSkillName("");
-    } else if (newSkill.trim()) {
-      const newSkillObject = {
-        id: parseInt(newSkill),
-        skillName: `Skill ${newSkill}`
-      };
-      const updatedSkills = [...formData.skillTags, newSkillObject];
-      handleInputChange('skillTags', updatedSkills);
-      setNewSkill("");
-    }
+  // Updated Skills management - using callback approach
+  const handleAddSkill = (skill, updatedSkills) => {
+    console.log('Adding skill:', skill);
+    console.log('Updated skills array:', updatedSkills);
+    
+    // Update formData with the new skills array
+    handleInputChange('skillTags', updatedSkills);
   };
 
-  const removeSkill = (index) => {
-    const updatedSkills = formData.skillTags.filter((_, i) => i !== index);
+  const handleRemoveSkill = (index, updatedSkills) => {
+    console.log('Removing skill at index:', index);
+    console.log('Updated skills array:', updatedSkills);
+    
+    // Update formData with the new skills array
     handleInputChange('skillTags', updatedSkills);
   };
 
   const renderSkillText = (skill) => {
     if (typeof skill === 'object' && skill !== null) {
-      return `${skill.skillName || 'Unknown Skill'} (ID: ${skill.id || 'N/A'})`;
+      return `${skill.skillName || 'Unknown Skill'}`;
     }
     return `Skill ID: ${skill}`;
   };
@@ -327,7 +314,6 @@ const EditProfile = ({ route }) => {
     fetchUserProfile();
   }, []);
 
-
   if (error) {
     return (
       <GestureHandlerRootView style={styles.container}>
@@ -376,15 +362,11 @@ const EditProfile = ({ route }) => {
               formatDate={formatDate}
             />
 
-            {/* Skills Section */}
+            {/* Skills Section - Updated to use new callback approach */}
             <SkillsForm 
               skillTags={formData.skillTags}
-              newSkill={newSkill}
-              newSkillName={newSkillName}
-              onNewSkillChange={setNewSkill}
-              onNewSkillNameChange={setNewSkillName}
-              onAddSkill={addSkill}
-              onRemoveSkill={removeSkill}
+              onAddSkill={handleAddSkill}
+              onRemoveSkill={handleRemoveSkill}
               renderSkillText={renderSkillText}
             />
 

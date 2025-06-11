@@ -44,6 +44,24 @@ class JobSeekerService {
             };
         }
     }
+
+    static async getSkillTags () {
+        try {
+            const response = await api.get('skill-tags');
+            return {
+                success: true,
+                data: response.data,
+                status: response.status
+            };
+        } catch (error) {
+            console.error('Error in getSkillTags:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || error.message || "Đã xảy ra lỗi khi lấy danh sách kỹ năng.",
+                status: error.response?.status
+            };
+        }
+    }
 }
 
 export default JobSeekerService;
