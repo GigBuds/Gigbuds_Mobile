@@ -41,7 +41,7 @@ export default function Navigator() {
             </UserLayout>
           )}
         />
-         <Stack.Screen
+        <Stack.Screen
           name="JobDetail"
           options={{ headerShown: false }}
           children={() => (
@@ -145,8 +145,8 @@ export default function Navigator() {
   };
 
   const LoginStack = () => {
-      const [isLoading, setIsLoading] = useState(false);
-    
+    const [isLoading, setIsLoading] = useState(false);
+
     return (
       <Stack.Navigator>
         <Stack.Screen

@@ -2,6 +2,7 @@ import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setupSignalRLifeCycleHandler } from "./setupSignalRLifeCycleHandler";
 import { setupNotificationHandlers } from "./setupNotificationHandlers";
+import * as signalR from "@microsoft/signalr";
 /**
  * SignalRService class for managing SignalR connection and events.
  */
@@ -50,6 +51,8 @@ class SignalRService {
       this.connection = new HubConnectionBuilder()
         .withUrl(hubUrl, {
           accessTokenFactory: () => accessToken,
+          skipNegotiation: true,
+          transport: signalR.HttpTransportType.WebSockets,
           headers: accessToken
             ? { Authorization: `Bearer ${accessToken}` }
             : {},
@@ -105,10 +108,10 @@ class SignalRService {
       type: notificationData.type || type,
       title: notificationData.title,
       message: notificationData.message,
+      data: notificationData.data,
       timestamp: new Date(),
       isRead: false,
-      data: notificationData.data,
-      additionalPayload: notificationData.additionalPayload || null,  
+      additionalPayload: notificationData.additionalPayload || null,
     };
 
     // Trigger notification callback

@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useCallback, useEffect, useState } from "react";
 import signalRService from "./SignalRService";
 
 /**
@@ -29,6 +29,7 @@ export const useSignalR = (options = {}) => {
   // Handle incoming notifications
   const handleNotification = useCallback((notification) => {
     const updatedNotifications = [notification, ...notifications];
+    console.log("updatedNotifications", updatedNotifications);
     setNotifications(updatedNotifications);
     saveNotifications(updatedNotifications);
   }, []);

@@ -122,8 +122,6 @@ const LoginSection = () => {
     }
   };
 
-
-
   return (
     <View style={styles.container}>
       <ScrollView

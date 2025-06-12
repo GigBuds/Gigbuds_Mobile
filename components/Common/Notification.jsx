@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { Badge } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import NotificationPanel from "./NotificationPanel";
 import { useSignalR } from "../../Services/SignalRService/useSignalR";
 import { useNavigation } from "@react-navigation/native";
+import { Portal } from "react-native-portalize";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const Notification = ({ style }) => {
   const navigate = useNavigation();
@@ -53,12 +55,11 @@ const Notification = ({ style }) => {
     setNotifications(updatedNotifications);
     saveNotifications(updatedNotifications);
 
-    // Handle navigation based on notification type
     switch (notification.type) {
       case "job":
         console.log(notification.additionalPayload);
         navigate.navigate("JobDetail", {
-          jobId: notification.additionalPayload
+          jobId: notification.additionalPayload,
         });
         console.log("Navigate to job details:", notification);
         break;
@@ -96,12 +97,17 @@ const Notification = ({ style }) => {
     saveNotifications(updatedNotifications);
   };
 
+  const handleDeleteAll = async () => {
+    await AsyncStorage.removeItem("notifications");
+    setNotifications([]);
+  };
+
   return (
     <>
       <TouchableOpacity
         style={[styles.container, style]}
         onPress={handleNotificationPress}
-        activeOpacity={0.7}
+        activeOpacity={0.8}
       >
         {unreadCount > 0 && (
           <Badge style={styles.badge}>
@@ -124,13 +130,16 @@ const Notification = ({ style }) => {
         </View>
       </TouchableOpacity>
 
-      <NotificationPanel
-        isVisible={isPanelVisible}
-        onClose={handleClosePanel}
-        notifications={notifications}
-        onNotificationPress={handleNotificationItemPress}
-        onMarkAllAsRead={handleMarkAllAsRead}
-      />
+      <Portal>
+        <NotificationPanel
+          isVisible={isPanelVisible}
+          onClose={handleClosePanel}
+          notifications={notifications}
+          onNotificationPress={handleNotificationItemPress}
+          onMarkAllAsRead={handleMarkAllAsRead}
+          onDeleteAll={handleDeleteAll}
+        />
+      </Portal>
     </>
   );
 };

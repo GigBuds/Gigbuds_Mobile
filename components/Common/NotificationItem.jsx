@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import PropTypes from "prop-types";
 
 const NotificationItem = ({ notification, onPress }) => {
   const getNotificationIcon = (type) => {
@@ -64,6 +65,22 @@ const NotificationItem = ({ notification, onPress }) => {
       {!notification.isRead && <View style={styles.unreadDot} />}
     </TouchableOpacity>
   );
+};
+
+NotificationItem.propTypes = {
+  notification: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    type: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    message: PropTypes.string.isRequired,
+    timestamp: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number,
+      PropTypes.instanceOf(Date),
+    ]).isRequired,
+    isRead: PropTypes.bool.isRequired,
+  }).isRequired,
+  onPress: PropTypes.func.isRequired,
 };
 
 const styles = StyleSheet.create({
