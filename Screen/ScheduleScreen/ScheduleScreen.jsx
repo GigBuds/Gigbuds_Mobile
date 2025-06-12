@@ -382,9 +382,8 @@ const ScheduleScreen = () => {
         events={events}
         height={750}
         mode="week"
-        scrollOffsetMinutes={480} 
+        scrollOffsetMinutes={400} 
         onPressEvent={openEventModal}
-        onPressCell={openEventModal}
         eventCellStyle={styles.eventCell}
         headerContentStyle={styles.calendarHeader}
         bodyContainerStyle={styles.calendarBody}
