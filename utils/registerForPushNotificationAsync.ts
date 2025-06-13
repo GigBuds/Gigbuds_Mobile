@@ -17,46 +17,28 @@ export async function registerForPushNotificationAsync() {
   }
 
   // Check if the device is a real device
-  if (Device.isDevice) {
-    const { status: existingStatus } =
-      await Notifications.getPermissionsAsync();
-    let finalStatus = existingStatus;
+  const { status: existingStatus } = await Notifications.getPermissionsAsync();
+  let finalStatus = existingStatus;
+  console.log("🔔 Existing status", existingStatus);
 
-    if (existingStatus !== "granted") {
-      const { status } = await Notifications.requestPermissionsAsync();
-      finalStatus = status;
-      if (finalStatus !== "granted") {
-        alert("Failed to get push notification permission");
-        return;
-      }
+  if (existingStatus !== "granted") {
+    const { status } = await Notifications.requestPermissionsAsync();
+    finalStatus = status;
+    if (finalStatus !== "granted") {
+      alert("Failed to get push notification permission");
+      return;
     }
+  }
 
-    const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-    if (!projectId) {
-      throw new Error("Project ID is not set");
-    }
-    try {
-      const userId = await AsyncStorage.getItem("userId");
-      const token = await Notifications.getExpoPushTokenAsync({
-        projectId,
-      });
-      await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/v1/notifications/register-push-notification`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            token: token.data,
-            userId,
-          }),
-        }
-      );
-    } catch (error) {
-      console.error("Error registering device for push notifications", error);
-    }
-  } else {
-    alert("Push notifications are not supported on this device");
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+  if (!projectId) {
+    throw new Error("Project ID is not set");
+  }
+  try {
+    return await Notifications.getExpoPushTokenAsync({
+      projectId,
+    });
+  } catch (error) {
+    console.error("Error registering device for push notifications", error);
   }
 }

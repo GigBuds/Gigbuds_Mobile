@@ -15,8 +15,11 @@ import LoginService from "../../../Services/LoginService/LoginService";
 import { jwtDecode } from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoadingComponent from "../../../components/Common/LoadingComponent";
+import { useNotification } from "../../../context/notificationContext";
+import NotificationService from "../../../Services/NotificationService/NotificationService";
 
 const LoginSection = () => {
+  const { expoPushToken } = useNotification();
   const [identifier, setIdentifier] = useState(""); // Changed from email to identifier
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -51,6 +54,14 @@ const LoginSection = () => {
         `${userInfo.family_name} ${userInfo.name}`
       );
       await AsyncStorage.setItem("userId", userInfo.sub);
+      if (expoPushToken) {
+        console.log("Registering push notification for user:", userInfo.sub);
+        console.log("Expo push token:", expoPushToken);
+        await NotificationService.registerPushNotification(
+          expoPushToken,
+          userInfo.sub
+        );
+      } else console.log("No expo push token found");
       console.log("User info stored successfully.");
     } catch (error) {
       console.error("Error storing user info:", error);
