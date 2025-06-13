@@ -28,6 +28,7 @@ export default {
           isAndroidBackgroundLocationEnabled: true,
         },
       ],
+      "expo-secure-store",
     ],
     ios: {
       bundleIdentifier: "Gigbuds",
