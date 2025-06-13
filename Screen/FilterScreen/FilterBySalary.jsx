@@ -1,7 +1,16 @@
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert, Platform, ScrollView, ActionSheetIOS } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  Alert,
+  Platform,
+  ScrollView,
+  ActionSheetIOS,
+} from "react-native";
 import React from "react";
 import { RadioButton } from "react-native-paper";
-import { Picker } from '@react-native-picker/picker';
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FilterActionButton from "../../components/FilterActionButton/FilterActionButton";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
@@ -18,14 +27,15 @@ const FilterBySalary = () => {
   const [selectedCity, setSelectedCity] = React.useState("");
   const [selectedDistricts, setSelectedDistricts] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
-  
+
   // New datetime states
   const [jobTimeFrom, setJobTimeFrom] = React.useState(null);
   const [jobTimeTo, setJobTimeTo] = React.useState(null);
-  const [isDateTimePickerVisible, setDateTimePickerVisibility] = React.useState(false);
-  const [dateTimePickerMode, setDateTimePickerMode] = React.useState('date');
+  const [isDateTimePickerVisible, setDateTimePickerVisibility] =
+    React.useState(false);
+  const [dateTimePickerMode, setDateTimePickerMode] = React.useState("date");
   const [currentDateTimeField, setCurrentDateTimeField] = React.useState(null);
-  
+
   const salaryOptions = [
     { label: "Trả theo giờ", value: "Hour" },
     { label: "Trả theo ngày", value: "Day" },
@@ -35,23 +45,33 @@ const FilterBySalary = () => {
   // Load saved search parameters from AsyncStorage
   const loadSavedFilters = async () => {
     try {
-      const savedParams = await AsyncStorage.getItem('salaryFilter');
+      const savedParams = await AsyncStorage.getItem("salaryFilter");
       if (savedParams) {
         const parsedParams = JSON.parse(savedParams);
-        console.log('Loaded search params:', parsedParams);
-        
+        console.log("Loaded search params:", parsedParams);
+
         // Set the state with saved values
         setSalaryUnit(parsedParams.salaryUnit || "");
-        setSalaryFrom(parsedParams.salaryFrom ? parsedParams.salaryFrom.toString() : "");
-        setSalaryTo(parsedParams.salaryTo ? parsedParams.salaryTo.toString() : "");
+        setSalaryFrom(
+          parsedParams.salaryFrom ? parsedParams.salaryFrom.toString() : ""
+        );
+        setSalaryTo(
+          parsedParams.salaryTo ? parsedParams.salaryTo.toString() : ""
+        );
         setIsMale(parsedParams.isMale !== undefined ? parsedParams.isMale : "");
-        setSelectedCity(parsedParams.cityId ? parsedParams.cityId.toString() : "");
+        setSelectedCity(
+          parsedParams.cityId ? parsedParams.cityId.toString() : ""
+        );
         setSelectedDistricts(parsedParams.districtCodeList || []);
-        setJobTimeFrom(parsedParams.jobTimeFrom ? new Date(parsedParams.jobTimeFrom) : null);
-        setJobTimeTo(parsedParams.jobTimeTo ? new Date(parsedParams.jobTimeTo) : null);
+        setJobTimeFrom(
+          parsedParams.jobTimeFrom ? new Date(parsedParams.jobTimeFrom) : null
+        );
+        setJobTimeTo(
+          parsedParams.jobTimeTo ? new Date(parsedParams.jobTimeTo) : null
+        );
       }
     } catch (error) {
-      console.error('Error loading saved filters:', error);
+      console.error("Error loading saved filters:", error);
     }
   };
 
@@ -70,28 +90,28 @@ const FilterBySalary = () => {
         salaryUnit: salaryUnit || undefined,
         isMale: isMale === "" ? undefined : isMale,
         cityId: selectedCity ? parseInt(selectedCity) : undefined,
-        districtCodeList: selectedDistricts.length > 0 ? selectedDistricts : undefined,
+        districtCodeList:
+          selectedDistricts.length > 0 ? selectedDistricts : undefined,
         jobTimeFrom: jobTimeFrom ? jobTimeFrom.toISOString() : undefined,
-        jobTimeTo: jobTimeTo ? jobTimeTo.toISOString() : undefined
+        jobTimeTo: jobTimeTo ? jobTimeTo.toISOString() : undefined,
       };
-      
-      await AsyncStorage.setItem('salaryFilter', JSON.stringify(searchParams));
 
-      await AsyncStorage.setItem('isSalaryFilterApplied', 'true');
-      console.log('Saved search params:', searchParams);        
+      await AsyncStorage.setItem("salaryFilter", JSON.stringify(searchParams));
+
+      await AsyncStorage.setItem("isSalaryFilterApplied", "true");
+      console.log("Saved search params:", searchParams);
       navigation.goBack();
-
     } catch (error) {
-      console.error('Error applying filters:', error);
-      Alert.alert('Lỗi', 'Không thể áp dụng bộ lọc. Vui lòng thử lại sau.');
+      console.error("Error applying filters:", error);
+      Alert.alert("Lỗi", "Không thể áp dụng bộ lọc. Vui lòng thử lại sau.");
     }
   };
 
   const handleClearFilter = async () => {
     try {
-      await AsyncStorage.removeItem('salaryFilter');
-      console.log('Cleared salary filter from storage');
-      
+      await AsyncStorage.removeItem("salaryFilter");
+      console.log("Cleared salary filter from storage");
+
       // Clear state
       setSalaryUnit("");
       setSalaryFrom("");
@@ -101,35 +121,31 @@ const FilterBySalary = () => {
       setSelectedDistricts([]);
       setJobTimeFrom(null);
       setJobTimeTo(null);
-      AsyncStorage.removeItem('isSalaryFilterApplied');
-      AsyncStorage.removeItem('salaryFilter');
+      AsyncStorage.removeItem("isSalaryFilterApplied");
+      AsyncStorage.removeItem("salaryFilter");
       navigation.goBack();
     } catch (error) {
-      console.error('Error clearing filters:', error);
+      console.error("Error clearing filters:", error);
     }
   };
 
   const selectGender = () => {
-    Alert.alert(
-      "Chọn giới tính",
-      "",
-      [
-        { text: "Nam", onPress: () => setIsMale(true) },
-        { text: "Nữ", onPress: () => setIsMale(false) },
-        { text: "Không chọn", onPress: () => setIsMale("") },
-        { text: "Hủy", style: "cancel" }
-      ]
-    );
+    Alert.alert("Chọn giới tính", "", [
+      { text: "Nam", onPress: () => setIsMale(true) },
+      { text: "Nữ", onPress: () => setIsMale(false) },
+      { text: "Không chọn", onPress: () => setIsMale("") },
+      { text: "Hủy", style: "cancel" },
+    ]);
   };
 
   const selectCity = () => {
     const options = [
-      ...vietnamCities.map(city => ({
+      ...vietnamCities.map((city) => ({
         text: city.name,
-        onPress: () => handleCityChange(city.id.toString())
+        onPress: () => handleCityChange(city.id.toString()),
       })),
       { text: "Không chọn", onPress: () => handleCityChange("") },
-      { text: "Hủy", style: "cancel" }
+      { text: "Hủy", style: "cancel" },
     ];
 
     Alert.alert("Chọn thành phố", "", options);
@@ -137,21 +153,21 @@ const FilterBySalary = () => {
 
   const selectDistrict = () => {
     const availableDistricts = getAvailableDistricts();
-    
-    if (Platform.OS === 'ios') {
+
+    if (Platform.OS === "ios") {
       // iOS ActionSheet
       const options = [
-        ...availableDistricts.map(district => district.name),
-        'Xóa tất cả',
-        'Hủy'
+        ...availableDistricts.map((district) => district.name),
+        "Xóa tất cả",
+        "Hủy",
       ];
-      
+
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options: options,
           cancelButtonIndex: options.length - 1,
           destructiveButtonIndex: options.length - 2,
-          title: 'Chọn quận/huyện'
+          title: "Chọn quận/huyện",
         },
         (buttonIndex) => {
           if (buttonIndex === options.length - 2) {
@@ -166,18 +182,24 @@ const FilterBySalary = () => {
       );
     } else {
       // Android Alert with multiple options
-      const districtOptions = availableDistricts.map(district => ({
-        text: `${selectedDistricts.includes(district.code) ? '✓ ' : ''}${district.name}`,
-        onPress: () => handleDistrictToggle(district.code)
+      const districtOptions = availableDistricts.map((district) => ({
+        text: `${selectedDistricts.includes(district.code) ? "✓ " : ""}${
+          district.name
+        }`,
+        onPress: () => handleDistrictToggle(district.code),
       }));
-      
+
       const allOptions = [
         ...districtOptions,
         { text: "Xóa tất cả", onPress: () => setSelectedDistricts([]) },
-        { text: "Hủy", style: "cancel" }
+        { text: "Hủy", style: "cancel" },
       ];
 
-      Alert.alert("Chọn quận/huyện", "Nhấn để chọn/bỏ chọn quận/huyện", allOptions);
+      Alert.alert(
+        "Chọn quận/huyện",
+        "Nhấn để chọn/bỏ chọn quận/huyện",
+        allOptions
+      );
     }
   };
 
@@ -187,9 +209,9 @@ const FilterBySalary = () => {
   };
 
   const handleDistrictToggle = (districtCode) => {
-    setSelectedDistricts(prev => {
+    setSelectedDistricts((prev) => {
       if (prev.includes(districtCode)) {
-        return prev.filter(code => code !== districtCode);
+        return prev.filter((code) => code !== districtCode);
       } else {
         return [...prev, districtCode];
       }
@@ -197,7 +219,9 @@ const FilterBySalary = () => {
   };
 
   const getSelectedCityName = () => {
-    const city = vietnamCities.find(city => city.id === parseInt(selectedCity));
+    const city = vietnamCities.find(
+      (city) => city.id === parseInt(selectedCity)
+    );
     return city ? city.name : "Chọn thành phố";
   };
 
@@ -209,7 +233,9 @@ const FilterBySalary = () => {
   const getSelectedDistrictsText = () => {
     if (selectedDistricts.length === 0) return "Chọn quận/huyện";
     if (selectedDistricts.length === 1) {
-      const district = getAvailableDistricts().find(d => d.code === selectedDistricts[0]);
+      const district = getAvailableDistricts().find(
+        (d) => d.code === selectedDistricts[0]
+      );
       return district ? district.name : "1 quận/huyện đã chọn";
     }
     return `${selectedDistricts.length} quận/huyện đã chọn`;
@@ -228,10 +254,11 @@ const FilterBySalary = () => {
   };
 
   const handleDateTimeConfirm = (selectedDate) => {
-    const currentDateTime = currentDateTimeField === 'from' ? jobTimeFrom : jobTimeTo;
+    const currentDateTime =
+      currentDateTimeField === "from" ? jobTimeFrom : jobTimeTo;
     let newDateTime;
-    
-    if (dateTimePickerMode === 'date') {
+
+    if (dateTimePickerMode === "date") {
       // Update date, keep existing time if any
       if (currentDateTime) {
         newDateTime = new Date(selectedDate);
@@ -250,42 +277,37 @@ const FilterBySalary = () => {
         newDateTime = selectedDate;
       }
     }
-    
-    if (currentDateTimeField === 'from') {
+
+    if (currentDateTimeField === "from") {
       setJobTimeFrom(newDateTime);
     } else {
       setJobTimeTo(newDateTime);
     }
-    
+
     hideDateTimePicker();
   };
 
   const selectDateTime = (field) => {
-    if (Platform.OS === 'ios') {
-      const options = [
-        'Chọn ngày',
-        'Chọn giờ',
-        'Xóa thời gian',
-        'Hủy'
-      ];
-      
+    if (Platform.OS === "ios") {
+      const options = ["Chọn ngày", "Chọn giờ", "Xóa thời gian", "Hủy"];
+
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options: options,
           cancelButtonIndex: 3,
           destructiveButtonIndex: 2,
-          title: field === 'from' ? 'Thời gian bắt đầu' : 'Thời gian kết thúc'
+          title: field === "from" ? "Thời gian bắt đầu" : "Thời gian kết thúc",
         },
         (buttonIndex) => {
           if (buttonIndex === 0) {
             // Select date
-            showDateTimePicker(field, 'date');
+            showDateTimePicker(field, "date");
           } else if (buttonIndex === 1) {
             // Select time
-            showDateTimePicker(field, 'time');
+            showDateTimePicker(field, "time");
           } else if (buttonIndex === 2) {
             // Clear time
-            if (field === 'from') {
+            if (field === "from") {
               setJobTimeFrom(null);
             } else {
               setJobTimeTo(null);
@@ -296,40 +318,40 @@ const FilterBySalary = () => {
     } else {
       // Android - show options
       Alert.alert(
-        field === 'from' ? 'Thời gian bắt đầu' : 'Thời gian kết thúc',
-        'Chọn loại thời gian',
+        field === "from" ? "Thời gian bắt đầu" : "Thời gian kết thúc",
+        "Chọn loại thời gian",
         [
           {
-            text: 'Chọn ngày',
-            onPress: () => showDateTimePicker(field, 'date')
+            text: "Chọn ngày",
+            onPress: () => showDateTimePicker(field, "date"),
           },
           {
-            text: 'Chọn giờ',
-            onPress: () => showDateTimePicker(field, 'time')
+            text: "Chọn giờ",
+            onPress: () => showDateTimePicker(field, "time"),
           },
           {
-            text: 'Xóa thời gian',
+            text: "Xóa thời gian",
             onPress: () => {
-              if (field === 'from') {
+              if (field === "from") {
                 setJobTimeFrom(null);
               } else {
                 setJobTimeTo(null);
               }
-            }
+            },
           },
-          { text: 'Hủy', style: 'cancel' }
+          { text: "Hủy", style: "cancel" },
         ]
       );
     }
   };
 
   const formatDateTime = (dateTime) => {
-    if (!dateTime) return '';
-    
-    const date = dateTime.toLocaleDateString('vi-VN');
-    const time = dateTime.toLocaleTimeString('vi-VN', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    if (!dateTime) return "";
+
+    const date = dateTime.toLocaleDateString("vi-VN");
+    const time = dateTime.toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
     return `${date} ${time}`;
   };
@@ -342,7 +364,7 @@ const FilterBySalary = () => {
         mode={dateTimePickerMode}
         isDarkModeEnabled={false}
         date={
-          currentDateTimeField === 'from' 
+          currentDateTimeField === "from"
             ? jobTimeFrom || new Date()
             : jobTimeTo || new Date()
         }
@@ -363,7 +385,7 @@ const FilterBySalary = () => {
               onPress={() => setSalaryUnit(item.value)}
               style={[
                 styles.radioOption,
-                salaryUnit === item.value && styles.radioOptionSelected
+                salaryUnit === item.value && styles.radioOptionSelected,
               ]}
             >
               <View style={styles.radioButtonContainer}>
@@ -372,7 +394,7 @@ const FilterBySalary = () => {
               <Text
                 style={[
                   styles.radioLabel,
-                  salaryUnit === item.value && styles.radioLabelSelected
+                  salaryUnit === item.value && styles.radioLabelSelected,
                 ]}
               >
                 {item.label}
@@ -445,10 +467,10 @@ const FilterBySalary = () => {
               >
                 <Picker.Item label="Chọn thành phố" value="" />
                 {vietnamCities.map((city) => (
-                  <Picker.Item 
-                    key={city.id} 
-                    label={city.name} 
-                    value={city.id.toString()} 
+                  <Picker.Item
+                    key={city.id}
+                    label={city.name}
+                    value={city.id.toString()}
                   />
                 ))}
               </Picker>
@@ -460,8 +482,8 @@ const FilterBySalary = () => {
         {selectedCity && (
           <View style={styles.districtContainer}>
             <Text style={styles.sectionTitle}>Quận/Huyện</Text>
-            <TouchableOpacity 
-              onPress={selectDistrict} 
+            <TouchableOpacity
+              onPress={selectDistrict}
               style={styles.pickerContainer}
               disabled={loading}
             >
@@ -478,10 +500,14 @@ const FilterBySalary = () => {
               <View style={styles.selectedDistrictsContainer}>
                 <Text style={styles.selectedDistrictsLabel}>Đã chọn:</Text>
                 <Text style={styles.selectedDistrictsText}>
-                  {selectedDistricts.map(code => {
-                    const district = getAvailableDistricts().find(d => d.code === code);
-                    return district ? district.name : code;
-                  }).join(', ')}
+                  {selectedDistricts
+                    .map((code) => {
+                      const district = getAvailableDistricts().find(
+                        (d) => d.code === code
+                      );
+                      return district ? district.name : code;
+                    })
+                    .join(", ")}
                 </Text>
               </View>
             )}
@@ -523,46 +549,50 @@ const FilterBySalary = () => {
         <View style={styles.dateTimeRangeContainer}>
           <Text style={styles.sectionTitle}>Thời gian làm việc</Text>
           <View style={styles.dateTimeInputContainer}>
-            <TouchableOpacity 
-              onPress={() => selectDateTime('from')}
-              style={[
-                styles.dateTimeInput,
-                styles.datePickerInput
-              ]}
+            <TouchableOpacity
+              onPress={() => selectDateTime("from")}
+              style={[styles.dateTimeInput, styles.datePickerInput]}
               disabled={loading}
             >
-              <Text style={[
-                jobTimeFrom ? styles.datePickerText : styles.datePickerPlaceholder
-              ]}>
-                {jobTimeFrom ? formatDateTime(jobTimeFrom) : 'Thời gian bắt đầu'}
+              <Text
+                style={[
+                  jobTimeFrom
+                    ? styles.datePickerText
+                    : styles.datePickerPlaceholder,
+                ]}
+              >
+                {jobTimeFrom
+                  ? formatDateTime(jobTimeFrom)
+                  : "Thời gian bắt đầu"}
               </Text>
             </TouchableOpacity>
-            
+
             <Ionicons
               name="arrow-forward"
               size={24}
               color="#FF7345"
               style={styles.arrowIcon}
             />
-            
-            <TouchableOpacity 
-              onPress={() => selectDateTime('to')}
-              style={[
-                styles.dateTimeInput,
-                styles.datePickerInput
-              ]}
+
+            <TouchableOpacity
+              onPress={() => selectDateTime("to")}
+              style={[styles.dateTimeInput, styles.datePickerInput]}
               disabled={loading}
             >
-              <Text style={[
-                jobTimeTo ? styles.datePickerText : styles.datePickerPlaceholder
-              ]}>
-                {jobTimeTo ? formatDateTime(jobTimeTo) : 'Thời gian kết thúc'}
+              <Text
+                style={[
+                  jobTimeTo
+                    ? styles.datePickerText
+                    : styles.datePickerPlaceholder,
+                ]}
+              >
+                {jobTimeTo ? formatDateTime(jobTimeTo) : "Thời gian kết thúc"}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
-      
+
       <FilterActionButton
         onClear={handleClearFilter}
         onApply={handleApplyFilter}
@@ -717,7 +747,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "white",
     minHeight: 48,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   datePickerInput: {
     justifyContent: "center",
