@@ -6,19 +6,21 @@ import Navigator from "./navigation/Navigator";
 
 export default function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <SafeAreaView forceInset={{ bottom: "never" }} style={{ flex: 1 }}>
-          <Image
-            source={require("./assets/main-bg.png")}
-            style={{ width: "100%", height: "100%", position: "absolute" }}
-            resizeMethod="resize"
-            resizeMode="cover"
-          />
+    <NotificationProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaProvider>
+          <SafeAreaView forceInset={{ bottom: "never" }} style={{ flex: 1 }}>
+            <Image
+              source={require("./assets/main-bg.png")}
+              style={{ width: "100%", height: "100%", position: "absolute" }}
+              resizeMethod="resize"
+              resizeMode="cover"
+            />
 
-          <Navigator />
-        </SafeAreaView>
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+            <Navigator />
+          </SafeAreaView>
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </NotificationProvider>
   );
 }
