@@ -22,9 +22,9 @@ export const useNotification = () => {
   return context;
 };
 
-export const NotificationProvider = ({ children }) => {
+export const PushNotificationProvider = ({ children }) => {
   const [expoPushToken, setExpoPushToken] = useState(null);
-  const [notification, setNotification] = useState(null);
+  const [pushNotification, setPushNotification] = useState(null);
   const [error, setError] = useState(null);
 
   const notificationListener = useRef();
@@ -34,7 +34,8 @@ export const NotificationProvider = ({ children }) => {
     console.log("🔔 Notification Provider");
     let existingDeviceToken = null;
     const tryGetDeviceToken = async () => {
-      existingDeviceToken = await NotificationService.getDeviceToken(userId);
+      const deviceId = await NotificationService.getDeviceId();
+      existingDeviceToken = await NotificationService.getDeviceToken(deviceId);
     };
 
     tryGetDeviceToken();
@@ -53,7 +54,7 @@ export const NotificationProvider = ({ children }) => {
     notificationListener.current =
       Notifications.addNotificationReceivedListener((notification) => {
         console.log("🔔 Notification Received: ", notification);
-        setNotification(notification);
+        setPushNotification(notification);
       });
 
     responseListener.current =
@@ -79,8 +80,8 @@ export const NotificationProvider = ({ children }) => {
   return (
     <NotificationContext.Provider
       value={useMemo(
-        () => ({ expoPushToken, notification, error }),
-        [expoPushToken, notification, error]
+        () => ({ expoPushToken, pushNotification, error }),
+        [expoPushToken, pushNotification, error]
       )}
     >
       {children}

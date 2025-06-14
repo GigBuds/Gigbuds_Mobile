@@ -36,14 +36,24 @@ class NotificationService {
     }
   }
 
-  static async getDeviceToken(userId) {
+  static async getDeviceToken(deviceId) {
     try {
       const response = await api.get(
-        `/notifications/push-notifications/device-token/${userId}`
+        `/notifications/push-notifications/device-token/${deviceId}`
       );
       return response.data;
     } catch (error) {
-      console.error("Error getting device token", error);
+      console.warn("Device token not found", error);
+      return null;
+    }
+  }
+
+  static async getMissedNotifications() {
+    try {
+      const response = await api.get("/notifications/stored");
+      return response.data;
+    } catch (error) {
+      console.error("Error getting stored notifications", error);
       throw error;
     }
   }

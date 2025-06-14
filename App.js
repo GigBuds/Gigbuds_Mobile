@@ -3,11 +3,11 @@ import { Image, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Navigator from "./navigation/Navigator";
-import { NotificationProvider } from "./context/notificationContext";
+import { PushNotificationProvider } from "./context/notificationContext";
 
 export default function App() {
   return (
-    <NotificationProvider>
+    <PushNotificationProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
           <SafeAreaView forceInset={{ bottom: "never" }} style={{ flex: 1 }}>
@@ -22,6 +22,6 @@ export default function App() {
           </SafeAreaView>
         </SafeAreaProvider>
       </GestureHandlerRootView>
-    </NotificationProvider>
+    </PushNotificationProvider>
   );
 }

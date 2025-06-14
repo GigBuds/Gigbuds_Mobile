@@ -1,6 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useCallback, useEffect, useState } from "react";
 import signalRService from "./SignalRService";
+import { SignalRCallbackExtensions } from "./signalRCallbackExtensions";
 
 /**
  * Custom hook for managing SignalR connection and events
@@ -31,44 +31,21 @@ export const useSignalR = (options = {}) => {
     const updatedNotifications = [notification, ...notifications];
     console.log("updatedNotifications", updatedNotifications);
     setNotifications(updatedNotifications);
-    saveNotifications(updatedNotifications);
+    SignalRCallbackExtensions.SaveNotificationsAsync(updatedNotifications);
   }, []);
-
-  const saveNotifications = async (notifications) => {
-    try {
-      await AsyncStorage.setItem(
-        "notifications",
-        JSON.stringify(notifications)
-      );
-    } catch (error) {
-      console.error("Failed to save notifications:", error);
-    }
-  };
-
-  const loadStoredNotifications = async () => {
-    try {
-      const storedNotifications = await AsyncStorage.getItem("notifications");
-      if (storedNotifications) {
-        const parsed = JSON.parse(storedNotifications);
-        // Convert timestamp strings back to Date objects
-        const notifications = parsed.map((notif) => ({
-          ...notif,
-          timestamp: new Date(notif.timestamp),
-        }));
-        setNotifications(notifications);
-      }
-    } catch (error) {
-      console.error("Failed to load stored notifications:", error);
-    }
-  };
 
   // Set up event handlers
   useEffect(() => {
     const setupEventHandlers = () => {
       // Connection events
-      signalRService.onEvent("onConnected", () => {
+      signalRService.onEvent("onConnected", async () => {
         console.log("onConnected");
         updateConnectionStatus();
+        const missedNotifications =
+          await SignalRCallbackExtensions.FetchMissedNotificationsAsync();
+        if (missedNotifications) {
+          handleNotification(missedNotifications);
+        }
       });
 
       signalRService.onEvent("onDisconnected", updateConnectionStatus);
@@ -97,12 +74,9 @@ export const useSignalR = (options = {}) => {
     };
 
     setupEventHandlers();
-    loadStoredNotifications();
-
-    // Auto-connect if enabled
-    // if (autoConnect) {
-    //   signalRService.startConnection();
-    // }
+    SignalRCallbackExtensions.LoadStoredNotificationsAsync().then((notifications) => {
+      setNotifications(notifications);
+    }); // this will run before onConnected
 
     // Cleanup on unmount
     return () => {
@@ -153,8 +127,6 @@ export const useSignalR = (options = {}) => {
     // Notifications
     notifications,
     setNotifications,
-    loadStoredNotifications,
-    saveNotifications,
 
     // Connection controls
     connect,

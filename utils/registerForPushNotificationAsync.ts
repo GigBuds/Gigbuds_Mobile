@@ -35,9 +35,7 @@ export async function registerForPushNotificationAsync() {
     throw new Error("Project ID is not set");
   }
   try {
-    return await Notifications.getExpoPushTokenAsync({
-      projectId,
-    });
+    return await Notifications.getDevicePushTokenAsync();
   } catch (error) {
     console.error("Error registering device for push notifications", error);
   }
