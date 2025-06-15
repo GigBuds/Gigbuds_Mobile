@@ -4,6 +4,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import PropTypes from "prop-types";
 
 const NotificationItem = ({ notification, onPress }) => {
+  console.log("🔔 NotificationItem: ", notification);
   const getNotificationIcon = (type) => {
     switch (type) {
       case "job":
@@ -55,7 +56,7 @@ const NotificationItem = ({ notification, onPress }) => {
           {notification.title}
         </Text>
         <Text style={styles.message} numberOfLines={2}>
-          {notification.message}
+          {notification.content}
         </Text>
         <Text style={styles.timestamp}>
           {formatTimeAgo(notification.timestamp)}
@@ -72,7 +73,7 @@ NotificationItem.propTypes = {
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     type: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
-    message: PropTypes.string.isRequired,
+    content: PropTypes.string.isRequired,
     timestamp: PropTypes.oneOfType([
       PropTypes.string,
       PropTypes.number,

@@ -36,8 +36,10 @@ class NotificationService {
     }
   }
 
-  static async getDeviceToken(deviceId) {
+  static async getDeviceToken() {
     try {
+      const deviceId = await NotificationService.getDeviceId();
+      console.log("🔔 Device ID from getDeviceToken", deviceId);
       const response = await api.get(
         `/notifications/push-notifications/device-token/${deviceId}`
       );
@@ -49,11 +51,24 @@ class NotificationService {
   }
 
   static async getMissedNotifications() {
+    const deviceId = await NotificationService.getDeviceId();
     try {
-      const response = await api.get("/notifications/stored");
+      const response = await api.get(`/notifications/stored/${deviceId}`);
       return response.data;
     } catch (error) {
       console.error("Error getting stored notifications", error);
+      throw error;
+    }
+  }
+
+  static async markAsRead(notificationIds) {
+    try {
+      const response = await api.put(`/notifications/read`, {
+        notificationIds: notificationIds,
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error marking notification as read", error);
       throw error;
     }
   }

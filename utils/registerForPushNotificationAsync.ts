@@ -30,10 +30,6 @@ export async function registerForPushNotificationAsync() {
     }
   }
 
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-  if (!projectId) {
-    throw new Error("Project ID is not set");
-  }
   try {
     return await Notifications.getDevicePushTokenAsync();
   } catch (error) {

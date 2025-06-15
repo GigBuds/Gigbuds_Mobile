@@ -77,7 +77,7 @@ class SignalRService {
       // Set up notification handlers
       setupNotificationHandlers(
         this.connection,
-        this.handleNotification.bind(this)
+        this.triggerCallback.bind(this)
       );
 
       // Start the connection
@@ -97,25 +97,6 @@ class SignalRService {
       // Attempt reconnection
       await this.handleReconnection();
     }
-  }
-
-  /**
-   * Handle incoming notifications and trigger callbacks
-   */
-  handleNotification(type, notificationData) {
-    const notification = {
-      id: Date.now().toString(),
-      type: notificationData.type || type,
-      title: notificationData.title,
-      message: notificationData.message,
-      data: notificationData.data,
-      timestamp: new Date(),
-      isRead: false,
-      additionalPayload: notificationData.additionalPayload || null,
-    };
-
-    // Trigger notification callback
-    this.triggerCallback("onNotificationReceived", notification);
   }
 
   /**

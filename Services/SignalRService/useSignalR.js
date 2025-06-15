@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import signalRService from "./SignalRService";
 import { SignalRCallbackExtensions } from "./signalRCallbackExtensions";
+import { useNotification } from "../../context/notificationContext";
 
 /**
  * Custom hook for managing SignalR connection and events
@@ -10,7 +11,8 @@ import { SignalRCallbackExtensions } from "./signalRCallbackExtensions";
  * @param {Object} options.eventHandlers - Object mapping event names to handler functions
  */
 export const useSignalR = (options = {}) => {
-  const { autoConnect = true, groups = [], eventHandlers = {} } = options;
+  const { groups = [], eventHandlers = {} } = options;
+  const { notifications, setNotifications } = useNotification();
 
   const [connectionStatus, setConnectionStatus] = useState({
     isConnected: false,
@@ -18,8 +20,6 @@ export const useSignalR = (options = {}) => {
     reconnectAttempts: 0,
     connectionId: null,
   });
-
-  const [notifications, setNotifications] = useState([]);
 
   // Update connection status
   const updateConnectionStatus = useCallback(() => {
@@ -41,11 +41,6 @@ export const useSignalR = (options = {}) => {
       signalRService.onEvent("onConnected", async () => {
         console.log("onConnected");
         updateConnectionStatus();
-        const missedNotifications =
-          await SignalRCallbackExtensions.FetchMissedNotificationsAsync();
-        if (missedNotifications) {
-          handleNotification(missedNotifications);
-        }
       });
 
       signalRService.onEvent("onDisconnected", updateConnectionStatus);
@@ -74,9 +69,6 @@ export const useSignalR = (options = {}) => {
     };
 
     setupEventHandlers();
-    SignalRCallbackExtensions.LoadStoredNotificationsAsync().then((notifications) => {
-      setNotifications(notifications);
-    }); // this will run before onConnected
 
     // Cleanup on unmount
     return () => {
@@ -125,8 +117,7 @@ export const useSignalR = (options = {}) => {
     connectionStatus,
 
     // Notifications
-    notifications,
-    setNotifications,
+    handleNotification,
 
     // Connection controls
     connect,

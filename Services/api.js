@@ -12,7 +12,6 @@ const api = axios.create(config);
 api.defaults.baseURL = baseURL;
 
 const handleBefore = async (config) => {
-  console.log("handleBefore", config);
   try {
     const accessToken = await AsyncStorage.getItem("accessToken");
     if (accessToken) {

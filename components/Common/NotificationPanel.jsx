@@ -12,6 +12,7 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import NotificationItem from "./NotificationItem";
 import PropTypes from "prop-types";
+import { FlashList } from "@shopify/flash-list";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -26,7 +27,7 @@ const NotificationPanel = ({
   const slideAnim = useRef(new Animated.Value(screenWidth)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const panelOpacity = useRef(new Animated.Value(0)).current;
-  const [shouldRender, setShouldRender] = React.useState(false);
+  const [shouldRender, setShouldRender] = React.useState(false); // this flag is used to prevent the panel from rendering when it is not visible, and to set null when it is not visible
 
   useEffect(() => {
     if (isVisible) {
@@ -78,7 +79,7 @@ const NotificationPanel = ({
     onClose();
   };
 
-  if (!shouldRender) return null;
+  if (!shouldRender) return null; // this is used to prevent the panel from rendering when it is not visible
 
   return (
     <View style={styles.container}>
@@ -135,32 +136,26 @@ const NotificationPanel = ({
         </View>
 
         {/* Notifications List */}
-        <ScrollView
-          style={styles.notificationsList}
-          showsVerticalScrollIndicator={false}
-        >
-          {notifications.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons
-                name="notifications-off-outline"
-                size={48}
-                color="#CCC"
-              />
-              <Text style={styles.emptyText}>Không có thông báo nào</Text>
-              <Text style={styles.emptySubtext}>
-                Bạn sẽ nhận được thông báo về việc làm và tin nhắn tại đây
-              </Text>
-            </View>
-          ) : (
-            notifications.map((notification, index) => (
+        {notifications.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name="notifications-off-outline" size={48} color="#CCC" />
+            <Text style={styles.emptyText}>Không có thông báo nào</Text>
+            <Text style={styles.emptySubtext}>
+              Bạn sẽ nhận được thông báo về việc làm và tin nhắn tại đây
+            </Text>
+          </View>
+        ) : (
+          <FlashList
+            data={notifications}
+            renderItem={({ item }) => (
               <NotificationItem
-                key={notification.id || index}
-                notification={notification}
+                notification={item}
                 onPress={handleNotificationPress}
               />
-            ))
-          )}
-        </ScrollView>
+            )}
+            estimatedItemSize={100}
+          />
+        )}
       </Animated.View>
     </View>
   );

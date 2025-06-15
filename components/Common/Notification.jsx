@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { View, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { View, TouchableOpacity, StyleSheet, AppState } from "react-native";
 import { Badge } from "react-native-paper";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import NotificationPanel from "./NotificationPanel";
@@ -7,36 +7,53 @@ import { useSignalR } from "../../Services/SignalRService/useSignalR";
 import { useNavigation } from "@react-navigation/native";
 import { Portal } from "react-native-portalize";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NotificationService from "../../Services/NotificationService/NotificationService";
+import { useNotification } from "../../context/notificationContext";
 
 const Notification = ({ style }) => {
+  const { notifications, setNotifications } = useNotification();
   const navigate = useNavigation();
   const [isPanelVisible, setIsPanelVisible] = useState(false);
-  const {
-    connect,
-    disconnect,
-    joinGroup,
-    leaveGroup,
-    notifications,
-    setNotifications,
-    loadStoredNotifications,
-    saveNotifications,
-    connectionStatus,
-  } = useSignalR({
-    autoConnect: true,
-    groups: ["jobseekers"],
-  });
+  const subscription = useRef(null);
+  const { connect, disconnect, joinGroup, leaveGroup, connectionStatus } =
+    useSignalR({
+      autoConnect: true,
+      groups: ["jobseekers"],
+    });
 
   useEffect(() => {
-    connect();
-    joinGroup("jobseekers");
-    loadStoredNotifications();
+    (async () => {
+      await connect();
+      await joinGroup("jobseekers");
+    })();
+
+    const handleAppStateChange = async (nextAppState) => {
+      if (nextAppState === "background" || nextAppState === "inactive") {
+        await leaveGroup("jobseekers");
+        await disconnect();
+      } else if (nextAppState === "active") {
+        await connect();
+        await joinGroup("jobseekers");
+      }
+    };
+
+    subscription.current = AppState.addEventListener(
+      "change",
+      handleAppStateChange
+    );
 
     return () => {
+      if (subscription.current) {
+        subscription.current.remove();
+      }
       leaveGroup("jobseekers");
       disconnect();
     };
   }, [connect, joinGroup, leaveGroup, disconnect]);
 
+  useEffect(() => {
+    console.log("🔔 Notifications: ", notifications);
+  }, [notifications]);
   const unreadCount = notifications.filter((notif) => !notif.isRead).length;
 
   const handleNotificationPress = () => {
@@ -52,14 +69,14 @@ const Notification = ({ style }) => {
     const updatedNotifications = notifications.map((notif) =>
       notif.id === notification.id ? { ...notif, isRead: true } : notif
     );
+    NotificationService.markAsRead(notification.id);
     setNotifications(updatedNotifications);
-    saveNotifications(updatedNotifications);
 
     switch (notification.type) {
       case "job":
         console.log(notification.additionalPayload);
         navigate.navigate("JobDetail", {
-          jobId: notification.additionalPayload,
+          jobId: notification.additionalPayload?.jobId,
         });
         console.log("Navigate to job details:", notification);
         break;
@@ -94,7 +111,6 @@ const Notification = ({ style }) => {
       isRead: true,
     }));
     setNotifications(updatedNotifications);
-    saveNotifications(updatedNotifications);
   };
 
   const handleDeleteAll = async () => {

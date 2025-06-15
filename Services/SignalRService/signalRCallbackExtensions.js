@@ -10,17 +10,15 @@ export class SignalRCallbackExtensions {
 
   static async LoadStoredNotificationsAsync() {
     try {
-      const storedNotifications = await AsyncStorage.getItem("notifications");
+      const storedNotifications = JSON.parse(
+        await AsyncStorage.getItem("notifications")
+      );
       if (storedNotifications) {
-        const parsed = JSON.parse(storedNotifications);
-        // Convert timestamp strings back to Date objects
-        const notifications = parsed.map((notif) => ({
-          ...notif,
-          timestamp: new Date(notif.timestamp),
-        }));
-        console.log("Loaded stored notifications:", notifications);
-        return notifications;
+        console.log("Loaded stored notifications:", storedNotifications);
+        return storedNotifications;
       }
+      console.log("No stored notifications found");
+      return [];
     } catch (error) {
       console.error("Failed to load stored notifications:", error);
       return [];
