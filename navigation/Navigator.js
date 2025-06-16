@@ -101,9 +101,9 @@ export default function Navigator() {
           name="MemberShip"
           options={{ headerShown: false }}
           children={() => (
-            <UserLayout>
+             <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
               <MemberShip />
-            </UserLayout>
+            </HeaderLayout>
           )}
         />  
       </Stack.Navigator>
@@ -126,9 +126,9 @@ export default function Navigator() {
           name="MemberShip"
           options={{ headerShown: false }}
           children={() => (
-            <UserLayout>
+            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
               <MemberShip />
-            </UserLayout>
+            </HeaderLayout>
           )}
         />  
       </Stack.Navigator>
@@ -146,9 +146,9 @@ export default function Navigator() {
           name="MemberShip"
           options={{ headerShown: false }}
           children={() => (
-            <UserLayout>
+            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
               <MemberShip />
-            </UserLayout>
+            </HeaderLayout>
           )}
         />  
       </Stack.Navigator>
@@ -195,9 +195,9 @@ export default function Navigator() {
           name="MemberShip"
           options={{ headerShown: false }}
           children={() => (
-            <UserLayout>
+            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
               <MemberShip />
-            </UserLayout>
+            </HeaderLayout>
           )}
         />  
       </Stack.Navigator>
