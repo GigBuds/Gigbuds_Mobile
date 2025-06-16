@@ -19,6 +19,7 @@ import JobLocation from "../../components/JobDetail/JobLocation";
 import JobSchedule from "../../components/JobDetail/JobSchedule";
 import JobFeedback from "../../components/JobDetail/JobFeedback";
 import GradientButton from "../../components/JobDetail/GradientButton";
+import { useLoading } from "../../context/LoadingContext";
 
 const JobDetailScreen = () => {
   const route = useRoute();

@@ -27,6 +27,8 @@ import JobDetailLayout from "../layout/JobDetailLayout";
 import EditProfile from "../Screen/ProfileScreen/EditProfile/EditProfile";
 import PaymentResultScreen from '../Screen/PaymentScreen/PaymentResultScreen';
 import MembershipRegisterScreen from '../Screen/PaymentScreen/MembershipRegisterScreen';
+import MyJob from "../Screen/ProfileScreen/MyJob/MyJob";
+import HeaderLayout from "../layout/HeaderLayout";
 
 export default function Navigator() {
   const Tab = createBottomTabNavigator();
@@ -44,7 +46,7 @@ export default function Navigator() {
             </UserLayout>
           )}
         />
-         <Stack.Screen
+        <Stack.Screen
           name="JobDetail"
           options={{ headerShown: false }}
           children={() => (
@@ -112,11 +114,7 @@ export default function Navigator() {
         <Stack.Screen
           name="Schedule"
           options={{ headerShown: false }}
-          children={() => (
-            <UserLayout>
-              <ScheduleScreen />
-            </UserLayout>
-          )}
+          children={() => <ScheduleScreen />}
         />
       </Stack.Navigator>
     );
@@ -146,9 +144,15 @@ export default function Navigator() {
         <Stack.Screen
           name="EditProfile"
           options={{ headerShown: false }}
+          children={() => <EditProfile />}
+        />
+        <Stack.Screen
+          name="MyJobs"
+          options={{ headerShown: false }}
           children={() => (
-
-              <EditProfile />
+            <HeaderLayout title={"Công việc của tôi"} showBackButton={true}>
+              <MyJob />
+            </HeaderLayout>
           )}
         />
       </Stack.Navigator>
@@ -156,8 +160,8 @@ export default function Navigator() {
   };
 
   const LoginStack = () => {
-      const [isLoading, setIsLoading] = useState(false);
-    
+    const [isLoading, setIsLoading] = useState(false);
+
     return (
       <Stack.Navigator>
         <Stack.Screen

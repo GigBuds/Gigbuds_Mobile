@@ -10,7 +10,7 @@ const Profile = () => {
   const options = [
     {
       title:'Công việc của tôi',
-      link:'myjobs',
+      link:'MyJobs',
       icon: <Ionicons name="briefcase" size={30} color="#2558B6" />
     },
     {
