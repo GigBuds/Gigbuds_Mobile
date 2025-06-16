@@ -7,6 +7,7 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "gigbuds",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -25,10 +26,11 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
-      ]
+      ],
+      "expo-dev-client"
     ],
     "ios": {
-      "bundleIdentifier": "Gigbuds",
+      "bundleIdentifier": "com.gigbuds.mobile",
       "buildNumber": "1.0.0",
       "supportsTablet": true,
       "infoPlist": {
@@ -37,6 +39,7 @@
       }
     },
     "android": {
+      "package": "com.gigbuds.mobile",
       "versionCode": 1,
       "permissions": [
         "ACCESS_FINE_LOCATION",
