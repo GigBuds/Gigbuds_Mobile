@@ -155,6 +155,15 @@ export default function Navigator() {
             </HeaderLayout>
           )}
         />
+        <Stack.Screen
+          name="JobDetail"
+          options={{ headerShown: false }}
+          children={() => (
+            <JobDetailLayout>
+              <JobDetailScreen />
+            </JobDetailLayout>
+          )}
+        />
       </Stack.Navigator>
     );
   };

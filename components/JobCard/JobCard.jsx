@@ -121,15 +121,8 @@ const JobCard = ({
       }
       else {
         showLoading();
-        
-        // Build search parameters with pagination
-        const searchWithPagination = {
-          ...searchPar,
-          pageIndex: page - 1, // Convert to 0-based index for API
-          pageSize: pageSize
-        };
-        
-        result = await JobPostService.searchJobPosts(searchWithPagination);
+
+        result = await JobPostService.searchJobPosts(searchPar);
       }
 
       if (result.success) {

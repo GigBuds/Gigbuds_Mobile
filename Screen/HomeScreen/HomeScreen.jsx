@@ -9,8 +9,15 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const [searchInput, setSearchInput] = React.useState("");
+  const [searchParams, setSearchParams] = React.useState({});
 
-
+   useFocusEffect(
+      React.useCallback(() => {
+        setSearchParams({});
+        console.log("HomeScreen: Resetting searchParams");
+      }, [])
+    );
 
   return (
     <View>
@@ -75,7 +82,7 @@ const HomeScreen = () => {
           </Text>
         </TouchableOpacity>
       </View>
-      <JobCard marginBottom={250} />
+      <JobCard searchInput={searchInput} searchParams={searchParams} marginBottom={-170} />
     </View>
   );
 };
