@@ -34,5 +34,16 @@ yarn-error.*
 
 # typescript
 *.tsbuildinfo
+
+# ios
+/ios
+
+# android
+/android
+
+# other
 PROJECT_STRUCTURE.md
 .env
+google-services.json
+gigbuds-be-firebase-adminsdk-fbsvc-c970c35121.json
+ACTION_PLAN.md
