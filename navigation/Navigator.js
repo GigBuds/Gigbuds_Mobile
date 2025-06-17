@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavigationContainer, useNavigation } from "@react-navigation/native";
+import { useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
@@ -25,6 +25,8 @@ import MyProfileLayout from "../layout/MyProfileLayout";
 import JobDetailScreen from "../Screen/JobDetailScreen/JobDetailScreen";
 import JobDetailLayout from "../layout/JobDetailLayout";
 import EditProfile from "../Screen/ProfileScreen/EditProfile/EditProfile";
+import PaymentResultScreen from '../Screen/PaymentScreen/PaymentResultScreen';
+import MembershipRegisterScreen from '../Screen/PaymentScreen/MembershipRegisterScreen';
 import MyJob from "../Screen/ProfileScreen/MyJob/MyJob";
 import HeaderLayout from "../layout/HeaderLayout";
 import MemberShip from "../Screen/MemberShip/MemberShip";
@@ -192,14 +194,14 @@ export default function Navigator() {
           )}
         />
         <Stack.Screen
-          name="MemberShip"
+          name="JobDetail"
           options={{ headerShown: false }}
           children={() => (
-            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
-              <MemberShip />
-            </HeaderLayout>
+            <JobDetailLayout>
+              <JobDetailScreen />
+            </JobDetailLayout>
           )}
-        />  
+        />
       </Stack.Navigator>
     );
   };
@@ -330,13 +332,25 @@ export default function Navigator() {
           component={MainTab}
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+          name="PaymentResult"
+          component={PaymentResultScreen}
+          options={{
+            headerShown: false,
+            gestureEnabled: false
+          }}
+        />
+        <Stack.Screen
+          name="MembershipRegister"
+          component={MembershipRegisterScreen}
+          options={{
+            headerShown: false,
+            gestureEnabled: true
+          }}
+        />
       </Stack.Navigator>
     );
   };
 
-  return (
-    <NavigationContainer>
-      <RootStackNav />
-    </NavigationContainer>
-  );
+  return <RootStackNav />;
 }

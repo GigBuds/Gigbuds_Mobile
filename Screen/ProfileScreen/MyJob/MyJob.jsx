@@ -37,6 +37,7 @@ const MyJob = () => {
       />
        <JobCard 
           selectedTab={value}
+          marginBottom={50}
         />
 
         
