@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,11 +6,14 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  ScrollView,
   TouchableWithoutFeedback,
+  RefreshControl,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import NotificationItem from "./NotificationItem";
+import PropTypes from "prop-types";
+import { FlashList } from "@shopify/flash-list";
+import { useNotification } from "../../context/notificationContext";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -20,14 +23,19 @@ const NotificationPanel = ({
   notifications,
   onNotificationPress,
   onMarkAllAsRead,
+  onDeleteAll,
 }) => {
   const slideAnim = useRef(new Animated.Value(screenWidth)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const panelOpacity = useRef(new Animated.Value(0)).current;
+  const [shouldRender, setShouldRender] = React.useState(false); // this flag is used to prevent the panel from rendering when it is not visible, and to set null when it is not visible
+  const { fetchNewNotifications } = useNotification();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Slide in and out animation
   useEffect(() => {
     if (isVisible) {
-      // Slide in from right with fade in
+      setShouldRender(true);
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
@@ -45,8 +53,7 @@ const NotificationPanel = ({
           useNativeDriver: true,
         }),
       ]).start();
-    } else {
-      // Slide out to right with fade out
+    } else if (shouldRender) {
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: screenWidth,
@@ -60,12 +67,14 @@ const NotificationPanel = ({
         }),
         Animated.timing(panelOpacity, {
           toValue: 0,
-          duration: 200, // Slightly faster fade out for smoother effect
+          duration: 200,
           useNativeDriver: true,
         }),
-      ]).start();
+      ]).start(() => {
+        setShouldRender(false);
+      });
     }
-  }, [isVisible, slideAnim, overlayOpacity, panelOpacity]);
+  }, [isVisible, slideAnim, overlayOpacity, panelOpacity, shouldRender]);
 
   const unreadCount = notifications.filter((notif) => !notif.isRead).length;
 
@@ -74,7 +83,7 @@ const NotificationPanel = ({
     onClose();
   };
 
-  if (!isVisible) return null;
+  if (!shouldRender) return null; // this is used to prevent the panel from rendering when it is not visible
 
   return (
     <View style={styles.container}>
@@ -82,7 +91,6 @@ const NotificationPanel = ({
       <TouchableWithoutFeedback onPress={onClose}>
         <Animated.View style={[styles.overlay, { opacity: overlayOpacity }]} />
       </TouchableWithoutFeedback>
-
       {/* Notification Panel */}
       <Animated.View
         style={[
@@ -105,14 +113,16 @@ const NotificationPanel = ({
           </View>
 
           <View style={styles.headerActions}>
-            {unreadCount > 0 && (
-              <TouchableOpacity
-                style={styles.markAllButton}
-                onPress={onMarkAllAsRead}
-              >
-                <Text style={styles.markAllText}>Đánh dấu đã đọc</Text>
-              </TouchableOpacity>
-            )}
+            <View style={styles.actionButtons}>
+              {unreadCount > 0 && (
+                <TouchableOpacity
+                  style={styles.markAllButton}
+                  onPress={onMarkAllAsRead}
+                >
+                  <Text style={styles.markAllText}>Đánh dấu đã đọc</Text>
+                </TouchableOpacity>
+              )}
+            </View>
 
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Ionicons name="close" size={24} color="#666" />
@@ -121,11 +131,11 @@ const NotificationPanel = ({
         </View>
 
         {/* Notifications List */}
-        <ScrollView
-          style={styles.notificationsList}
-          showsVerticalScrollIndicator={false}
-        >
-          {notifications.length === 0 ? (
+        <FlashList
+          data={notifications}
+          onEndReached={() => fetchNewNotifications(setIsRefreshing)}
+          onEndReachedThreshold={0.8}
+          ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Ionicons
                 name="notifications-off-outline"
@@ -137,19 +147,40 @@ const NotificationPanel = ({
                 Bạn sẽ nhận được thông báo về việc làm và tin nhắn tại đây
               </Text>
             </View>
-          ) : (
-            notifications.map((notification, index) => (
-              <NotificationItem
-                key={notification.id || index}
-                notification={notification}
-                onPress={handleNotificationPress}
-              />
-            ))
+          }
+          renderItem={({ item }) => (
+            <NotificationItem
+              notification={item}
+              onPress={handleNotificationPress}
+            />
           )}
-        </ScrollView>
+          estimatedItemSize={100}
+        />
       </Animated.View>
     </View>
   );
+};
+
+NotificationPanel.propTypes = {
+  isVisible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  notifications: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+      type: PropTypes.string.isRequired,
+      title: PropTypes.string.isRequired,
+      message: PropTypes.string.isRequired,
+      timestamp: PropTypes.oneOfType([
+        PropTypes.string,
+        PropTypes.number,
+        PropTypes.instanceOf(Date),
+      ]).isRequired,
+      isRead: PropTypes.bool.isRequired,
+    })
+  ).isRequired,
+  onNotificationPress: PropTypes.func.isRequired,
+  onMarkAllAsRead: PropTypes.func.isRequired,
+  onDeleteAll: PropTypes.func.isRequired,
 };
 
 const styles = StyleSheet.create({
@@ -163,7 +194,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "#000",
+    backgroundColor: "#181824",
   },
   panel: {
     position: "absolute",
@@ -182,9 +213,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: "column",
     paddingHorizontal: 20,
     paddingTop: 60,
     paddingBottom: 20,
@@ -195,7 +224,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: "row",
     alignItems: "center",
-    flex: 1,
+    marginBottom: 16,
   },
   headerTitle: {
     fontSize: 20,
@@ -218,6 +247,11 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  actionButtons: {
+    flexDirection: "row",
     alignItems: "center",
   },
   markAllButton: {
@@ -230,6 +264,18 @@ const styles = StyleSheet.create({
   markAllText: {
     fontSize: 12,
     color: "#FF7345",
+    fontWeight: "500",
+  },
+  clearAllButton: {
+    marginRight: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: "#FFE5E5",
+  },
+  clearAllText: {
+    fontSize: 12,
+    color: "#FF4444",
     fontWeight: "500",
   },
   closeButton: {

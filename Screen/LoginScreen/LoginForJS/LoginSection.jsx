@@ -12,11 +12,12 @@ import { useNavigation } from "@react-navigation/native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Checkbox } from "react-native-paper";
 import LoginService from "../../../Services/LoginService/LoginService";
-import { jwtDecode } from "jwt-decode";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import LoadingComponent from "../../../components/Common/LoadingComponent";
+import { useNotification } from "../../../context/notificationContext";
+import NotificationService from "../../../Services/NotificationService/NotificationService";
 
 const LoginSection = () => {
+  const { expoPushToken, isDeviceTokenRegistered } = useNotification();
   const [identifier, setIdentifier] = useState(""); // Changed from email to identifier
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -29,19 +30,43 @@ const LoginSection = () => {
   const [userInfo, setUserInfo] = useState({});
 
   useEffect(() => {
-    if (idToken) {
-      try {
-        const decodedUserInfo = jwtDecode(idToken);
-        setUserInfo(decodedUserInfo);
-        console.log("Decoded idToken:", decodedUserInfo);
-        storeUserInfo(decodedUserInfo);
-        navigation.navigate("MainApp");
-      } catch (e) {
-        console.error("Error decoding idToken:", e);
-        Alert.alert("Lỗi", "Không thể giải mã token. Vui lòng đăng nhập lại.");
+    const handleTokenStorage = async () => {
+      if (idToken) {
+        try {
+          await AsyncStorage.setItem("userToken", idToken);
+          const decodedUserInfo = LoginService.decodeToken(idToken);
+          setUserInfo(decodedUserInfo);
+          console.log("Decoded idToken:", decodedUserInfo);
+          
+          // Extract membership information from ID token
+          const memberships = LoginService.extractMembershipsFromToken(idToken);
+          console.log("Extracted memberships:", memberships);
+          
+          // Store user info and memberships using LoginService
+          await LoginService.storeUserInfo(decodedUserInfo, memberships);
+          navigation.navigate("MainApp");
+        } catch (e) {
+          console.error("Error decoding idToken:", e);
+          Alert.alert("Lỗi", "Không thể giải mã token. Vui lòng đăng nhập lại.");
+        }
+      }
+    };
+    handleTokenStorage();
+  }, [idToken]);
+
+  useEffect(() => {
+    async function registerPushNotification() {
+      if (expoPushToken && !isDeviceTokenRegistered && userInfo.sub) {
+        console.log("Registering push notification for user:", userInfo.sub);
+        console.log("Expo push token:", expoPushToken);
+        await NotificationService.registerPushNotification(
+          expoPushToken,
+          userInfo.sub
+        );
       }
     }
-  }, [idToken]);
+    registerPushNotification();
+  }, [expoPushToken, isDeviceTokenRegistered, userInfo]);
 
   const storeUserInfo = async (userInfo) => {
     try {
@@ -51,6 +76,7 @@ const LoginSection = () => {
         `${userInfo.family_name} ${userInfo.name}`
       );
       await AsyncStorage.setItem("userId", userInfo.sub);
+
       console.log("User info stored successfully.");
     } catch (error) {
       console.error("Error storing user info:", error);
@@ -105,6 +131,7 @@ const LoginSection = () => {
         // Handle successful login
         console.log("Login successful:", result.data);
         setAccessToken(result.data.access_token);
+
         await AsyncStorage.setItem("accessToken", result.data.access_token);
         setIdToken(result.data.id_token);
       } else {
@@ -121,8 +148,6 @@ const LoginSection = () => {
       setIsLoading(false);
     }
   };
-
-
 
   return (
     <View style={styles.container}>

@@ -31,6 +31,8 @@ const JobDetailScreen = () => {
 
   const fetchJobDetails = async (id) => {
     try {
+      isLoading(true);
+      console.log("Fetching job details for job ID:", id);
       showLoading();
       const response = await JobPostService.getJobPostById(id);
       const jobDetails = await response.data;

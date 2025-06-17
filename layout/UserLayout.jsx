@@ -4,6 +4,7 @@ import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Notification from "../components/Common/Notification";
+import { Host } from "react-native-portalize";
 import LoadingComponent from "../components/Common/LoadingComponent";
 import { useLoading } from "../context/LoadingContext";
 
@@ -28,7 +29,9 @@ export default function UserLayout({ children }) {
   }, []);
 
   return (
-    <View style={styles.container}>
+    <Host>
+      {/* portal container, use for notification */}
+      <View style={styles.container}>
      {isLoading && (
         <SafeAreaView
           style={{
@@ -48,27 +51,28 @@ export default function UserLayout({ children }) {
           />
         </SafeAreaView>
       )}
-      <Image
-        source={mainBg}
-        style={styles.backgroundImage}
-        resizeMode="cover"
-      />
-      <View style={styles.headerContainer}>
-        <Image source={logo} resizeMode="center" style={styles.logo} />
-        <View
-          style={{
-            flexDirection: "column",
-            marginLeft: 10,
-            width: "63%",
-          }}
-        >
-          <Text style={{ fontSize: 18, color: "white" }}>Xin chào, </Text>
-          <Text style={styles.headerText}>{userName || "Người dùng"}</Text>
+        <Image
+          source={mainBg}
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        />
+        <View style={styles.headerContainer}>
+          <Image source={logo} resizeMode="center" style={styles.logo} />
+          <View
+            style={{
+              flexDirection: "column",
+              marginLeft: 10,
+              width: "63%",
+            }}
+          >
+            <Text style={{ fontSize: 18, color: "white" }}>Xin chào, </Text>
+            <Text style={styles.headerText}>{userName || "Người dùng"}</Text>
+          </View>
+          <Notification style={{ position: "absolute", right: 0 }} />
         </View>
-        <Notification />
+        <View style={styles.formContainer}>{children}</View>
       </View>
-      <View style={styles.formContainer}>{children}</View>
-    </View>
+    </Host>
   );
 }
 
