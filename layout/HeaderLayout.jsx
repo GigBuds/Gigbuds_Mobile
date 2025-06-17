@@ -1,12 +1,13 @@
 import { View, StyleSheet, Image, Text, TouchableOpacity, SafeAreaView } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import mainBg from "../assets/main-bg.png";
-
 import { useLoading } from "../context/LoadingContext";
 import LoadingComponent from "../components/Common/LoadingComponent";
+import IonIcons from "@expo/vector-icons/Ionicons";
 
-
-export default function JobDetailLayout({ children }) {
+export default function HeaderLayout({ children, title , showBackButton = true }) {
   const { isLoading } = useLoading();
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
@@ -34,6 +35,27 @@ export default function JobDetailLayout({ children }) {
         style={styles.backgroundImage}
         resizeMode="cover"
       />
+      <View>
+        <View style={styles.headerContainer}>
+          <View style={styles.headerRow}>
+            {showBackButton && (
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+              >
+                <IonIcons
+                  name="arrow-back-outline"
+                  size={25}
+                  color="white"
+                />
+              </TouchableOpacity>
+            )}
+            <Text style={styles.headerText}>{title}</Text>
+            {/* Spacer to center the title when back button is present */}
+            {showBackButton && <View style={styles.spacer} />}
+          </View>
+        </View>
+      </View>
       <View style={styles.formContainer}>{children}</View>
     </View>
   );
@@ -43,8 +65,6 @@ const styles = StyleSheet.create({
   container: {
     height: "100%",
     width: "100%",
-    alignItems: "center",
-    justifyContent: "flex-end",
   },
   backgroundImage: {
     width: "100%",
@@ -55,10 +75,29 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: "100%",
-    height: "30%",
-    flexDirection: "column",
     paddingHorizontal: "3%",
     paddingVertical: "5%",
+
+  },
+  headerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: 10,
+  },
+  backButton: {
+
+  },
+  headerText: {
+    fontSize: 20,
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    marginLeft: 20,
+  },
+  spacer: {
+    width: 45, 
   },
   logo: {
     backgroundColor: "black",
@@ -71,17 +110,9 @@ const styles = StyleSheet.create({
     height: "20%",
     width: "36%",
   },
-  headerText: {
-    fontSize: 25,
-    color: "white",
-    fontWeight: "bold",
-    marginTop: 15,
-  },
   formContainer: {
     width: "100%",
-    height: "82%",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    height: "100%",
     backgroundColor: "#F3F7FF",
     padding: 20,
   },

@@ -1,15 +1,25 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, Image, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Image,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+} from "react-native";
 import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Badge } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import LoadingComponent from "../components/Common/LoadingComponent";
+import { useLoading } from "../context/LoadingContext";
 
 export default function MyProfileLayout({ children }) {
-    const navigatetion = useNavigation();
+  const navigatetion = useNavigation();
   const [userName, setUserName] = useState("");
+  const { isLoading } = useLoading();
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -29,6 +39,26 @@ export default function MyProfileLayout({ children }) {
 
   return (
     <View style={styles.container}>
+      {isLoading && (
+        <SafeAreaView
+          style={{
+            zIndex: 1000,
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          <LoadingComponent
+            size={80}
+            speed={2000}
+            showText={true}
+            loadingText="Đang tải thông tin người dùng..."
+            animationType="outline"
+            strokeWidth={2.5}
+          />
+        </SafeAreaView>
+      )}
+
       <Image
         source={mainBg}
         style={styles.backgroundImage}

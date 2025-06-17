@@ -17,6 +17,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { vietnamCities, getDistrictsByCity } from "./districtandprovince";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { useLoading } from "../../context/LoadingContext";
 
 const FilterBySalary = () => {
   const navigation = useNavigation();
@@ -28,6 +29,7 @@ const FilterBySalary = () => {
   const [selectedDistricts, setSelectedDistricts] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
 
+const { showLoading, isLoading, hideLoading } = useLoading();  
   // New datetime states
   const [jobTimeFrom, setJobTimeFrom] = React.useState(null);
   const [jobTimeTo, setJobTimeTo] = React.useState(null);
@@ -445,7 +447,7 @@ const FilterBySalary = () => {
           <Text style={styles.sectionTitle}>Thành phố</Text>
           <View style={styles.pickerContainer}>
             {Platform.OS === "ios" ? (
-              <TouchableOpacity onPress={selectCity} disabled={loading}>
+              <TouchableOpacity onPress={selectCity} disabled={isLoading}>
                 <Text
                   style={{
                     padding: 12,
@@ -463,7 +465,7 @@ const FilterBySalary = () => {
                 prompt="Chọn thành phố"
                 dropdownIconColor="#FF7345"
                 mode="dropdown"
-                enabled={!loading}
+                enabled={!isLoading}
               >
                 <Picker.Item label="Chọn thành phố" value="" />
                 {vietnamCities.map((city) => (
@@ -485,7 +487,7 @@ const FilterBySalary = () => {
             <TouchableOpacity
               onPress={selectDistrict}
               style={styles.pickerContainer}
-              disabled={loading}
+              disabled={isLoading}
             >
               <Text
                 style={{
@@ -549,10 +551,13 @@ const FilterBySalary = () => {
         <View style={styles.dateTimeRangeContainer}>
           <Text style={styles.sectionTitle}>Thời gian làm việc</Text>
           <View style={styles.dateTimeInputContainer}>
-            <TouchableOpacity
-              onPress={() => selectDateTime("from")}
-              style={[styles.dateTimeInput, styles.datePickerInput]}
-              disabled={loading}
+            <TouchableOpacity 
+              onPress={() => selectDateTime('from')}
+              style={[
+                styles.dateTimeInput,
+                styles.datePickerInput
+              ]}
+              disabled={isLoading}
             >
               <Text
                 style={[
@@ -573,11 +578,14 @@ const FilterBySalary = () => {
               color="#FF7345"
               style={styles.arrowIcon}
             />
-
-            <TouchableOpacity
-              onPress={() => selectDateTime("to")}
-              style={[styles.dateTimeInput, styles.datePickerInput]}
-              disabled={loading}
+            
+            <TouchableOpacity 
+              onPress={() => selectDateTime('to')}
+              style={[
+                styles.dateTimeInput,
+                styles.datePickerInput
+              ]}
+              disabled={isLoading}
             >
               <Text
                 style={[
@@ -597,8 +605,8 @@ const FilterBySalary = () => {
         onClear={handleClearFilter}
         onApply={handleApplyFilter}
         clearText="Xoá bộ lọc"
-        applyText={loading ? "Đang tìm kiếm..." : "Áp dụng bộ lọc"}
-        disabled={loading}
+        applyText={isLoading ? "Đang tìm kiếm..." : "Áp dụng bộ lọc"}
+        disabled={isLoading}
       />
     </ScrollView>
   );

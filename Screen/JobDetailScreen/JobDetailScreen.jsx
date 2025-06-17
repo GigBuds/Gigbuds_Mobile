@@ -19,19 +19,21 @@ import JobLocation from "../../components/JobDetail/JobLocation";
 import JobSchedule from "../../components/JobDetail/JobSchedule";
 import JobFeedback from "../../components/JobDetail/JobFeedback";
 import GradientButton from "../../components/JobDetail/GradientButton";
+import { useLoading } from "../../context/LoadingContext";
 
 const JobDetailScreen = () => {
   const route = useRoute();
   const { jobId } = route.params || {};
   const [jobDetails, setJobDetails] = React.useState(null);
-  const [loading, setLoading] = React.useState(true);
+  const { showLoading, isLoading, hideLoading } = useLoading();
   const [coordinates, setCoordinates] = React.useState(null);
   const [locationLoading, setLocationLoading] = React.useState(false);
 
   const fetchJobDetails = async (id) => {
     try {
-      setLoading(true);
+      isLoading(true);
       console.log("Fetching job details for job ID:", id);
+      showLoading();
       const response = await JobPostService.getJobPostById(id);
       const jobDetails = await response.data;
       setJobDetails(jobDetails);
@@ -44,7 +46,7 @@ const JobDetailScreen = () => {
     } catch (error) {
       console.error("Error fetching job details:", error);
     } finally {
-      setLoading(false);
+      hideLoading();
     }
   };
 
@@ -96,7 +98,7 @@ const JobDetailScreen = () => {
       fetchJobDetails(jobId);
     } else {
       console.error("No job ID provided in route params");
-      setLoading(false);
+      hideLoading();
     }
   }, [jobId]);
 
@@ -107,13 +109,7 @@ const JobDetailScreen = () => {
     // For example: navigate to application screen, show modal, etc.
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text>Đang tải thông tin công việc...</Text>
-      </View>
-    );
-  }
+
 
   if (!jobDetails) {
     return (
