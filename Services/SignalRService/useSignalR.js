@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import signalRService from "./SignalRService";
 import { SignalRCallbackExtensions } from "./signalRCallbackExtensions";
 import { useNotification } from "../../context/notificationContext";
+import { setupNotificationHandlers } from "./setupNotificationHandlers";
 
 /**
  * Custom hook for managing SignalR connection and events
@@ -68,6 +69,7 @@ export const useSignalR = (options = {}) => {
       });
     };
 
+    setupNotificationHandlers();
     setupEventHandlers();
 
     // Cleanup on unmount

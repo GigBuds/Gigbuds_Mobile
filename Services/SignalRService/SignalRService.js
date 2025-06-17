@@ -1,41 +1,48 @@
 import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setupSignalRLifeCycleHandler } from "./setupSignalRLifeCycleHandler";
-import { setupNotificationHandlers } from "./setupNotificationHandlers";
 import * as signalR from "@microsoft/signalr";
-/**
- * SignalRService class for managing SignalR connection and events.
- */
+
 class SignalRService {
-  constructor() {
-    // Connection object for SignalR when connected to the server
-    this.connection = null;
+  #connection = null;
+  #isConnected = false;
+  #isConnecting = false;
+  #reconnectAttempts = 0;
+  #maxReconnectAttempts = 5;
+  #reconnectDelay = 5000; // 5 seconds
+  #notificationCallbacks = new Map();
+  #connectionCallbacks = new Map();
 
-    // Connection status
-    this.isConnected = false;
-    this.isConnecting = false;
+  constructor() {}
 
-    // Reconnect attempts
-    this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
-    this.reconnectDelay = 5000; // 5 seconds
-
-    // Notification callbacks
-    this.notificationCallbacks = new Map();
-    this.connectionCallbacks = new Map();
+  // Public getters
+  get connection() {
+    return this.#connection;
+  }
+  get isConnected() {
+    return this.#isConnected;
+  }
+  get isConnecting() {
+    return this.#isConnecting;
+  }
+  get reconnectAttempts() {
+    return this.#reconnectAttempts;
+  }
+  get maxReconnectAttempts() {
+    return this.#maxReconnectAttempts;
+  }
+  get reconnectDelay() {
+    return this.#reconnectDelay;
   }
 
-  /**
-   * Initialize and start SignalR connection
-   */
   async startConnection() {
-    if (this.isConnected || this.isConnecting) {
+    if (this.#isConnected || this.#isConnecting) {
       console.log("SignalR: Already connected or connecting");
       return;
     }
 
     try {
-      this.isConnecting = true;
+      this.#isConnecting = true;
 
       // Get hub URL from environment variables
       const hubUrl = process.env.HUB_URL || process.env.EXPO_PUBLIC_HUB_URL;
@@ -48,9 +55,9 @@ class SignalRService {
 
       // Build connection with authentication
       console.log("hubUrl", hubUrl);
-      this.connection = new HubConnectionBuilder()
+      this.#connection = new HubConnectionBuilder()
         .withUrl(hubUrl, {
-          accessTokenFactory: () => accessToken,
+          accessTokenFactory: () => Promise.resolve(accessToken),
           skipNegotiation: true,
           transport: signalR.HttpTransportType.WebSockets,
           headers: accessToken
@@ -71,45 +78,34 @@ class SignalRService {
         .configureLogging(LogLevel.Information)
         .build();
 
-      // Set up connection lifecycle event handlers
+      await this.#connection.start();
+
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // wait for connection to finish establishing
       setupSignalRLifeCycleHandler(this);
 
-      // Set up notification handlers
-      setupNotificationHandlers(
-        this.connection,
-        this.triggerCallback.bind(this)
-      );
-
-      // Start the connection
-      await this.connection.start();
-
-      this.isConnected = true;
-      this.isConnecting = false;
-      this.reconnectAttempts = 0;
+      this.#isConnected = true;
+      this.#isConnecting = false;
+      this.#reconnectAttempts = 0;
 
       console.log("SignalR: Connected successfully");
       this.triggerCallback("onConnected");
     } catch (error) {
-      this.isConnecting = false;
+      this.#isConnecting = false;
       console.error("SignalR: Connection failed", error);
       this.triggerCallback("onConnectionFailed", error);
 
-      // Attempt reconnection
       await this.handleReconnection();
     }
   }
 
-  /**
-   * Join a SignalR group
-   */
   async addToGroup(groupName) {
-    if (!this.isConnected || !this.connection) {
+    if (!this.#isConnected || !this.#connection) {
       console.warn("SignalR: Cannot join group - not connected");
       return false;
     }
 
     try {
-      await this.connection.invoke("AddToGroup", groupName);
+      await this.#connection.invoke("AddToGroup", groupName);
       console.log(`SignalR: Successfully joined group: ${groupName}`);
       return true;
     } catch (error) {
@@ -118,17 +114,14 @@ class SignalRService {
     }
   }
 
-  /**
-   * Leave a SignalR group
-   */
   async removeFromGroup(groupName) {
-    if (!this.isConnected || !this.connection) {
+    if (!this.#isConnected || !this.#connection) {
       console.warn("SignalR: Cannot leave group - not connected");
       return false;
     }
 
     try {
-      await this.connection.invoke("RemoveFromGroup", groupName);
+      await this.#connection.invoke("RemoveFromGroup", groupName);
       console.log(`SignalR: Successfully left group: ${groupName}`);
       return true;
     } catch (error) {
@@ -137,36 +130,32 @@ class SignalRService {
     }
   }
 
-  /**
-   * Handle reconnection attempts
-   */
   async handleReconnection() {
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+    if (this.#reconnectAttempts >= this.#maxReconnectAttempts) {
       console.log("SignalR: Max reconnection attempts reached");
       this.triggerCallback("onMaxReconnectAttemptsReached");
       return;
     }
 
-    this.reconnectAttempts++;
+    this.#reconnectAttempts++;
     console.log(
-      `SignalR: Reconnection attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts}`
+      `SignalR: Reconnection attempt ${this.#reconnectAttempts}/${
+        this.#maxReconnectAttempts
+      }`
     );
 
     setTimeout(async () => {
-      if (!this.isConnected) {
+      if (!this.#isConnected) {
         await this.startConnection();
       }
-    }, this.reconnectDelay);
+    }, this.#reconnectDelay);
   }
 
-  /**
-   * Stop the SignalR connection
-   */
   async stopConnection() {
-    if (this.connection) {
+    if (this.#connection) {
       try {
-        await this.connection.stop();
-        this.isConnected = false;
+        await this.#connection.stop();
+        this.#isConnected = false;
         console.log("SignalR: Connection stopped");
       } catch (error) {
         console.error("SignalR: Error stopping connection", error);
@@ -174,35 +163,28 @@ class SignalRService {
     }
   }
 
-  /**
-   * Register callback for various events
-   */
   onEvent(eventName, callback) {
-    if (!this.connectionCallbacks.has(eventName)) {
-      this.connectionCallbacks.set(eventName, []);
+    if (!this.#connectionCallbacks.has(eventName)) {
+      this.#connectionCallbacks.set(eventName, []);
     }
-    this.connectionCallbacks.get(eventName).push(callback);
+    this.#connectionCallbacks.get(eventName).push(callback);
   }
 
-  /**
-   * Remove event callback
-   */
   offEvent(eventName, callback) {
-    if (this.connectionCallbacks.has(eventName)) {
-      const callbacks = this.connectionCallbacks.get(eventName);
-      const index = callbacks.indexOf(callback);
-      if (index > -1) {
-        callbacks.splice(index, 1);
+    if (this.#connectionCallbacks.has(eventName)) {
+      const callbacks = this.#connectionCallbacks.get(eventName);
+      if (callbacks) {
+        this.#connectionCallbacks.set(
+          eventName,
+          callbacks.filter((c) => c !== callback)
+        );
       }
     }
   }
 
-  /**
-   * Trigger registered callbacks
-   */
   triggerCallback(eventName, data = null) {
-    if (this.connectionCallbacks.has(eventName)) {
-      this.connectionCallbacks.get(eventName).forEach((callback) => {
+    if (this.#connectionCallbacks.has(eventName)) {
+      this.#connectionCallbacks.get(eventName).forEach((callback) => {
         try {
           callback(data);
         } catch (error) {
@@ -212,30 +194,15 @@ class SignalRService {
     }
   }
 
-  /**
-   * Get connection status
-   */
   getConnectionStatus() {
     return {
-      isConnected: this.isConnected,
-      isConnecting: this.isConnecting,
-      reconnectAttempts: this.reconnectAttempts,
-      connectionId: this.connection?.connectionId || null,
+      isConnected: this.#isConnected,
+      isConnecting: this.#isConnecting,
+      reconnectAttempts: this.#reconnectAttempts,
+      connectionId: this.#connection?.connectionId || null,
     };
-  }
-
-  /**
-   * Update authentication token
-   */
-  async updateAuthToken() {
-    if (this.isConnected) {
-      // Reconnect with new token
-      await this.stopConnection();
-      await this.startConnection();
-    }
   }
 }
 
-// Export singleton instance
 const signalRService = new SignalRService();
 export default signalRService;

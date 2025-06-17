@@ -8,7 +8,7 @@ import { Platform } from "react-native";
 class NotificationService {
   static async registerPushNotification(token, userId) {
     try {
-      const deviceId = await NotificationService.getDeviceId();
+      const deviceId = await NotificationService();
       console.log("🔔 Device ID from registerPushNotification", deviceId);
       const body = {
         userId: userId,
@@ -57,6 +57,18 @@ class NotificationService {
       return response.data;
     } catch (error) {
       console.error("Error getting stored notifications", error);
+      throw error;
+    }
+  }
+
+  static async getNotifications(page, limit, userId) {
+    try {
+      const response = await api.get(
+        `/notifications?page=${page}&limit=${limit}&userId=${userId}`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error getting notifications", error);
       throw error;
     }
   }

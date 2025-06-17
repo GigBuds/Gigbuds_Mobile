@@ -31,6 +31,7 @@ export const PushNotificationProvider = ({ children }) => {
   const [pushNotification, setPushNotification] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [isDeviceTokenRegistered, setIsDeviceTokenRegistered] = useState(false);
+  const [pageIndex, setPageIndex] = useState(1);
   const [error, setError] = useState(null);
 
   const notificationListener = useRef();
@@ -39,14 +40,7 @@ export const PushNotificationProvider = ({ children }) => {
   useEffect(() => {
     console.log("🔔 Notification Provider");
 
-    /**
-     * Retrieves and processes notifications from both stored and missed sources
-     * Combines notifications, sorts them by timestamp, and stores the 10 most recent ones
-     * Updates the notifications state with the processed list
-     * @returns {Promise<void>}
-     */
     const getNotifications = async () => {
-      // await AsyncStorage.clear();
       console.log("🔔 Get notifications");
       const storedNotifications =
         await SignalRCallbackExtensions.LoadStoredNotificationsAsync();
@@ -112,7 +106,27 @@ export const PushNotificationProvider = ({ children }) => {
     };
   }, []);
 
-  //TODO: get latest notifications here
+  const fetchNewNotifications = useCallback(
+    async (setIsRefreshing) => {
+      try {
+        setIsRefreshing(true);
+        console.log("🔔 Fetch new notifications");
+        const response = await NotificationService.getNotifications(
+          pageIndex,
+          5,
+          userId
+        );
+        setPageIndex(pageIndex + 1);
+        console.log("🔔 Response: ", response);
+        setNotifications([...notifications, ...response]);
+        setIsRefreshing(false);
+      } catch (error) {
+        setError(error);
+        setIsRefreshing(false);
+      }
+    },
+    [setNotifications, setError]
+  );
 
   return (
     <NotificationContext.Provider
@@ -124,6 +138,7 @@ export const PushNotificationProvider = ({ children }) => {
           error,
           isDeviceTokenRegistered,
           setNotifications,
+          fetchNewNotifications,
         }),
         [
           expoPushToken,
@@ -132,6 +147,7 @@ export const PushNotificationProvider = ({ children }) => {
           isDeviceTokenRegistered,
           notifications,
           setNotifications,
+          fetchNewNotifications,
         ]
       )}
     >

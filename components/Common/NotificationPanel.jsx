@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,14 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
-  ScrollView,
   TouchableWithoutFeedback,
+  RefreshControl,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import NotificationItem from "./NotificationItem";
 import PropTypes from "prop-types";
 import { FlashList } from "@shopify/flash-list";
+import { useNotification } from "../../context/notificationContext";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -28,7 +29,10 @@ const NotificationPanel = ({
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const panelOpacity = useRef(new Animated.Value(0)).current;
   const [shouldRender, setShouldRender] = React.useState(false); // this flag is used to prevent the panel from rendering when it is not visible, and to set null when it is not visible
+  const { fetchNewNotifications } = useNotification();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Slide in and out animation
   useEffect(() => {
     if (isVisible) {
       setShouldRender(true);
@@ -118,15 +122,6 @@ const NotificationPanel = ({
                   <Text style={styles.markAllText}>Đánh dấu đã đọc</Text>
                 </TouchableOpacity>
               )}
-
-              {notifications.length > 0 && (
-                <TouchableOpacity
-                  style={styles.clearAllButton}
-                  onPress={onDeleteAll}
-                >
-                  <Text style={styles.clearAllText}>Xóa tất cả</Text>
-                </TouchableOpacity>
-              )}
             </View>
 
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -136,26 +131,31 @@ const NotificationPanel = ({
         </View>
 
         {/* Notifications List */}
-        {notifications.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="notifications-off-outline" size={48} color="#CCC" />
-            <Text style={styles.emptyText}>Không có thông báo nào</Text>
-            <Text style={styles.emptySubtext}>
-              Bạn sẽ nhận được thông báo về việc làm và tin nhắn tại đây
-            </Text>
-          </View>
-        ) : (
-          <FlashList
-            data={notifications}
-            renderItem={({ item }) => (
-              <NotificationItem
-                notification={item}
-                onPress={handleNotificationPress}
+        <FlashList
+          data={notifications}
+          onEndReached={() => fetchNewNotifications(setIsRefreshing)}
+          onEndReachedThreshold={0.8}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Ionicons
+                name="notifications-off-outline"
+                size={48}
+                color="#CCC"
               />
-            )}
-            estimatedItemSize={100}
-          />
-        )}
+              <Text style={styles.emptyText}>Không có thông báo nào</Text>
+              <Text style={styles.emptySubtext}>
+                Bạn sẽ nhận được thông báo về việc làm và tin nhắn tại đây
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <NotificationItem
+              notification={item}
+              onPress={handleNotificationPress}
+            />
+          )}
+          estimatedItemSize={100}
+        />
       </Animated.View>
     </View>
   );
