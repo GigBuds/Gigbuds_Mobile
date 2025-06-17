@@ -23,15 +23,15 @@ const MembershipCard = ({ membership, onSelect, isSelected = false }) => {
   }
 
   const getCardColor = () => {
-    if (membership.Price === 0) return '#f0f8ff' // Light blue for free
-    if (membership.Title.toLowerCase().includes('premium')) return '#fff8dc' // Light gold for premium
+    if (membership.price === 0) return '#f0f8ff' // Light blue for free
+    if (membership.title.toLowerCase().includes('premium')) return '#fff8dc' // Light gold for premium
     return '#f5f5f5' // Default gray
   }
 
   const getBorderColor = () => {
     if (isSelected) return '#2558B6'
-    if (membership.Price === 0) return '#87ceeb'
-    if (membership.Title.toLowerCase().includes('premium')) return '#ffd700'
+    if (membership.price === 0) return '#87ceeb'
+    if (membership.title.toLowerCase().includes('premium')) return '#ffd700'
     return '#ddd'
   }
 
@@ -51,13 +51,13 @@ const MembershipCard = ({ membership, onSelect, isSelected = false }) => {
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{membership.Title}</Text>
-          {membership.Price === 0 && (
+          <Text style={styles.title}>{membership.title}</Text>
+          {membership.price === 0 && (
             <View style={styles.freeBadge}>
               <Text style={styles.freeBadgeText}>MIỄN PHÍ</Text>
             </View>
           )}
-          {membership.Title.toLowerCase().includes('premium') && (
+          {membership.title.toLowerCase().includes('premium') && (
             <View style={styles.premiumBadge}>
               <Ionicons name="star" size={16} color="#fff" />
               <Text style={styles.premiumBadgeText}>PREMIUM</Text>
@@ -72,13 +72,13 @@ const MembershipCard = ({ membership, onSelect, isSelected = false }) => {
 
       {/* Price */}
       <View style={styles.priceContainer}>
-        <Text style={styles.price}>{formatPrice(membership.Price)}</Text>
-        <Text style={styles.duration}>/{formatDuration(membership.Duration)}</Text>
+        <Text style={styles.price}>{formatPrice(membership.price)}</Text>
+        <Text style={styles.duration}>/{formatDuration(membership.duration)}</Text>
       </View>
 
       {/* Features */}
       <View style={styles.featuresContainer}>
-        {parseFeatures(membership.Description).map((feature, index) => (
+        {parseFeatures(membership.description).map((feature, index) => (
           <View key={index} style={styles.featureItem}>
             <Ionicons
               name={feature.includes('Không') || feature.includes('Giới hạn') ? 'close-circle' : 'checkmark-circle'}
@@ -101,11 +101,8 @@ const MembershipCard = ({ membership, onSelect, isSelected = false }) => {
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.membershipType}>
-          Dành cho: {membership.MembershipType === 'JobSeeker' ? 'Người tìm việc' : 'Nhà tuyển dụng'}
+          Dành cho: {membership.membershipType === 'JobSeeker' ? 'Người tìm việc' : 'Nhà tuyển dụng'}
         </Text>
-        {!membership.IsEnabled && (
-          <Text style={styles.disabledText}>Tạm thời không khả dụng</Text>
-        )}
       </View>
     </TouchableOpacity>
   )

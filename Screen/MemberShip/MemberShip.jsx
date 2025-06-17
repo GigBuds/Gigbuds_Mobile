@@ -1,45 +1,48 @@
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
 import React, { useState, useEffect } from 'react'
-import { MemberShip as MembershipData } from './data'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import MembershipCard from '../../components/MemberShipCard/MemberShipCard'
+import MembershipService from '../../Services/MembershipService/MembershipService'
 
 const MemberShip = () => {
   const [selectedMembership, setSelectedMembership] = useState(null)
   const [userType, setUserType] = useState('JobSeeker') // Default to JobSeeker
   const [filteredMemberships, setFilteredMemberships] = useState([])
+  const [MembershipData, setMembershipData] = useState([])
 
-  useEffect(() => {
-    // Get user type from AsyncStorage or context
-    const getUserType = async () => {
-      try {
-        const storedUserType = await AsyncStorage.getItem('userType')
-        if (storedUserType) {
-          setUserType(storedUserType)
-        }
-      } catch (error) {
-        console.error('Error getting user type:', error)
+  const fetchMembershipData = async () => {
+    try {
+      const response = await MembershipService.getMemberships()
+      console.log('Membership data fetched:', response.data)
+      if (response && response.data) {
+        setMembershipData(response.data)
+      } else {
+        console.error('Failed to fetch membership data:', response.error)
       }
+    } catch (error) { 
+      console.error('Error fetching membership data:', error)
     }
-    getUserType()
+  }
+
+  // Fetch membership data on component mount
+  useEffect(() => {
+    fetchMembershipData()
   }, [])
 
+  // Filter memberships when data or userType changes
   useEffect(() => {
-    // Filter memberships based on user type
-    const filtered = MembershipData.filter(membership => 
-      membership.MembershipType === userType && membership.IsEnabled
-    )
-    setFilteredMemberships(filtered)
-  }, [userType])
+    if (MembershipData && MembershipData.length > 0) {
+      const filtered = MembershipData.filter(membership => 
+        membership.membershipType === userType
+      )
+      setFilteredMemberships(filtered)
+      console.log('Filtered memberships:', filtered)
+    }
+  }, [MembershipData, userType])
 
   const handleSelectMembership = (membership) => {
     setSelectedMembership(membership)
     console.log('Selected membership:', membership)
-  }
-
-  const handleUserTypeChange = (type) => {
-    setUserType(type)
-    setSelectedMembership(null) // Reset selection when changing user type
   }
 
   const handleSubscribe = () => {
@@ -52,7 +55,7 @@ const MemberShip = () => {
 
   const getMembershipStats = () => {
     const totalPlans = filteredMemberships.length
-    const freePlans = filteredMemberships.filter(m => m.Price === 0).length
+    const freePlans = filteredMemberships.filter(m => m.price === 0).length
     const paidPlans = totalPlans - freePlans
     
     return { totalPlans, freePlans, paidPlans }
@@ -85,10 +88,10 @@ const MemberShip = () => {
       <ScrollView style={selectedMembership ? styles.scrollViewWithButton : styles.scrollView} showsVerticalScrollIndicator={false}>
         {filteredMemberships.map((membership) => (
           <MembershipCard
-            key={membership.Id}
+            key={membership.id}
             membership={membership}
             onSelect={handleSelectMembership}
-            isSelected={selectedMembership?.Id === membership.Id}
+            isSelected={selectedMembership?.id === membership.id}
           />
         ))}
         
@@ -113,16 +116,16 @@ const MemberShip = () => {
             disabled={!selectedMembership}
           >
             <Text style={styles.subscribeButtonText}>
-              {selectedMembership.Price === 0 
+              {selectedMembership.price === 0 
                 ? 'Sử dụng gói miễn phí' 
-                : `Đăng ký với ${selectedMembership.Title}`}
+                : `Đăng ký với ${selectedMembership.title}`}
             </Text>
             {selectedMembership.Price > 0 && (
               <Text style={styles.subscribeButtonSubtext}>
                 {new Intl.NumberFormat('vi-VN', {
                   style: 'currency',
                   currency: 'VND'
-                }).format(selectedMembership.Price)}
+                }).format(selectedMembership.price)}
               </Text>
             )
             

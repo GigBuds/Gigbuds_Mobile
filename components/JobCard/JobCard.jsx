@@ -293,7 +293,9 @@ const JobCard = ({
           }}
           onPress={() => {
             navigate.navigate("JobDetail", {
-              jobId: job.jobPostId,
+              jobId: (selectedTab === "AcceptedJob" || selectedTab === "AppliedJob" || selectedTab === "JobHistory")
+                ? job.id 
+                : job.jobPostId || job.id
             });
           }}
         >
