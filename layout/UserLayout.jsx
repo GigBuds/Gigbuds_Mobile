@@ -83,6 +83,7 @@ export default function UserLayout({ children }) {
           </TouchableOpacity>
         </View>
         <Notification />
+        <View style={styles.formContainer}>{children}</View>
       </View>
     </Host>
   );
