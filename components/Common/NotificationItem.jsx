@@ -1,8 +1,10 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import PropTypes from "prop-types";
 
 const NotificationItem = ({ notification, onPress }) => {
+  console.log("🔔 NotificationItem: ", notification);
   const getNotificationIcon = (type) => {
     switch (type) {
       case "job":
@@ -54,7 +56,7 @@ const NotificationItem = ({ notification, onPress }) => {
           {notification.title}
         </Text>
         <Text style={styles.message} numberOfLines={2}>
-          {notification.message}
+          {notification.content}
         </Text>
         <Text style={styles.timestamp}>
           {formatTimeAgo(notification.timestamp)}
@@ -64,6 +66,22 @@ const NotificationItem = ({ notification, onPress }) => {
       {!notification.isRead && <View style={styles.unreadDot} />}
     </TouchableOpacity>
   );
+};
+
+NotificationItem.propTypes = {
+  notification: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    type: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    content: PropTypes.string.isRequired,
+    timestamp: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number,
+      PropTypes.instanceOf(Date),
+    ]).isRequired,
+    isRead: PropTypes.bool.isRequired,
+  }).isRequired,
+  onPress: PropTypes.func.isRequired,
 };
 
 const styles = StyleSheet.create({

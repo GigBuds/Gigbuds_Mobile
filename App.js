@@ -7,6 +7,7 @@ import { LoadingProvider } from "./context/LoadingContext";
 import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
 import Navigator from "./navigation/Navigator";
+import { PushNotificationProvider } from "./context/notificationContext";
 
 const prefix = Linking.createURL('/');
 
@@ -48,28 +49,31 @@ export default function App() {
   }, []);
 
   return (
-    <LoadingProvider>
-      <NavigationContainer 
-        linking={linking} 
-        fallback={<Text>Loading...</Text>}
-        onStateChange={(state) => {
-          console.log('📱 Navigation state changed:', state);
-        }}
-      >
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <SafeAreaProvider>
-            <SafeAreaView forceInset={{ bottom: "never" }} style={{ flex: 1 }}>
-              <Image
-                source={require("./assets/main-bg.png")}
-                style={{ width: "100%", height: "100%", position: "absolute" }}
-                resizeMethod="resize"
-                resizeMode="cover"
-              />
-              <Navigator />
-            </SafeAreaView>
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
-      </NavigationContainer>
-    </LoadingProvider>
+    <PushNotificationProvider>   
+      <LoadingProvider>
+        <NavigationContainer 
+          linking={linking} 
+          fallback={<Text>Loading...</Text>}
+          onStateChange={(state) => {
+            console.log('📱 Navigation state changed:', state);
+          }}
+        >
+          <GestureHandlerRootView style={{ flex: 1 }}>
+            <SafeAreaProvider>
+              <SafeAreaView forceInset={{ bottom: "never" }} style={{ flex: 1 }}>
+                <Image
+                  source={require("./assets/main-bg.png")}
+                  style={{ width: "100%", height: "100%", position: "absolute" }}
+                  resizeMethod="resize"
+                  resizeMode="cover"
+                />
+                <Navigator />
+              </SafeAreaView>
+            </SafeAreaProvider>
+          </GestureHandlerRootView>
+        </NavigationContainer>
+      </LoadingProvider>
+    </PushNotificationProvider>
+
   );
 }

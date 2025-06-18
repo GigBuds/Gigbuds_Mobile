@@ -12,7 +12,6 @@ import {
 import React, { useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
-import { Picker } from "@react-native-picker/picker";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import RegisterService from "../../../Services/RegisterService/RegisterService";
 
@@ -452,7 +451,10 @@ const RegisterSection = () => {
       </View>
 
       <TouchableOpacity
-        style={[styles.registerButton, isLoading && styles.registerButtonDisabled]}
+        style={[
+          styles.registerButton,
+          isLoading && styles.registerButtonDisabled,
+        ]}
         onPress={handleRegister}
         disabled={isLoading}
       >
