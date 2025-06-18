@@ -2,6 +2,11 @@ import api from "../api";
 
 class JobApplicationService {
   static async applyForJob(jobPostId, accountId, cvFile) {
+    console.log("Applying for job with:", {
+      jobPostId,
+      accountId,
+      cvFile,
+    });
     try {
       if (!jobPostId || !accountId) {
         throw new Error("jobPostId, accountId are required");
@@ -108,6 +113,31 @@ class JobApplicationService {
           error.response?.data?.message ||
           error.message ||
           "Đã xảy ra lỗi khi lấy danh sách đơn ứng tuyển.",
+        status: error.response?.status,
+      };
+    }
+  }
+  static async checkIfApplied(jobPostId, accountId) {
+    try {
+      if (!jobPostId || !accountId) {
+        throw new Error("jobPostId, accountId are required");
+      }
+      const response = await api.get(
+        `job-applications/check-job-application/${jobPostId}/${accountId}`
+      );
+      return {
+        success: true,
+        data: response.data,
+        status: response.status,
+      };
+    } catch (error) {
+      console.error("Error in checkIfApplied:", error);
+      return {
+        success: false,
+        error:
+          error.response?.data?.message ||
+          error.message ||
+          "Đã xảy ra lỗi khi kiểm tra đơn ứng tuyển.",
         status: error.response?.status,
       };
     }

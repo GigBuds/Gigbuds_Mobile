@@ -29,6 +29,7 @@ import PaymentResultScreen from '../Screen/PaymentScreen/PaymentResultScreen';
 import MembershipRegisterScreen from '../Screen/PaymentScreen/MembershipRegisterScreen';
 import MyJob from "../Screen/ProfileScreen/MyJob/MyJob";
 import HeaderLayout from "../layout/HeaderLayout";
+import MemberShip from "../Screen/MemberShip/MemberShip";
 
 export default function Navigator() {
   const Tab = createBottomTabNavigator();
@@ -55,6 +56,15 @@ export default function Navigator() {
             </JobDetailLayout>
           )}
         />
+        <Stack.Screen
+          name="MemberShip"
+          options={{ headerShown: false }}
+          children={() => (
+            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
+              <MemberShip />
+            </HeaderLayout>
+          )}
+        />  
       </Stack.Navigator>
     );
   };
@@ -89,6 +99,15 @@ export default function Navigator() {
             </JobDetailLayout>
           )}
         />
+        <Stack.Screen
+          name="MemberShip"
+          options={{ headerShown: false }}
+          children={() => (
+             <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
+              <MemberShip />
+            </HeaderLayout>
+          )}
+        />  
       </Stack.Navigator>
     );
   };
@@ -105,6 +124,15 @@ export default function Navigator() {
             </UserLayout>
           )}
         />
+        <Stack.Screen
+          name="MemberShip"
+          options={{ headerShown: false }}
+          children={() => (
+            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
+              <MemberShip />
+            </HeaderLayout>
+          )}
+        />  
       </Stack.Navigator>
     );
   };
@@ -116,7 +144,17 @@ export default function Navigator() {
           options={{ headerShown: false }}
           children={() => <ScheduleScreen />}
         />
+        <Stack.Screen
+          name="MemberShip"
+          options={{ headerShown: false }}
+          children={() => (
+            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
+              <MemberShip />
+            </HeaderLayout>
+          )}
+        />  
       </Stack.Navigator>
+      
     );
   };
 
@@ -191,6 +229,8 @@ export default function Navigator() {
       </Stack.Navigator>
     );
   };
+
+
 
   const MainTab = () => {
     return (

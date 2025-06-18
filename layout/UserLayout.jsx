@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, Image, Text, SafeAreaView } from "react-native";
+import { View, StyleSheet, Image, Text, SafeAreaView, TouchableOpacity } from "react-native";
 import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
+import Entypo from "@expo/vector-icons/Entypo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Notification from "../components/Common/Notification";
 import LoadingComponent from "../components/Common/LoadingComponent";
 import { useLoading } from "../context/LoadingContext";
+import { useNavigation } from "@react-navigation/native";
 
 export default function UserLayout({ children }) {
   const [userName, setUserName] = useState("");
   const { isLoading } = useLoading();
+  const navigate = useNavigation();
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -59,12 +62,16 @@ export default function UserLayout({ children }) {
           style={{
             flexDirection: "column",
             marginLeft: 10,
-            width: "63%",
+            width: "53%",
           }}
         >
           <Text style={{ fontSize: 18, color: "white" }}>Xin chào, </Text>
           <Text style={styles.headerText}>{userName || "Người dùng"}</Text>
         </View>
+        <TouchableOpacity onPress={() => navigate.navigate("MemberShip")}>
+         <Entypo name="shield" size={30} color="white" />
+        </TouchableOpacity>
+
         <Notification />
       </View>
       <View style={styles.formContainer}>{children}</View>
