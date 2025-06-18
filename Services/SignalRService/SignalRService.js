@@ -2,6 +2,7 @@ import { HubConnectionBuilder, LogLevel } from "@microsoft/signalr";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setupSignalRLifeCycleHandler } from "./setupSignalRLifeCycleHandler";
 import * as signalR from "@microsoft/signalr";
+import { setupNotificationHandlers } from "./setupNotificationHandlers";
 
 class SignalRService {
   #connection = null;
@@ -80,7 +81,7 @@ class SignalRService {
 
       await this.#connection.start();
 
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // wait for connection to finish establishing
+      setupNotificationHandlers(this);
       setupSignalRLifeCycleHandler(this);
 
       this.#isConnected = true;

@@ -69,14 +69,14 @@ const Notification = ({ style }) => {
     const updatedNotifications = notifications.map((notif) =>
       notif.id === notification.id ? { ...notif, isRead: true } : notif
     );
-    NotificationService.markAsRead(notification.id);
+    NotificationService.markAsRead([notification.id]);
     setNotifications(updatedNotifications);
 
     switch (notification.type) {
       case "job":
         console.log(notification.additionalPayload);
         navigate.navigate("JobDetail", {
-          jobId: notification.additionalPayload?.jobId,
+          jobPostId: notification.additionalPayload?.jobPostId,
         });
         console.log("Navigate to job details:", notification);
         break;

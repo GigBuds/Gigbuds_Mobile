@@ -8,7 +8,7 @@ import { Platform } from "react-native";
 class NotificationService {
   static async registerPushNotification(token, userId) {
     try {
-      const deviceId = await NotificationService();
+      const deviceId = await NotificationService.getDeviceId();
       console.log("🔔 Device ID from registerPushNotification", deviceId);
       const body = {
         userId: userId,
@@ -75,7 +75,7 @@ class NotificationService {
 
   static async markAsRead(notificationIds) {
     try {
-      const response = await api.put(`/notifications/read`, {
+      const response = await api.post(`/notifications/read`, {
         notificationIds: notificationIds,
       });
       return response.data;

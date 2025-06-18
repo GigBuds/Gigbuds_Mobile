@@ -1,8 +1,7 @@
-import signalRService from "./SignalRService";
-
-export function setupNotificationHandlers() {
+export function setupNotificationHandlers(signalRService) {
   const connection = signalRService.connection;
 
+  console.log("SIGNALR SETUP NOTIFICATION HANDLERS", signalRService);
   // Job seeker notifications
   connection.on("NotifyNewPostFromFollowedEmployer", (data) => {
     console.log("SignalR: New post from followed employer", data);
