@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   TouchableOpacity,
   Text,
@@ -23,20 +23,56 @@ const GradientButton = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPDF, setSelectedPDF] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+
+  useEffect(() => {
+    const checkIfApplied = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId || !jobDetails?.id) {
+          setHasApplied(false);
+          return;
+        }
+        const response = await JobApplicationService.checkIfApplied(
+          jobDetails.id,
+          userId
+        );
+        console.log("Check application response:", response);
+        if (response.success) {
+          setHasApplied(false); // Assuming API returns hasApplied boolean
+        } else {
+          setHasApplied(true);
+        }
+      } catch (error) {
+        console.error("Error checking application:", error);
+        setHasApplied(false); // Default to false if error occurs
+      } 
+    };
+    checkIfApplied();
+  }, [jobDetails]);
 
   const getButtonText = () => {
-    if (jobDetails?.vacancyCount > 0) {
-      return `Chỉ còn ${jobDetails.vacancyCount} vị trí !`;
+    if (hasApplied) {
+      return "Đã ứng tuyển";
     }
-    return "Hiện tại không có vị trí tuyển dụng";
+    if (!jobDetails?.vacancyCount || jobDetails.vacancyCount <= 0) {
+      return "Hiện tại không có vị trí tuyển dụng";
+    }
+    return `Chỉ còn ${jobDetails.vacancyCount} vị trí !`;
   };
 
-  const isDisabled = !jobDetails?.vacancyCount || jobDetails.vacancyCount <= 0;
+  // Button is disabled if already applied, no vacancy, or currently applying
+  const isDisabled = hasApplied || 
+                    !jobDetails?.vacancyCount || 
+                    jobDetails.vacancyCount <= 0 || 
+                    isApplying;
 
   // Handle button press to show modal
   const handlePress = () => {
     if (!isDisabled) {
       setModalVisible(true);
+    } else if (hasApplied) {
+      Alert.alert("Thông báo", "Bạn đã ứng tuyển vào vị trí này rồi!");
     }
   };
 
@@ -80,9 +116,8 @@ const GradientButton = ({
         type: selectedPDF.mimeType || 'application/pdf',
         name: selectedPDF.name,
       };
-      
 
-      // Step 4: Submit job application with the file URL
+      // Submit job application with the file
       const response = await JobApplicationService.applyForJob(
         jobDetails.id,
         userId,
@@ -97,6 +132,9 @@ const GradientButton = ({
         );
         return;
       } else {
+        // Update hasApplied state after successful application
+        setHasApplied(true);
+        
         Alert.alert(
           "Thành công",
           "Ứng tuyển thành công! Chúng tôi sẽ liên hệ với bạn sớm.",
@@ -119,21 +157,40 @@ const GradientButton = ({
     }
   };
 
+  // Get button colors based on state
+  const getButtonColors = () => {
+    if (hasApplied) {
+      return ["#6c757d", "#adb5bd"]; // Gray colors for applied state
+    }
+    if (isDisabled) {
+      return ["#dee2e6", "#f8f9fa"]; // Light gray for disabled
+    }
+    return colors; // Original colors for active state
+  };
+
   return (
     <>
       <LinearGradient
-        colors={colors}
+        colors={getButtonColors()}
         start={start}
         end={end}
-        style={styles.gradientButton}
+        style={[
+          styles.gradientButton,
+          isDisabled && styles.disabledGradientButton
+        ]}
       >
-        {!isDisabled ? (
-          <TouchableOpacity onPress={handlePress} style={styles.touchableArea}>
-            <Text style={styles.buttonText}>{getButtonText()}</Text>
-          </TouchableOpacity>
-        ) : (
-          <Text style={styles.buttonText}>{getButtonText()}</Text>
-        )}
+        <TouchableOpacity 
+          onPress={handlePress} 
+          style={styles.touchableArea}
+          disabled={isDisabled && !hasApplied} // Allow press on hasApplied to show alert
+        >
+          <Text style={[
+            styles.buttonText,
+            isDisabled && styles.disabledButtonText
+          ]}>
+            {getButtonText()}
+          </Text>
+        </TouchableOpacity>
       </LinearGradient>
 
       {/* Confirm Modal */}
@@ -213,6 +270,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 20,
   },
+  disabledGradientButton: {
+    opacity: 0.6,
+  },
   touchableArea: {
     width: "100%",
     alignItems: "center",
@@ -223,6 +283,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  disabledButtonText: {
+    color: "#666",
   },
   modalOverlay: {
     flex: 1,
