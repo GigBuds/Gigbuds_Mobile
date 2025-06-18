@@ -25,12 +25,13 @@ const JobDetailScreen = () => {
   const route = useRoute();
   const { jobId } = route.params || {};
   const [jobDetails, setJobDetails] = React.useState(null);
-  const { showLoading, isLoading, hideLoading } = useLoading();
+  const { showLoading, hideLoading } = useLoading();
   const [coordinates, setCoordinates] = React.useState(null);
   const [locationLoading, setLocationLoading] = React.useState(false);
 
   const fetchJobDetails = async (id) => {
     try {
+      console.log("Fetching job details for job ID:", id);
       showLoading();
       const response = await JobPostService.getJobPostById(id);
       const jobDetails = await response.data;
