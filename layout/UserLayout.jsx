@@ -16,6 +16,7 @@ import { Host } from "react-native-portalize";
 import LoadingComponent from "../components/Common/LoadingComponent";
 import { useLoading } from "../context/LoadingContext";
 import { useNavigation } from "@react-navigation/native";
+import * as Location from "expo-location";
 
 export default function UserLayout({ children }) {
   const [userName, setUserName] = useState("");
@@ -23,6 +24,16 @@ export default function UserLayout({ children }) {
   const navigate = useNavigation();
 
   useEffect(() => {
+    const checkLocationPermission = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission denied",
+          "Please enable location services in your device settings."
+        );
+      }
+    };
+
     const fetchUserName = async () => {
       try {
         const storedUserName = await AsyncStorage.getItem("userName");
@@ -35,6 +46,7 @@ export default function UserLayout({ children }) {
       }
     };
 
+    checkLocationPermission();
     fetchUserName();
   }, []);
 
