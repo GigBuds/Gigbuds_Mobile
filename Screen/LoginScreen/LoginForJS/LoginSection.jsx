@@ -13,9 +13,11 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Checkbox } from "react-native-paper";
 import LoginService from "../../../Services/LoginService/LoginService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import LoadingComponent from "../../../components/Common/LoadingComponent";
+import { useNotification } from "../../../context/notificationContext";
+import NotificationService from "../../../Services/NotificationService/NotificationService";
 
 const LoginSection = () => {
+  const { expoPushToken, isDeviceTokenRegistered } = useNotification();
   const [identifier, setIdentifier] = useState(""); // Changed from email to identifier
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -49,9 +51,37 @@ const LoginSection = () => {
         }
       }
     };
-
     handleTokenStorage();
   }, [idToken]);
+
+  useEffect(() => {
+    async function registerPushNotification() {
+      if (expoPushToken && !isDeviceTokenRegistered && userInfo.sub) {
+        console.log("Registering push notification for user:", userInfo.sub);
+        console.log("Expo push token:", expoPushToken);
+        await NotificationService.registerPushNotification(
+          expoPushToken,
+          userInfo.sub
+        );
+      }
+    }
+    registerPushNotification();
+  }, [expoPushToken, isDeviceTokenRegistered, userInfo]);
+
+  const storeUserInfo = async (userInfo) => {
+    try {
+      console.log("Storing user info:", userInfo);
+      await AsyncStorage.setItem(
+        "userName",
+        `${userInfo.family_name} ${userInfo.name}`
+      );
+      await AsyncStorage.setItem("userId", userInfo.sub);
+
+      console.log("User info stored successfully.");
+    } catch (error) {
+      console.error("Error storing user info:", error);
+    }
+  };
 
   // Helper function to detect if input is email or phone
   const isEmail = (input) => {
@@ -101,6 +131,7 @@ const LoginSection = () => {
         // Handle successful login
         console.log("Login successful:", result.data);
         setAccessToken(result.data.access_token);
+
         await AsyncStorage.setItem("accessToken", result.data.access_token);
         setIdToken(result.data.id_token);
       } else {
@@ -117,8 +148,6 @@ const LoginSection = () => {
       setIsLoading(false);
     }
   };
-
-
 
   return (
     <View style={styles.container}>

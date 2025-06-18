@@ -1,5 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import signalRService from "./SignalRService";
+import { SignalRCallbackExtensions } from "./signalRCallbackExtensions";
+import { useNotification } from "../../context/notificationContext";
 
 /**
  * Custom hook for managing SignalR connection and events
@@ -9,7 +11,8 @@ import signalRService from "./SignalRService";
  * @param {Object} options.eventHandlers - Object mapping event names to handler functions
  */
 export const useSignalR = (options = {}) => {
-  const { autoConnect = true, groups = [], eventHandlers = {} } = options;
+  const { groups = [], eventHandlers = {} } = options;
+  const { notifications, setNotifications } = useNotification();
 
   const [connectionStatus, setConnectionStatus] = useState({
     isConnected: false,
@@ -18,8 +21,6 @@ export const useSignalR = (options = {}) => {
     connectionId: null,
   });
 
-  const [notifications, setNotifications] = useState([]);
-
   // Update connection status
   const updateConnectionStatus = useCallback(() => {
     setConnectionStatus(signalRService.getConnectionStatus());
@@ -27,21 +28,20 @@ export const useSignalR = (options = {}) => {
 
   // Handle incoming notifications
   const handleNotification = useCallback((notification) => {
-    console.log("handleNotification", notification);
-    setNotifications((prev) => [notification, ...prev]);
+    const updatedNotifications = [notification, ...notifications];
+    console.log("updatedNotifications", updatedNotifications);
+    setNotifications(updatedNotifications);
+    SignalRCallbackExtensions.SaveNotificationsAsync(updatedNotifications);
   }, []);
 
+  console.log("SIGNALR HERE");
   // Set up event handlers
   useEffect(() => {
     const setupEventHandlers = () => {
       // Connection events
-      signalRService.onEvent("onConnected", () => {
+      signalRService.onEvent("onConnected", async () => {
         console.log("onConnected");
         updateConnectionStatus();
-        // Join specified groups
-        groups.forEach((group) => {
-          signalRService.addToGroup(group);
-        });
       });
 
       signalRService.onEvent("onDisconnected", updateConnectionStatus);
@@ -71,11 +71,6 @@ export const useSignalR = (options = {}) => {
 
     setupEventHandlers();
 
-    // Auto-connect if enabled
-    if (autoConnect) {
-      signalRService.startConnection();
-    }
-
     // Cleanup on unmount
     return () => {
       signalRService.offEvent("onConnected", updateConnectionStatus);
@@ -93,13 +88,7 @@ export const useSignalR = (options = {}) => {
         signalRService.offEvent(eventName, handler);
       });
     };
-  }, [
-    autoConnect,
-    groups,
-    eventHandlers,
-    updateConnectionStatus,
-    handleNotification,
-  ]);
+  }, []);
 
   // Connection control methods
   const connect = useCallback(async () => {
@@ -111,10 +100,12 @@ export const useSignalR = (options = {}) => {
   }, []);
 
   const joinGroup = useCallback(async (groupName) => {
+    console.log("Joining group", groupName);
     return await signalRService.addToGroup(groupName);
   }, []);
 
   const leaveGroup = useCallback(async (groupName) => {
+    console.log("Leaving group", groupName);
     return await signalRService.removeFromGroup(groupName);
   }, []);
 
@@ -124,11 +115,10 @@ export const useSignalR = (options = {}) => {
 
   return {
     // Connection state
-    ...connectionStatus,
+    connectionStatus,
 
     // Notifications
-    notifications,
-    setNotifications,
+    handleNotification,
 
     // Connection controls
     connect,
