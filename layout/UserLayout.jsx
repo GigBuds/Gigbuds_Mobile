@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { View, StyleSheet, Image, Text, SafeAreaView, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Image,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+} from "react-native";
 import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
 import Entypo from "@expo/vector-icons/Entypo";
@@ -9,6 +16,7 @@ import { Host } from "react-native-portalize";
 import LoadingComponent from "../components/Common/LoadingComponent";
 import { useLoading } from "../context/LoadingContext";
 import { useNavigation } from "@react-navigation/native";
+import * as Location from "expo-location";
 
 export default function UserLayout({ children }) {
   const [userName, setUserName] = useState("");
@@ -16,6 +24,16 @@ export default function UserLayout({ children }) {
   const navigate = useNavigation();
 
   useEffect(() => {
+    const checkLocationPermission = async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert(
+          "Permission denied",
+          "Please enable location services in your device settings."
+        );
+      }
+    };
+
     const fetchUserName = async () => {
       try {
         const storedUserName = await AsyncStorage.getItem("userName");
@@ -28,6 +46,7 @@ export default function UserLayout({ children }) {
       }
     };
 
+    checkLocationPermission();
     fetchUserName();
   }, []);
 
@@ -35,25 +54,25 @@ export default function UserLayout({ children }) {
     <Host>
       {/* portal container, use for notification */}
       <View style={styles.container}>
-     {isLoading && (
-        <SafeAreaView
-          style={{
-            zIndex: 1000,
-            position: "absolute",
-            width: "100%",
-            height: "100%",
-          }}
-        >
-          <LoadingComponent
-            size={80}
-            speed={2000}
-            showText={true}
-            loadingText="Đang tải thông tin ..."
-            animationType="outline"
-            strokeWidth={2.5}
-          />
-        </SafeAreaView>
-      )}
+        {isLoading && (
+          <SafeAreaView
+            style={{
+              zIndex: 1000,
+              position: "absolute",
+              width: "100%",
+              height: "100%",
+            }}
+          >
+            <LoadingComponent
+              size={80}
+              speed={2000}
+              showText={true}
+              loadingText="Đang tải thông tin ..."
+              animationType="outline"
+              strokeWidth={2.5}
+            />
+          </SafeAreaView>
+        )}
         <Image
           source={mainBg}
           style={styles.backgroundImage}
@@ -65,14 +84,17 @@ export default function UserLayout({ children }) {
             style={{
               flexDirection: "column",
               marginLeft: 10,
-              width: "63%",
+              width: "53%",
             }}
           >
             <Text style={{ fontSize: 18, color: "white" }}>Xin chào, </Text>
             <Text style={styles.headerText}>{userName || "Người dùng"}</Text>
           </View>
-          <Notification style={{ position: "absolute", right: 0 }} />
+          <TouchableOpacity onPress={() => navigate.navigate("MemberShip")}>
+            <Entypo name="shield" size={30} color="white" />
+          </TouchableOpacity>
         </View>
+        <Notification />
         <View style={styles.formContainer}>{children}</View>
       </View>
     </Host>

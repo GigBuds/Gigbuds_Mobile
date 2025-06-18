@@ -1,7 +1,14 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Linking, StyleSheet } from 'react-native';
-import { Image } from 'react-native';
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Linking,
+  StyleSheet,
+} from "react-native";
+import { Image } from "react-native";
 import MapView, { Marker } from "react-native-maps";
+import { PROVIDER_GOOGLE } from "react-native-maps";
 
 const JobLocation = ({ jobDetails, coordinates, locationLoading }) => {
   return (
@@ -10,14 +17,25 @@ const JobLocation = ({ jobDetails, coordinates, locationLoading }) => {
       <View style={styles.sentenceContainer}>
         <Text style={styles.bulletPoint}>•</Text>
         <Text style={styles.sentenceText}>{jobDetails?.jobLocation}</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={() => {
-            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(jobDetails?.jobLocation)}`;
+            const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+              jobDetails?.jobLocation
+            )}`;
             Linking.openURL(url);
           }}
         >
-          <Text style={[styles.sentenceText, { color: '#2558B6', textDecorationLine: 'underline', marginLeft:10 }]}>
-            Xem Bản Đồ 
+          <Text
+            style={[
+              styles.sentenceText,
+              {
+                color: "#2558B6",
+                textDecorationLine: "underline",
+                marginLeft: 10,
+              },
+            ]}
+          >
+            Xem Bản Đồ
           </Text>
         </TouchableOpacity>
       </View>
@@ -44,7 +62,7 @@ const JobLocation = ({ jobDetails, coordinates, locationLoading }) => {
           loadingEnabled={true}
           loadingIndicatorColor="#666666"
           loadingBackgroundColor="#eeeeee"
-          provider="google"
+          provider={PROVIDER_GOOGLE}
           mapType="standard"
         >
           <Marker
@@ -56,7 +74,10 @@ const JobLocation = ({ jobDetails, coordinates, locationLoading }) => {
             description={jobDetails?.jobLocation}
           >
             <Image
-              source={{ uri: jobDetails?.companyLogo || "https://via.placeholder.com/50" }}
+              source={{
+                uri:
+                  jobDetails?.companyLogo || "https://via.placeholder.com/50",
+              }}
               style={{ width: 50, height: 50, borderRadius: 10 }}
               resizeMode="center"
             />
@@ -76,7 +97,7 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     marginBottom: 15,
     marginHorizontal: 10,
-    borderBottomColor: '#ccc',
+    borderBottomColor: "#ccc",
     borderBottomWidth: 0.5,
   },
   sectionTitle: {

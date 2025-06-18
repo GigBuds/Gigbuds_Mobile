@@ -1,13 +1,13 @@
-import { set } from 'lodash';
-import React, { createContext, useContext, useState } from 'react';
+import { set } from "lodash";
+import React, { createContext, useContext, useState } from "react";
 
 const LoadingContext = createContext();
 
 export const LoadingProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState('Đang tải...');
+  const [loadingText, setLoadingText] = useState("Đang tải...");
 
-  const showLoading = (text = 'Đang tải...') => {
+  const showLoading = (text = "Đang tải...") => {
     setLoadingText(text);
     setIsLoading(true);
     setTimeout(() => {
@@ -27,7 +27,12 @@ export const LoadingProvider = ({ children }) => {
   };
 
   return (
-    <LoadingContext.Provider value={value}>
+    <LoadingContext.Provider
+      value={React.useMemo(
+        () => ({ isLoading, loadingText, showLoading, hideLoading }),
+        [isLoading, loadingText, showLoading, hideLoading]
+      )}
+    >
       {children}
     </LoadingContext.Provider>
   );
@@ -36,7 +41,7 @@ export const LoadingProvider = ({ children }) => {
 export const useLoading = () => {
   const context = useContext(LoadingContext);
   if (!context) {
-    throw new Error('useLoading must be used within a LoadingProvider');
+    throw new Error("useLoading must be used within a LoadingProvider");
   }
   return context;
 };
