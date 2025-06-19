@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import React from 'react'
 import Ionicons from '@expo/vector-icons/Ionicons'
 
-const MembershipCard = ({ membership, onSelect, isSelected = false }) => {
+const MembershipCard = ({ membership, onSelect, isSelected = false, isCurrentlySubscribed = false }) => {
   const formatPrice = (price) => {
     if (price === 0) return 'Miễn phí'
     return new Intl.NumberFormat('vi-VN', {
@@ -23,16 +23,30 @@ const MembershipCard = ({ membership, onSelect, isSelected = false }) => {
   }
 
   const getCardColor = () => {
-    if (membership.price === 0) return '#f0f8ff' // Light blue for free
-    if (membership.title.toLowerCase().includes('premium')) return '#fff8dc' // Light gold for premium
-    return '#f5f5f5' // Default gray
+    if (isCurrentlySubscribed) return '#E8F5E8' // Light green for active
+    if (isSelected) return '#E3F2FD' // Light blue for selected
+    if (membership.price === 0) return '#F8F9FA' // Light gray for free
+    if (membership.title.toLowerCase().includes('premium')) return '#FFF9E6' // Light amber for premium
+    return '#FFFFFF' // White for others
   }
 
   const getBorderColor = () => {
-    if (isSelected) return '#2558B6'
-    if (membership.price === 0) return '#87ceeb'
-    if (membership.title.toLowerCase().includes('premium')) return '#ffd700'
-    return '#ddd'
+    if (isCurrentlySubscribed) return '#28A745' // Green for active
+    if (isSelected) return '#2196F3' // Blue for selected
+    if (membership.price === 0) return '#6C757D' // Gray for free
+    if (membership.title.toLowerCase().includes('premium')) return '#FF9800' // Orange for premium
+    return '#E0E0E0' // Light gray for others
+  }
+
+  const getBorderWidth = () => {
+    if (isCurrentlySubscribed || isSelected) return 2
+    return 1
+  }
+
+  const getIconColor = () => {
+    if (membership.price === 0) return '#6C757D'
+    if (membership.title.toLowerCase().includes('premium')) return '#FF9800'
+    return '#2196F3'
   }
 
   return (
@@ -42,119 +56,219 @@ const MembershipCard = ({ membership, onSelect, isSelected = false }) => {
         {
           backgroundColor: getCardColor(),
           borderColor: getBorderColor(),
-          borderWidth: isSelected ? 2 : 1,
+          borderWidth: getBorderWidth(),
+          transform: [{ scale: isCurrentlySubscribed ? 1.02 : 1 }]
         }
       ]}
       onPress={() => onSelect && onSelect(membership)}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
     >
+      {/* Active Membership Ribbon */}
+      {isCurrentlySubscribed && (
+        <View style={styles.activeRibbon}>
+          <Text style={styles.activeRibbonText}>ĐANG SỬ DỤNG</Text>
+        </View>
+      )}
+
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <Text style={styles.title}>{membership.title}</Text>
-          {membership.price === 0 && (
-            <View style={styles.freeBadge}>
-              <Text style={styles.freeBadgeText}>MIỄN PHÍ</Text>
-            </View>
-          )}
-          {membership.title.toLowerCase().includes('premium') && (
-            <View style={styles.premiumBadge}>
-              <Ionicons name="star" size={16} color="#fff" />
-              <Text style={styles.premiumBadgeText}>PREMIUM</Text>
-            </View>
-          )}
+          <View style={styles.titleRow}>
+            <Text style={[
+              styles.title,
+              { color: isCurrentlySubscribed ? '#28A745' : '#333' }
+            ]}>
+              {membership.title}
+            </Text>
+            {isCurrentlySubscribed && (
+              <Ionicons name="checkmark-circle" size={20} color="#28A745" style={styles.activeIcon} />
+            )}
+          </View>
+          
+          <View style={styles.badgeContainer}>
+            {membership.price === 0 && (
+              <View style={styles.freeBadge}>
+                <Ionicons name="gift" size={12} color="#fff" />
+                <Text style={styles.freeBadgeText}>MIỄN PHÍ</Text>
+              </View>
+            )}
+            {membership.title.toLowerCase().includes('premium') && (
+              <View style={styles.premiumBadge}>
+                <Ionicons name="star" size={12} color="#fff" />
+                <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+              </View>
+            )}
+          </View>
         </View>
         
-        {isSelected && (
-          <Ionicons name="checkmark-circle" size={24} color="#2558B6" />
+        {isSelected && !isCurrentlySubscribed && (
+          <View style={styles.selectedIndicator}>
+            <Ionicons name="checkmark-circle" size={24} color="#2196F3" />
+          </View>
         )}
       </View>
 
-      {/* Price */}
-      <View style={styles.priceContainer}>
-        <Text style={styles.price}>{formatPrice(membership.price)}</Text>
-        <Text style={styles.duration}>/{formatDuration(membership.duration)}</Text>
+      {/* Price Section */}
+      <View style={styles.priceSection}>
+        <View style={styles.priceContainer}>
+          <Text style={[
+            styles.price,
+            { color: isCurrentlySubscribed ? '#28A745' : '#2196F3' }
+          ]}>
+            {formatPrice(membership.price)}
+          </Text>
+          <Text style={styles.duration}>/{formatDuration(membership.duration)}</Text>
+        </View>
+        
+        {membership.price > 0 && (
+          <View style={styles.pricePerDay}>
+            <Text style={styles.pricePerDayText}>
+              ≈ {new Intl.NumberFormat('vi-VN', {
+                style: 'currency',
+                currency: 'VND'
+              }).format(Math.round(membership.price / membership.duration))}/ngày
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Features */}
       <View style={styles.featuresContainer}>
-        {parseFeatures(membership.description).map((feature, index) => (
+        <Text style={styles.featuresTitle}>Quyền lợi:</Text>
+        {parseFeatures(membership.description).slice(0, 4).map((feature, index) => (
           <View key={index} style={styles.featureItem}>
-            <Ionicons
-              name={feature.includes('Không') || feature.includes('Giới hạn') ? 'close-circle' : 'checkmark-circle'}
-              size={16}
-              color={feature.includes('Không') || feature.includes('Giới hạn') ? '#ff6b6b' : '#51cf66'}
-              style={styles.featureIcon}
-            />
+            <View style={[styles.featureIconContainer, { backgroundColor: getIconColor() + '20' }]}>
+              <Ionicons
+                name={feature.includes('Không') || feature.includes('Giới hạn') ? 'close' : 'checkmark'}
+                size={12}
+                color={feature.includes('Không') || feature.includes('Giới hạn') ? '#DC3545' : getIconColor()}
+              />
+            </View>
             <Text style={[
               styles.featureText,
               {
-                color: feature.includes('Không') || feature.includes('Giới hạn') ? '#ff6b6b' : '#333'
+                color: feature.includes('Không') || feature.includes('Giới hạn') ? '#DC3545' : '#333'
               }
             ]}>
               {feature.replace('- ', '')}
             </Text>
           </View>
         ))}
+        
+        {parseFeatures(membership.description).length > 4 && (
+          <Text style={styles.moreFeatures}>
+            +{parseFeatures(membership.description).length - 4} quyền lợi khác
+          </Text>
+        )}
       </View>
 
       {/* Footer */}
       <View style={styles.footer}>
-        <Text style={styles.membershipType}>
-          Dành cho: {membership.membershipType === 'JobSeeker' ? 'Người tìm việc' : 'Nhà tuyển dụng'}
-        </Text>
+        <View style={styles.membershipTypeContainer}>
+          <Ionicons 
+            name={membership.membershipType === 'JobSeeker' ? 'person' : 'business'} 
+            size={14} 
+            color="#666" 
+          />
+          <Text style={styles.membershipType}>
+            {membership.membershipType === 'JobSeeker' ? 'Người tìm việc' : 'Nhà tuyển dụng'}
+          </Text>
+        </View>
+        
+        {isCurrentlySubscribed && (
+          <View style={styles.activeStatusContainer}>
+            <View style={styles.activeDot} />
+            <Text style={styles.activeStatusText}>Đang hoạt động</Text>
+          </View>
+        )}
       </View>
+
+      {/* Glow effect for active membership */}
+      {isCurrentlySubscribed && <View style={styles.glowEffect} />}
     </TouchableOpacity>
   )
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     marginVertical: 8,
     marginHorizontal: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 6,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  activeRibbon: {
+    position: 'absolute',
+    top: 20,
+    right: -30,
+    backgroundColor: '#28A745',
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    transform: [{ rotate: '45deg' }],
+    zIndex: 10,
+  },
+  activeRibbonText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   titleContainer: {
     flex: 1,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 8,
   },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  activeIcon: {
+    marginLeft: 8,
+  },
+  badgeContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   freeBadge: {
-    backgroundColor: '#87ceeb',
-    paddingHorizontal: 8,
+    backgroundColor: '#6C757D',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
   },
   freeBadgeText: {
     color: '#fff',
     fontSize: 10,
     fontWeight: 'bold',
+    marginLeft: 4,
   },
   premiumBadge: {
-    backgroundColor: '#ffd700',
-    paddingHorizontal: 8,
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
@@ -165,53 +279,118 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 4,
   },
+  selectedIndicator: {
+    backgroundColor: '#E3F2FD',
+    borderRadius: 20,
+    padding: 2,
+  },
+  priceSection: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 16,
+    marginBottom: 4,
   },
   price: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#2558B6',
   },
   duration: {
     fontSize: 16,
     color: '#666',
     marginLeft: 4,
   },
-  featuresContainer: {
-    marginBottom: 16,
+  pricePerDay: {
+    backgroundColor: '#F8F9FA',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 8,
-  },
-  featureIcon: {
-    marginRight: 8,
-    marginTop: 2,
-  },
-  featureText: {
-    fontSize: 14,
-    flex: 1,
-    lineHeight: 18,
-  },
-  footer: {
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    paddingTop: 12,
-  },
-  membershipType: {
+  pricePerDayText: {
     fontSize: 12,
     color: '#666',
     fontStyle: 'italic',
   },
-  disabledText: {
+  featuresContainer: {
+    marginBottom: 20,
+  },
+  featuresTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 12,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  featureIconContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    marginTop: 1,
+  },
+  featureText: {
+    fontSize: 14,
+    flex: 1,
+    lineHeight: 20,
+  },
+  moreFeatures: {
     fontSize: 12,
-    color: '#ff6b6b',
-    fontWeight: 'bold',
-    marginTop: 4,
+    color: '#666',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    paddingTop: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  membershipTypeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  membershipType: {
+    fontSize: 12,
+    color: '#666',
+    marginLeft: 6,
+  },
+  activeStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  activeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#28A745',
+    marginRight: 6,
+  },
+  activeStatusText: {
+    fontSize: 12,
+    color: '#28A745',
+    fontWeight: '600',
+  },
+  glowEffect: {
+    position: 'absolute',
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 18,
+    backgroundColor: '#28A745',
+    opacity: 0.1,
+    zIndex: -1,
   },
 })
 

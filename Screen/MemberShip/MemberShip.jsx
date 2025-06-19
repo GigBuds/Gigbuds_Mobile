@@ -13,6 +13,10 @@ const MemberShip = () => {
   const [MembershipData, setMembershipData] = useState([])
   const [userId, setUserId] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [isSubscribed, setIsSubscribed] = useState(false)
+  const [currentMembershipId, setCurrentMembershipId] = useState(null)
+  const [currentMembership, setCurrentMembership] = useState(null)
+  const [membershipEndDate, setMembershipEndDate] = useState(null)
 
   const fetchMembershipData = async () => {
     try {
@@ -44,6 +48,13 @@ const MemberShip = () => {
     getUserId()
   }, [])
 
+  // Check membership status when userId and membershipData are available
+  useEffect(() => {
+    if (userId && MembershipData.length > 0) {
+      checkSubscribedMembership()
+    }
+  }, [userId, MembershipData])
+
   // Filter memberships when data or userType changes
   useEffect(() => {
     if (MembershipData && MembershipData.length > 0) {
@@ -57,11 +68,151 @@ const MemberShip = () => {
 
   const handleSelectMembership = (membership) => {
     setSelectedMembership(membership)
-    console.log('Selected membership:', membership)
+  }
+
+  const checkSubscribedMembership = async () => {
+    try {
+      const response = await MembershipService.checkMembership(userId)
+      console.log('Check membership response:', response.data)
+      
+      // Check if response is an array and has active memberships
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        // Find the first active membership
+        const activeMembership = response.data.find(membership => 
+          membership.status === 'Active'
+        )
+        console.log('Active membership found:', activeMembership)
+        
+        if (activeMembership) {
+          
+          // Find the current membership in the membership data
+          const currentMembershipData = MembershipData.find(
+            membership => membership.id === activeMembership.membershipId
+          )
+          
+          if (currentMembershipData) {
+            setIsSubscribed(true)
+            setCurrentMembershipId(activeMembership.membershipId)
+            setCurrentMembership(currentMembershipData)
+            setMembershipEndDate(activeMembership.endDate)
+            console.log('User is subscribed to:', currentMembershipData.title)
+            console.log('Membership expires on:', activeMembership.endDate)
+          } else {
+            setIsSubscribed(false)
+            setCurrentMembershipId(null)
+            setCurrentMembership(null)
+            setMembershipEndDate(null)
+          }
+        } else {
+          // No active membership found in the array
+          setIsSubscribed(false)
+          setCurrentMembershipId(null)
+          setCurrentMembership(null)
+          setMembershipEndDate(null)
+          console.log('No active membership found in response array')
+        }
+      } else {
+        // Empty array or no response
+        setIsSubscribed(false)
+        setCurrentMembershipId(null)
+        setCurrentMembership(null)
+        setMembershipEndDate(null)
+        console.log('No membership data found (empty array or no response)')
+      }
+    } catch (error) {
+      console.error('Error checking membership:', error)
+      // Don't show alert for membership check errors as it might be normal for new users
+      setIsSubscribed(false)
+      setCurrentMembershipId(null)
+      setCurrentMembership(null)
+      setMembershipEndDate(null)
+    }
+  }
+
+  const handleRevokeMembership = async () => {
+    if (!currentMembershipId) return
+
+    Alert.alert(
+      'Hủy gói thành viên',
+      `Bạn có chắc chắn muốn hủy gói "${currentMembership?.title}"? Bạn sẽ mất tất cả quyền lợi của gói này.`,
+      [
+        {
+          text: 'Hủy bỏ',
+          style: 'cancel'
+        },
+        {
+          text: 'Xác nhận hủy',
+          style: 'destructive',
+          onPress: async () => {
+            setIsLoading(true)
+            try {
+              // Call API to revoke membership
+              const response = await MembershipService.revokeMembership(userId, currentMembershipId)
+              
+              if (response.success) {
+                Alert.alert('Thành công', 'Đã hủy gói thành viên thành công!')
+                setIsSubscribed(false)
+                setCurrentMembershipId(null)
+                setCurrentMembership(null)
+                setMembershipEndDate(null)
+                // Refresh membership status
+                await checkSubscribedMembership()
+              } else {
+                Alert.alert('Lỗi', response.error || 'Không thể hủy gói thành viên. Vui lòng thử lại sau.')
+              }
+            } catch (error) {
+              console.error('Error revoking membership:', error)
+              Alert.alert('Lỗi', 'Đã xảy ra lỗi khi hủy gói thành viên. Vui lòng thử lại sau.')
+            } finally {
+              setIsLoading(false)
+            }
+          }
+        }
+      ]
+    )
   }
 
   const handleSubscribe = async () => {
     if (!selectedMembership) return
+
+    // If user is already subscribed to a different membership, ask for confirmation
+    if (isSubscribed && currentMembershipId !== selectedMembership.id) {
+      Alert.alert(
+        'Thay đổi gói thành viên',
+        `Bạn đang sử dụng gói "${currentMembership?.title}". Để đăng ký gói mới, bạn cần hủy gói hiện tại trước. Bạn có muốn tiếp tục?`,
+        [
+          {
+            text: 'Hủy bỏ',
+            style: 'cancel'
+          },
+          {
+            text: 'Tiếp tục',
+            onPress: () => handleRevokeMembership()
+          }
+        ]
+      )
+      return
+    }
+
+    // If user is already subscribed to the same membership
+    if (isSubscribed && currentMembershipId === selectedMembership.id) {
+      Alert.alert(
+        'Đã đăng ký',
+        `Bạn đã đăng ký gói "${selectedMembership.title}" này rồi.`,
+        [
+          {
+            text: 'OK',
+            style: 'default'
+          },
+          {
+            text: 'Hủy gói này',
+            style: 'destructive',
+            onPress: () => handleRevokeMembership()
+          }
+        ]
+      )
+      return
+    }
 
     // If it's a free membership, handle differently
     if (selectedMembership.price === 0) {
@@ -75,10 +226,31 @@ const MemberShip = () => {
           },
           {
             text: 'Kích hoạt',
-            onPress: () => {
-              // Handle free membership activation
-              console.log('Activating free membership:', selectedMembership)
-              Alert.alert('Thành công', 'Gói miễn phí đã được kích hoạt!')
+            onPress: async () => {
+              setIsLoading(true)
+              try {
+                // Handle free membership activation
+                console.log('Activating free membership:', selectedMembership)
+                
+                // Call API to activate free membership
+                const response = await MembershipService.activateFreeMembership(userId, selectedMembership.id)
+                
+                if (response.success) {
+                  Alert.alert('Thành công', 'Gói miễn phí đã được kích hoạt!')
+                  setIsSubscribed(true)
+                  setCurrentMembershipId(selectedMembership.id)
+                  setCurrentMembership(selectedMembership)
+                  // Refresh membership status
+                  await checkSubscribedMembership()
+                } else {
+                  Alert.alert('Lỗi', response.error || 'Không thể kích hoạt gói miễn phí.')
+                }
+              } catch (error) {
+                console.error('Error activating free membership:', error)
+                Alert.alert('Lỗi', 'Đã xảy ra lỗi khi kích hoạt gói miễn phí.')
+              } finally {
+                setIsLoading(false)
+              }
             }
           }
         ]
@@ -125,7 +297,15 @@ const MemberShip = () => {
             Alert.alert(
               'Chuyển hướng thanh toán',
               'Bạn sẽ được chuyển đến cổng thanh toán PayOS. Sau khi hoàn tất, ứng dụng sẽ tự động mở lại.',
-              [{ text: 'OK' }]
+              [{ 
+                text: 'OK',
+                onPress: () => {
+                  // Refresh membership status after payment attempt
+                  setTimeout(() => {
+                    checkSubscribedMembership()
+                  }, 2000)
+                }
+              }]
             )
           } else {
             Alert.alert('Lỗi', 'Không thể mở liên kết thanh toán')
@@ -158,6 +338,25 @@ const MemberShip = () => {
     return { totalPlans, freePlans, paidPlans }
   }
 
+  const getButtonText = () => {
+    if (isLoading) return 'Đang xử lý...'
+    
+    if (!selectedMembership) return 'Chọn gói thành viên'
+    
+    // If user is subscribed to the selected membership
+    if (isSubscribed && currentMembershipId === selectedMembership.id) {
+      return 'Đã đăng ký'
+    }
+    
+    // If it's a free membership
+    if (selectedMembership.price === 0) {
+      return 'Sử dụng gói miễn phí'
+    }
+    
+    // For paid memberships
+    return `Đăng ký với ${selectedMembership.title}`
+  }
+
   const stats = getMembershipStats()
 
   return (
@@ -170,6 +369,18 @@ const MemberShip = () => {
             ? 'Nâng cấp để có trải nghiệm tìm việc tốt hơn' 
             : 'Nâng cấp để đăng tin tuyển dụng hiệu quả'}
         </Text>
+        {isSubscribed && currentMembership && (
+          <View style={styles.currentSubscriptionContainer}>
+            <Text style={styles.currentSubscription}>
+              Đang sử dụng: {currentMembership.title}
+            </Text>
+            {membershipEndDate && (
+              <Text style={styles.expirationDate}>
+                Hết hạn: {new Date(membershipEndDate).toLocaleDateString('vi-VN')}
+              </Text>
+            )}
+          </View>
+        )}
       </View>
 
       {/* Stats */}
@@ -187,6 +398,7 @@ const MemberShip = () => {
             membership={membership}
             onSelect={handleSelectMembership}
             isSelected={selectedMembership?.id === membership.id}
+            isCurrentlySubscribed={isSubscribed && currentMembershipId === membership.id}
           />
         ))}
         
@@ -205,7 +417,8 @@ const MemberShip = () => {
           <TouchableOpacity
             style={[
               styles.subscribeButton,
-              (!selectedMembership || isLoading) && styles.disabledButton
+              (!selectedMembership || isLoading) && styles.disabledButton,
+              (isSubscribed && currentMembershipId === selectedMembership.id) && styles.subscribedButton
             ]}
             onPress={handleSubscribe}
             disabled={!selectedMembership || isLoading}
@@ -214,15 +427,14 @@ const MemberShip = () => {
               {isLoading && (
                 <Ionicons name="card" size={20} color="white" style={styles.buttonIcon} />
               )}
+              {(isSubscribed && currentMembershipId === selectedMembership.id) && !isLoading && (
+                <Ionicons name="checkmark-circle" size={20} color="white" style={styles.buttonIcon} />
+              )}
               <View style={styles.subscribeButtonTextContainer}>
                 <Text style={styles.subscribeButtonText}>
-                  {isLoading 
-                    ? 'Đang xử lý...' 
-                    : selectedMembership.price === 0 
-                      ? 'Sử dụng gói miễn phí' 
-                      : `Đăng ký với ${selectedMembership.title}`}
+                  {getButtonText()}
                 </Text>
-                {selectedMembership.price > 0 && (
+                {selectedMembership.price > 0 && !(isSubscribed && currentMembershipId === selectedMembership.id) && (
                   <Text style={styles.subscribeButtonSubtext}>
                     {new Intl.NumberFormat('vi-VN', {
                       style: 'currency',
@@ -273,6 +485,29 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: 'center',
     color: '#666',
+  },
+  currentSubscriptionContainer: {
+    alignItems: 'center',
+    marginTop: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFF4F1',
+    borderRadius: 12,
+    alignSelf: 'center',
+    borderWidth: 1,
+    borderColor: '#FFE5DC',
+  },
+  currentSubscription: {
+    fontSize: 14,
+    textAlign: 'center',
+    color: '#FF7345',
+    fontWeight: '600',
+  },
+  expirationDate: {
+    fontSize: 12,
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 2,
   },
   statsContainer: {
     alignItems: 'center',
@@ -326,6 +561,9 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: '#ccc',
+  },
+  subscribedButton: {
+    backgroundColor: '#28a745',
   },
   subscribeButtonContent: {
     flexDirection: 'row',
