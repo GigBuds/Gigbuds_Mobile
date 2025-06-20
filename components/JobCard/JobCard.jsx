@@ -1,4 +1,3 @@
-
 import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
 import React from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -15,7 +14,7 @@ const JobCard = ({
   selectedTab,
   searchInput,
 }) => {
-    const { showLoading, hideLoading } = useLoading();
+  const { showLoading, hideLoading } = useLoading();
 
   const [jobData, setJobData] = React.useState(null);
   const [jobSeekerId, setJobSeekerId] = React.useState(null);
@@ -118,21 +117,22 @@ const JobCard = ({
         });
 
         setLocationLoading(false);
-      } else if (selectedTab === "AcceptedJob" || selectedTab === "AppliedJob" || selectedTab === "JobHistory") {
+      } else if (
+        selectedTab === "AcceptedJob" ||
+        selectedTab === "AppliedJob" ||
+        selectedTab === "JobHistory"
+      ) {
         showLoading();
         result = await JobApplicationService.getJobApplicationsByAccountId(
           jobSeekerId,
           selectedTab,
           1,
-          10,
+          10
         );
-      }
-      else {
+      } else {
         showLoading();
         result = await JobPostService.searchJobPosts(searchPar);
       }
-
-      // console.log("Search results:", result.data?.items);
 
       // Process the data: filter by distance (only for "Gợi Ý"), then filter by title, then sort
       let rawData = result.success ? result.data.items || [] : [];
@@ -170,19 +170,16 @@ const JobCard = ({
   };
 
   React.useEffect(() => {
-    if (selectedTab === "Gợi Ý" && jobSeekerId) {
-      fetchJobPosts(searchParams);
-    } else {
+    if (jobSeekerId) {
       fetchJobPosts(searchParams);
     }
-  }, [searchParams, selectedTab, jobSeekerId, searchInput]); // Added searchInput to dependencies
+  }, [searchParams, selectedTab, jobSeekerId, searchInput]);
 
   React.useEffect(() => {
     if (jobData && jobData.length > 0) {
       fetchJobPosts(searchParams);
     }
-  }, [selectedTab, searchInput]);
-
+  }, [selectedTab, searchInput, jobSeekerId]);
 
   // No data state
   if (!jobData || !Array.isArray(jobData) || jobData.length === 0) {
@@ -293,9 +290,12 @@ const JobCard = ({
           }}
           onPress={() => {
             navigate.navigate("JobDetail", {
-              jobId: (selectedTab === "AcceptedJob" || selectedTab === "AppliedJob" || selectedTab === "JobHistory")
-                ? job.id 
-                : job.jobPostId || job.id
+              jobId:
+                selectedTab === "AcceptedJob" ||
+                selectedTab === "AppliedJob" ||
+                selectedTab === "JobHistory"
+                  ? job.id
+                  : job.jobPostId || job.id,
             });
           }}
         >

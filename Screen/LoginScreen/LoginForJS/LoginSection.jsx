@@ -74,21 +74,6 @@ const LoginSection = () => {
     registerPushNotification();
   }, [expoPushToken, isDeviceTokenRegistered, userInfo]);
 
-  const storeUserInfo = async (userInfo) => {
-    try {
-      console.log("Storing user info:", userInfo);
-      await AsyncStorage.setItem(
-        "userName",
-        `${userInfo.family_name} ${userInfo.name}`
-      );
-      await AsyncStorage.setItem("userId", userInfo.sub);
-
-      console.log("User info stored successfully.");
-    } catch (error) {
-      console.error("Error storing user info:", error);
-    }
-  };
-
   // Helper function to detect if input is email or phone
   const isEmail = (input) => {
     return /\S+@\S+\.\S+/.test(input);
