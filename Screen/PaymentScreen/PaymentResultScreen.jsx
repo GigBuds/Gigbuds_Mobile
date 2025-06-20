@@ -155,7 +155,7 @@ const PaymentResultScreen = () => {
 
   const handleGoBack = useCallback(() => {
     // Navigate to membership or home screen
-    navigation.navigate('Home');
+    navigation.navigate('MainApp');
   }, [navigation]);
 
   const handleRetry = useCallback(() => {

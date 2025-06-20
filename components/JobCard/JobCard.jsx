@@ -1,6 +1,5 @@
-
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import React from "react";
+import { View, Text, ScrollView, Image, TouchableOpacity, ActivityIndicator } from "react-native";
+import React, { useCallback, useRef } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import JobPostService from "../../Services/JobPostService/JobPostService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -15,12 +14,23 @@ const JobCard = ({
   selectedTab,
   searchInput,
 }) => {
-    const { showLoading, hideLoading } = useLoading();
+  const { showLoading, hideLoading } = useLoading();
 
-  const [jobData, setJobData] = React.useState(null);
+  const [jobData, setJobData] = React.useState([]);
   const [jobSeekerId, setJobSeekerId] = React.useState(null);
   const [locationLoading, setLocationLoading] = React.useState(false);
+  const [loadingMore, setLoadingMore] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const [hasMoreData, setHasMoreData] = React.useState(true);
+  const [totalItems, setTotalItems] = React.useState(0);
+  const [debouncedSearchInput, setDebouncedSearchInput] = React.useState(searchInput || "");
   const navigate = useNavigation();
+
+  const PAGE_SIZE = 5;
+  const DEBOUNCE_DELAY = 1000;
+  const debounceTimerRef = useRef(null);
+  const previousSearchInputRef = useRef(searchInput || "");
+
   React.useEffect(() => {
     const getUserId = async () => {
       try {
@@ -32,6 +42,33 @@ const JobCard = ({
     };
     getUserId();
   }, []);
+
+  // Debounce search input - only update if search input actually changed
+  React.useEffect(() => {
+    const currentSearchInput = searchInput || "";
+    
+    // Only proceed if search input actually changed
+    if (previousSearchInputRef.current !== currentSearchInput) {
+      previousSearchInputRef.current = currentSearchInput;
+      
+      // Clear existing timer
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      // Set new timer
+      debounceTimerRef.current = setTimeout(() => {
+        setDebouncedSearchInput(currentSearchInput);
+      }, DEBOUNCE_DELAY);
+    }
+
+    // Cleanup function
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [searchInput]);
 
   // Helper function to extract distance in km
   const getDistanceInKm = (formattedDistance) => {
@@ -50,7 +87,7 @@ const JobCard = ({
   };
 
   // Filter function to get jobs within 50km (only for "Gợi Ý" tab)
-  const filterJobsByDistance = (jobs) => {
+  const filterJobsByDistance = useCallback((jobs) => {
     if (!jobs || !Array.isArray(jobs)) return [];
 
     // Only filter for "Gợi Ý" tab
@@ -62,25 +99,26 @@ const JobCard = ({
       const distanceKm = getDistanceInKm(job.formattedDistance);
       return distanceKm <= 50;
     });
-  };
+  }, [selectedTab]);
 
-  // Filter function for search input (jobTitle)
-  const filterJobsByTitle = (jobs) => {
-    if (!jobs || !Array.isArray(jobs) || !searchInput || !searchInput.trim()) {
+  // Updated filterJobsByTitle function - only for specific tabs
+  const filterJobsByTitle = useCallback((jobs) => {
+    // Only apply client-side filtering for specific tabs
+    if (!jobs || !Array.isArray(jobs) || !debouncedSearchInput || !debouncedSearchInput.trim()) {
       return jobs;
     }
 
-    const searchTerm = searchInput.trim().toLowerCase();
+    const searchTerm = debouncedSearchInput.trim().toLowerCase();
 
     return jobs.filter((job) => {
       // Check if jobTitle contains the search term (case insensitive)
       const jobTitle = job.jobTitle?.toLowerCase() || "";
       return jobTitle.includes(searchTerm);
     });
-  };
+  }, [debouncedSearchInput]);
 
   // Sort function based on selected tab
-  const sortJobData = (jobs) => {
+  const sortJobData = useCallback((jobs) => {
     if (!jobs || !Array.isArray(jobs)) return [];
 
     const sortedJobs = [...jobs]; // Create a copy to avoid mutating original array
@@ -97,98 +135,199 @@ const JobCard = ({
       return sortedJobs.sort((a, b) => {
         const dateA = new Date(a.updatedAt || 0);
         const dateB = new Date(b.updatedAt || 0);
-        return dateA - dateB;
+        return dateB - dateA; // Fixed: newest first
       });
     }
-  };
+  }, [selectedTab]);
 
-  const fetchJobPosts = async (searchPar) => {
+  const fetchJobPosts = useCallback(async (searchPar, page = 0, isLoadMore = false) => {
     try {
       let result;
 
       if (selectedTab === "Gợi Ý") {
-        showLoading();
-        setLocationLoading(true);
+        if (!isLoadMore) {
+          showLoading();
+          setLocationLoading(true);
+        } else {
+          setLoadingMore(true);
+        }
 
         result = await JobPostService.getRecommendedJobPosts(jobSeekerId, {
-          pageIndex: 0,
-          pageSize: 50, // Increased to get more results before filtering
+          pageIndex: page + 1,
+          pageSize: PAGE_SIZE,
           includeScheduleMatching: true,
           includeDistanceCalculation: true,
         });
 
         setLocationLoading(false);
       } else if (selectedTab === "AcceptedJob" || selectedTab === "AppliedJob" || selectedTab === "JobHistory") {
-        showLoading();
+        if (!isLoadMore) {
+          showLoading();
+        } else {
+          setLoadingMore(true);
+        }
         result = await JobApplicationService.getJobApplicationsByAccountId(
           jobSeekerId,
           selectedTab,
-          1,
-          10,
+          page + 1,
+          PAGE_SIZE,
         );
-      }
-      else {
-        showLoading();
-        result = await JobPostService.searchJobPosts(searchPar);
-      }
-
-      // console.log("Search results:", result.data?.items);
-
-      // Process the data: filter by distance (only for "Gợi Ý"), then filter by title, then sort
-      let rawData = result.success ? result.data.items || [] : [];
-
-      // Filter jobs within 50km only for "Gợi Ý" tab
-      const distanceFilteredData = filterJobsByDistance(rawData);
-
-      // Filter by job title if searchInput is provided
-      const titleFilteredData = filterJobsByTitle(distanceFilteredData);
-
-      if (selectedTab === "Gợi Ý") {
-        console.log(
-          `Filtered to ${distanceFilteredData.length} jobs within 50km`
-        );
+      } else {
+        if (!isLoadMore) {
+          showLoading();
+        } else {
+          setLoadingMore(true);
+        }
+        
+        // Add pagination and debouncedSearchInput to search params
+        const paginatedSearchParams = {
+          ...searchPar,
+          pageIndex: page + 1,
+          pageSize: PAGE_SIZE,
+          // Add debouncedSearchInput as jobName if it exists
+          ...(debouncedSearchInput && debouncedSearchInput.trim() && { jobName: debouncedSearchInput.trim() })
+        };
+        console.log("Paginated Search Params:", paginatedSearchParams);
+        result = await JobPostService.searchJobPosts(paginatedSearchParams);
       }
 
-      if (searchInput && searchInput.trim()) {
-        console.log(
-          `Filtered to ${titleFilteredData.length} jobs matching "${searchInput}"`
-        );
-      }
+      if (result.success) {
+        const rawData = result.data.items || [];
+        const totalCount = result.data.totalCount || result.data.total || 0;
+        
+        // For non-search tabs, apply client-side filtering
+        // For search tabs, the API already handles jobName filtering
+        let processedData = rawData;
+        
+        if (selectedTab === "Gợi Ý") {
+          // Apply distance filtering only for "Gợi Ý" tab
+          processedData = filterJobsByDistance(rawData);
+          
+          // Apply client-side title filtering for "Gợi Ý" tab if debouncedSearchInput exists
+          if (debouncedSearchInput && debouncedSearchInput.trim()) {
+            processedData = filterJobsByTitle(processedData);
+          }
+        } else if (selectedTab === "AcceptedJob" || selectedTab === "AppliedJob" || selectedTab === "JobHistory") {
+          // Apply client-side title filtering for these tabs if debouncedSearchInput exists
+          if (debouncedSearchInput && debouncedSearchInput.trim()) {
+            processedData = filterJobsByTitle(rawData);
+          }
+        }
+        // For other tabs (search), the API already handles jobName filtering, so no client-side filtering needed
+        
+        const sortedData = sortJobData(processedData);
 
-      const sortedData = sortJobData(titleFilteredData);
-      setJobData(sortedData);
-      if (!result.success) {
+        if (isLoadMore) {
+          // Append new data to existing data
+          setJobData(prevData => {
+            // Remove duplicates based on job ID
+            const existingIds = new Set(prevData.map(job => job.jobPostId || job.id));
+            const newJobs = sortedData.filter(job => !existingIds.has(job.jobPostId || job.id));
+            return [...prevData, ...newJobs];
+          });
+        } else {
+          // Replace data for initial load or refresh
+          setJobData(sortedData);
+        }
+
+        setTotalItems(totalCount);
+        setCurrentPage(page);
+        
+        // FIXED LOGIC: Check if there's more data based on actual API response
+        // If the API returns fewer items than PAGE_SIZE, it means we've reached the end
+        const hasMore = rawData && rawData.length === PAGE_SIZE;
+        setHasMoreData(hasMore);
+
+        if (selectedTab === "Gợi Ý") {
+          console.log(`Filtered to ${processedData.length} jobs within 50km`);
+        }
+
+        if (debouncedSearchInput && debouncedSearchInput.trim()) {
+          console.log(`Jobs matching "${debouncedSearchInput}": ${processedData.length}`);
+        }
+
+        console.log(`Page ${page}: Loaded ${rawData.length} items, Total: ${totalCount}, HasMore: ${hasMore}`);
+      } else {
         console.error("Error fetching search results:", result.error);
+        if (!isLoadMore) {
+          setJobData([]);
+        }
+        setHasMoreData(false);
       }
     } catch (error) {
       console.error("Error fetching job posts:", error);
-      setJobData([]);
+      if (!isLoadMore) {
+        setJobData([]);
+      }
+      setHasMoreData(false);
     } finally {
       hideLoading();
       setLocationLoading(false);
+      setLoadingMore(false);
     }
-  };
+  }, [jobSeekerId, selectedTab, debouncedSearchInput, showLoading, hideLoading, filterJobsByDistance, filterJobsByTitle, sortJobData]);
 
+  // Load more function - FIXED to properly increment page
+  const loadMoreJobs = useCallback(async () => {
+    if (loadingMore || !hasMoreData) return;
+    
+    const nextPage = currentPage + 1;
+    console.log(`Loading more jobs - Next page: ${nextPage}`);
+    await fetchJobPosts(searchParams, nextPage, true);
+  }, [loadingMore, hasMoreData, currentPage, searchParams, fetchJobPosts]);
+
+  // Reset and fetch initial data
+  const resetAndFetch = useCallback(async () => {
+    console.log("Resetting pagination and fetching initial data");
+    setCurrentPage(0);
+    setHasMoreData(true);
+    setJobData([]);
+    await fetchJobPosts(searchParams, 0, false);
+  }, [searchParams, fetchJobPosts]);
+
+  // Effect for initial load and when dependencies change - FIXED TO PREVENT LOOPS
   React.useEffect(() => {
-    if (selectedTab === "Gợi Ý" && jobSeekerId) {
-      fetchJobPosts(searchParams);
-    } else {
-      fetchJobPosts(searchParams);
-    }
-  }, [searchParams, selectedTab, jobSeekerId, searchInput]); // Added searchInput to dependencies
+    if (!jobSeekerId) return; // Don't fetch if no user ID
+    
+    // Reset and fetch when key dependencies change
+    resetAndFetch();
+  }, [searchParams, selectedTab, jobSeekerId, debouncedSearchInput]); // Removed resetAndFetch from dependencies to prevent loop
 
-  React.useEffect(() => {
-    if (jobData && jobData.length > 0) {
-      fetchJobPosts(searchParams);
+  // Handle scroll to load more with improved threshold
+  const handleScroll = useCallback((event) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 100; // Increased threshold for better UX
+    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
+    
+    if (isCloseToBottom && hasMoreData && !loadingMore) {
+      loadMoreJobs();
     }
-  }, [selectedTab, searchInput]);
-
+  }, [hasMoreData, loadingMore, loadMoreJobs]);
 
   // No data state
   if (!jobData || !Array.isArray(jobData) || jobData.length === 0) {
+    // Don't show no data message while loading initial data
+    if (locationLoading) {
+      return (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 20,
+          }}
+        >
+          <ActivityIndicator size="large" color="#FF7345" />
+          <Text style={{ fontSize: 16, color: "gray", textAlign: "center", marginTop: 10 }}>
+            Đang tải công việc...
+          </Text>
+        </View>
+      );
+    }
+
     const noDataMessage = () => {
-      if (searchInput && searchInput.trim()) {
-        return `Không tìm thấy công việc với từ khóa "${searchInput}"`;
+      if (debouncedSearchInput && debouncedSearchInput.trim()) {
+        return `Không tìm thấy công việc với từ khóa "${debouncedSearchInput}"`;
       }
       return selectedTab === "Gợi Ý"
         ? "Không có công việc gợi ý trong vòng 50km."
@@ -276,10 +415,15 @@ const JobCard = ({
   };
 
   return (
-    <ScrollView bouncesZoom={true} style={{ marginBottom: marginBottom }}>
+    <ScrollView 
+      bouncesZoom={true} 
+      style={{ marginBottom: marginBottom }}
+      onScroll={handleScroll}
+      scrollEventThrottle={16} // Reduced for better responsiveness
+    >
       {jobData.map((job, index) => (
         <TouchableOpacity
-          key={job.id || `job-${index}`}
+          key={job.id || job.jobPostId || `job-${index}`}
           style={{
             width: "100%",
             height: 150,
@@ -324,9 +468,9 @@ const JobCard = ({
               resizeMode="cover"
             />
             <View style={{ marginLeft: 10, width: "84%" }}>
-              {/* Highlight search term in job title */}
-              {searchInput && searchInput.trim() ? (
-                highlightSearchTerm(job.jobTitle, searchInput)
+              {/* Highlight search term in job title using debouncedSearchInput */}
+              {debouncedSearchInput && debouncedSearchInput.trim() ? (
+                highlightSearchTerm(job.jobTitle, debouncedSearchInput)
               ) : (
                 <Text
                   style={{ fontWeight: "bold", fontSize: 18, width: "80%" }}
@@ -453,6 +597,41 @@ const JobCard = ({
           </View>
         </TouchableOpacity>
       ))}
+      
+      {/* Load More Indicator */}
+      {loadingMore && (
+        <View style={{ 
+          paddingVertical: 20, 
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <ActivityIndicator size="large" color="#FF7345" />
+          <Text style={{ 
+            marginTop: 10, 
+            color: 'gray',
+            fontSize: 14
+          }}>
+            Đang tải thêm công việc...
+          </Text>
+        </View>
+      )}
+      
+      {/* End of List Indicator */}
+      {!hasMoreData && jobData.length > 0 && (
+        <View style={{ 
+          paddingVertical: 20, 
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Text style={{ 
+            color: 'gray',
+            fontSize: 14,
+            fontStyle: 'italic'
+          }}>
+            Đã hiển thị tất cả {jobData.length} công việc
+          </Text>
+        </View>
+      )}
     </ScrollView>
   );
 };
