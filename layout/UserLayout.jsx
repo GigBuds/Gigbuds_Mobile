@@ -11,12 +11,10 @@ import mainBg from "../assets/main-bg.png";
 import logo from "../assets/logo.png";
 import Entypo from "@expo/vector-icons/Entypo";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Notification from "../components/Common/Notification";
 import { Host } from "react-native-portalize";
 import LoadingComponent from "../components/Common/LoadingComponent";
 import { useLoading } from "../context/LoadingContext";
 import { useNavigation } from "@react-navigation/native";
-import * as Location from "expo-location";
 
 export default function UserLayout({ children }) {
   const [userName, setUserName] = useState("");
@@ -24,15 +22,6 @@ export default function UserLayout({ children }) {
   const navigate = useNavigation();
 
   useEffect(() => {
-    const checkLocationPermission = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission denied",
-          "Please enable location services in your device settings."
-        );
-      }
-    };
 
     const fetchUserName = async () => {
       try {
@@ -46,7 +35,6 @@ export default function UserLayout({ children }) {
       }
     };
 
-    checkLocationPermission();
     fetchUserName();
   }, []);
 
@@ -84,7 +72,7 @@ export default function UserLayout({ children }) {
             style={{
               flexDirection: "column",
               marginLeft: 10,
-              width: "53%",
+              width: "70%",
             }}
           >
             <Text style={{ fontSize: 18, color: "white" }}>Xin chào, </Text>
@@ -94,7 +82,6 @@ export default function UserLayout({ children }) {
             <Entypo name="shield" size={30} color="white" />
           </TouchableOpacity>
         </View>
-        <Notification />
         <View style={styles.formContainer}>{children}</View>
       </View>
     </Host>
