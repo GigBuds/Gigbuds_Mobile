@@ -70,11 +70,8 @@ class JobSeekerService {
             }
 
             const response = await api.get(`job-seekers/location/${id}`);
-            return {
-                success: true,
-                data: response.data,
-                status: response.status
-            };
+            console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: ",response.data);
+            return response.data;
         } catch (error) {
             console.error('Error in getJobSeekerLocation:', error);
             return {

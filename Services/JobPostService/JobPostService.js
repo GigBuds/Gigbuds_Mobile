@@ -127,7 +127,7 @@ class JobPostService {
             const JobSeekerService = require('../JobSeekerService/JobSeekerService').default;
             const result = await JobSeekerService.getJobSeekerLocation(jobSeekerId);
             
-            if (result.success && result.data) {
+            if (result.data) {
                 console.log('Using JobSeeker location:', result.data);
                 return result.data;
             } else {

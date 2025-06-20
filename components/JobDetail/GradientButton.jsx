@@ -97,10 +97,11 @@ const GradientButton = ({
 
   // Handle job application
   const applyForJob = async () => {
-    if (!selectedPDF) {
-      Alert.alert("Thông báo", "Vui lòng chọn file CV (PDF)");
-      return;
-    }
+    // Remove the PDF validation - CV is now optional
+    // if (!selectedPDF) {
+    //   Alert.alert("Thông báo", "Vui lòng chọn file CV (PDF)");
+    //   return;
+    // }
 
     try {
       setIsApplying(true);
@@ -111,13 +112,17 @@ const GradientButton = ({
         return;
       }
 
-      const cvFile = {
-        uri: selectedPDF.uri,
-        type: selectedPDF.mimeType || 'application/pdf',
-        name: selectedPDF.name,
-      };
+      // CV file is now optional
+      let cvFile = null;
+      if (selectedPDF) {
+        cvFile = {
+          uri: selectedPDF.uri,
+          type: selectedPDF.mimeType || 'application/pdf',
+          name: selectedPDF.name,
+        };
+      }
 
-      // Submit job application with the file
+      // Submit job application with optional CV file
       const response = await JobApplicationService.applyForJob(
         jobDetails.id,
         userId,
@@ -210,7 +215,7 @@ const GradientButton = ({
 
             {/* PDF Upload Section */}
             <View style={styles.uploadSection}>
-              <Text style={styles.uploadLabel}>Tải lên CV (PDF) *</Text>
+              <Text style={styles.uploadLabel}>Tải lên CV (PDF) (Tùy chọn)</Text>
 
               <TouchableOpacity
                 style={styles.uploadButton}
@@ -246,10 +251,10 @@ const GradientButton = ({
               <TouchableOpacity
                 style={[
                   styles.confirmButton,
-                  (!selectedPDF || isApplying) && styles.disabledButton,
+                  isApplying && styles.disabledButton,
                 ]}
                 onPress={applyForJob}
-                disabled={!selectedPDF || isApplying}
+                disabled={isApplying}
               >
                 <Text style={styles.confirmButtonText}>
                   {isApplying ? "Đang ứng tuyển..." : "Ứng tuyển"}

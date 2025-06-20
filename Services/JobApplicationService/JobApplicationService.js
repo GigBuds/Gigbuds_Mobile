@@ -12,7 +12,12 @@ class JobApplicationService {
         throw new Error("jobPostId, accountId are required");
       }
       const formData = new FormData();
-      formData.append("cvFile", cvFile);
+      
+      // Only append CV file if it exists (CV is now optional)
+      if (cvFile) {
+        formData.append("cvFile", cvFile);
+      }
+      
       const response = await api.post(
         `job-applications/apply?jobPostId=${jobPostId}&accountId=${accountId}`,
         formData,
@@ -132,6 +137,9 @@ class JobApplicationService {
       };
     } catch (error) {
       console.error("Error in checkIfApplied:", error);
+      if(error.response?.status === 409){
+        console.info("Bạn đã ứng tuyển công việc này");
+      }
       return {
         success: false,
         error:
