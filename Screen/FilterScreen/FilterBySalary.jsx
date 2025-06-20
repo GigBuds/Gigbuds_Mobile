@@ -18,6 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { vietnamCities, getDistrictsByCity } from "./districtandprovince";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { useLoading } from "../../context/LoadingContext";
+import { Picker } from "@react-native-picker/picker";
 
 const FilterBySalary = () => {
   const navigation = useNavigation();

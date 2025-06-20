@@ -12,9 +12,12 @@ class JobPostService {
         jobTimeTo,
         salaryUnit,
         districtCodeList,
-        jobPositionId
+        jobPositionId,
+        pageIndex,
+        pageSize
     } = {}) {
         try {
+            
             const params = new URLSearchParams();
             
             if (companyName) params.append('companyName', companyName);
@@ -28,7 +31,8 @@ class JobPostService {
             if (districtCodeList && Array.isArray(districtCodeList) && districtCodeList.length > 0) {
                 params.append('districtCodeList', districtCodeList.join(','));
             }
-            
+            if (pageIndex) params.append('pageIndex', pageIndex);
+            if (pageSize) params.append('pageSize', pageSize);
             const response = await api.get(`job-posts/search?${params.toString()}`);
             return {
                 success: true,
@@ -62,6 +66,14 @@ class JobPostService {
                 timeout: 10000,
             });
 
+            // Check if coordinates are within Vietnam bounds
+            const isInVietnam = this.isLocationInVietnam(location.coords.latitude, location.coords.longitude);
+            
+            if (!isInVietnam) {
+                console.warn('Location is outside Vietnam, using fallback location');
+                return 'S205 Vinhome Grand Park, Quận 9, Thành phố Hồ Chí Minh'; // Fallback location
+            }
+
             // Reverse geocode to get address
             const reverseGeocode = await Location.reverseGeocodeAsync({
                 latitude: location.coords.latitude,
@@ -70,6 +82,13 @@ class JobPostService {
 
             if (reverseGeocode.length > 0) {
                 const address = reverseGeocode[0];
+                
+                // Double check if the country is Vietnam
+                if (address.country && !this.isVietnamCountry(address.country)) {
+                    console.warn('Reverse geocoded country is not Vietnam:', address.country);
+                    return 'S205 Vinhome Grand Park, Quận 9, Thành phố Hồ Chí Minh'; // Fallback location
+                }
+                
                 // Format Vietnamese address
                 const formattedAddress = [
                     address.streetNumber,
@@ -78,7 +97,7 @@ class JobPostService {
                     address.city || address.region,
                 ].filter(Boolean).join(', ');
                 
-                console.log('Current location:', formattedAddress);
+                console.log('Current location (Vietnam):', formattedAddress);
                 return formattedAddress || 'S205 Vinhome Grand Park, Quận 9, Thành phố Hồ Chí Minh';
             }
 
@@ -87,6 +106,41 @@ class JobPostService {
             console.error('Error getting current location:', error);
             return 'S205 Vinhome Grand Park, Quận 9, Thành phố Hồ Chí Minh'; // Fallback location
         }
+    }
+
+    // Helper method to check if coordinates are within Vietnam bounds
+    static isLocationInVietnam(latitude, longitude) {
+        // Vietnam approximate geographic bounds
+        const vietnamBounds = {
+            north: 23.393395,  // Northernmost point (near China border)
+            south: 8.179767,   // Southernmost point (Ca Mau)
+            east: 109.464638,  // Easternmost point (including islands)
+            west: 102.144906   // Westernmost point (near Laos border)
+        };
+        
+        return (
+            latitude >= vietnamBounds.south &&
+            latitude <= vietnamBounds.north &&
+            longitude >= vietnamBounds.west &&
+            longitude <= vietnamBounds.east
+        );
+    }
+
+    // Helper method to check if country name indicates Vietnam
+    static isVietnamCountry(country) {
+        const vietnamNames = [
+            'Vietnam',
+            'Viet Nam', 
+            'VN',
+            'VNM',
+            'Socialist Republic of Vietnam',
+            'Cộng hòa Xã hội chủ nghĩa Việt Nam',
+            'Việt Nam'
+        ];
+        
+        return vietnamNames.some(name => 
+            country.toLowerCase().includes(name.toLowerCase())
+        );
     }
 
     // Updated method to use expo-location
