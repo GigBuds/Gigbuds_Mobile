@@ -15,6 +15,8 @@ import LoginService from "../../../Services/LoginService/LoginService";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNotification } from "../../../context/notificationContext";
 import NotificationService from "../../../Services/NotificationService/NotificationService";
+import signalRService from "../../../Services/SignalRService/SignalRService";
+import { useSignalRContext } from "../../../context/SignalRProvider";
 
 const LoginSection = () => {
   const { expoPushToken, isDeviceTokenRegistered } = useNotification();
@@ -26,8 +28,8 @@ const LoginSection = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigation = useNavigation();
   const [idToken, setIdToken] = useState("");
-  const [accessToken, setAccessToken] = useState("");
   const [userInfo, setUserInfo] = useState({});
+  const { connect } = useSignalRContext();
 
   useEffect(() => {
     const handleTokenStorage = async () => {
@@ -37,17 +39,21 @@ const LoginSection = () => {
           const decodedUserInfo = LoginService.decodeToken(idToken);
           setUserInfo(decodedUserInfo);
           console.log("Decoded idToken:", decodedUserInfo);
-          
+          await connect();
+
           // Extract membership information from ID token
           const memberships = LoginService.extractMembershipsFromToken(idToken);
           console.log("Extracted memberships:", memberships);
-          
+
           // Store user info and memberships using LoginService
           await LoginService.storeUserInfo(decodedUserInfo, memberships);
           navigation.navigate("MainApp");
         } catch (e) {
           console.error("Error decoding idToken:", e);
-          Alert.alert("Lỗi", "Không thể giải mã token. Vui lòng đăng nhập lại.");
+          Alert.alert(
+            "Lỗi",
+            "Không thể giải mã token. Vui lòng đăng nhập lại."
+          );
         }
       }
     };
@@ -67,21 +73,6 @@ const LoginSection = () => {
     }
     registerPushNotification();
   }, [expoPushToken, isDeviceTokenRegistered, userInfo]);
-
-  const storeUserInfo = async (userInfo) => {
-    try {
-      console.log("Storing user info:", userInfo);
-      await AsyncStorage.setItem(
-        "userName",
-        `${userInfo.family_name} ${userInfo.name}`
-      );
-      await AsyncStorage.setItem("userId", userInfo.sub);
-
-      console.log("User info stored successfully.");
-    } catch (error) {
-      console.error("Error storing user info:", error);
-    }
-  };
 
   // Helper function to detect if input is email or phone
   const isEmail = (input) => {
@@ -130,8 +121,6 @@ const LoginSection = () => {
       if (result.success) {
         // Handle successful login
         console.log("Login successful:", result.data);
-        setAccessToken(result.data.access_token);
-
         await AsyncStorage.setItem("accessToken", result.data.access_token);
         setIdToken(result.data.id_token);
       } else {

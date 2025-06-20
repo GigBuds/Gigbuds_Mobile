@@ -39,6 +39,9 @@ class NotificationService {
   static async getDeviceToken() {
     try {
       const deviceId = await NotificationService.getDeviceId();
+      if (!deviceId) {
+        throw new Error("Device ID not found");
+      }
       console.log("🔔 Device ID from getDeviceToken", deviceId);
       const response = await api.get(
         `/notifications/push-notifications/device-token/${deviceId}`
@@ -87,6 +90,7 @@ class NotificationService {
 
   static async getDeviceId() {
     if (Platform.OS === "android") {
+      console.log("🔔 Application.getAndroidId()", Application.getAndroidId());
       return Application.getAndroidId();
     } else {
       let deviceId = await SecureStore.getItemAsync("deviceId");

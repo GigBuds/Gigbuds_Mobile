@@ -13,6 +13,7 @@ import React, { useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useNavigation } from "@react-navigation/native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { Picker } from "@react-native-picker/picker";
 import RegisterService from "../../../Services/RegisterService/RegisterService";
 
 const RegisterSection = () => {

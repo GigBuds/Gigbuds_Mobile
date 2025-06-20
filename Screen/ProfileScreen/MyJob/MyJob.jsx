@@ -7,6 +7,7 @@ import JobCard from '../../../components/JobCard/JobCard'
 
 const MyJob = () => {
   const [value, setValue] = useState('AcceptedJob')
+  const [pageIndex, setPageIndex] = useState(null)
   
   const handleValueChange = useCallback((newValue) => {
     setValue(newValue)
@@ -38,6 +39,8 @@ const MyJob = () => {
           selectedTab={value}
           marginBottom={50}
         />
+
+        
     </View>
   )
 }
