@@ -136,10 +136,12 @@ class JobApplicationService {
         status: response.status,
       };
     } catch (error) {
-      console.error("Error in checkIfApplied:", error);
+
       if(error.response?.status === 409){
-        console.info("Bạn đã ứng tuyển công việc này");
-      }
+        console.info("Bạn đã ứng tuyển công việc này", error.response);
+      }else{
+        console.error("Error in checkIfApplied:", error);
+      }      
       return {
         success: false,
         error:
