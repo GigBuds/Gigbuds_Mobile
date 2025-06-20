@@ -144,6 +144,20 @@ const SkillsForm = ({
         }
     };
 
+    const handleRemoveSkill = (index) => {
+        console.log('Removing skill at index:', index);
+        if (index < 0 || index >= localSkillTags.length) {
+            console.error('Invalid index for skill removal:', index);
+            return;
+        }
+        const skillToRemove = localSkillTags[index];
+        console.log('Skill to remove:', skillToRemove);
+        const updatedSkills = localSkillTags.filter((_, i) => i !== index);
+        setLocalSkillTags(updatedSkills);
+        onRemoveSkill && onRemoveSkill(skillToRemove, updatedSkills);
+        console.log('Updated skills after removal:', updatedSkills);
+    };
+
     const renderSkillModal = () => (
         <Modal
             visible={isModalVisible}

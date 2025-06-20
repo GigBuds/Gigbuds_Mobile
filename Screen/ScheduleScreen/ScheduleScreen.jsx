@@ -457,6 +457,8 @@ const ScheduleScreen = () => {
           <DateTimePickerModal
             isVisible={showStartPicker}
             mode="time"
+            minimumTime={new Date(new Date().setHours(0, 0, 0, 0))}
+            maximumTime={new Date(new Date().setHours(23, 59, 59, 999))}
             date={startTime}
             onConfirm={onStartTimeChange}
             onCancel={() => setShowStartPicker(false)}
@@ -467,6 +469,8 @@ const ScheduleScreen = () => {
           <DateTimePickerModal
             isVisible={showEndPicker}
             mode="time"
+            minimumTime={new Date(new Date().setHours(0, 0, 0, 0))}
+            maximumTime={new Date(new Date().setHours(23, 59, 59, 999))}
             date={endTime}
             onConfirm={onEndTimeChange}
             onCancel={() => setShowEndPicker(false)}
