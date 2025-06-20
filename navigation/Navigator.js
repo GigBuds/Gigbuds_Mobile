@@ -14,6 +14,7 @@ import ProfileScreen from "../Screen/ProfileScreen/ProfileScreen";
 import SearchScreen from "../Screen/SearchScreen/SearchScreen";
 import LoginScreen from "../Screen/LoginScreen/LoginScreen";
 import LoginForJS from "../Screen/LoginScreen/LoginForJS/LoginForJS";
+import NotificationScreen from "../Screen/NotificationScreen/NotificationScreen";
 
 import OTPScreen from "../Screen/LoginScreen/OTPScreen/OTPScreen";
 import UserLayout from "../layout/UserLayout";
@@ -25,11 +26,13 @@ import MyProfileLayout from "../layout/MyProfileLayout";
 import JobDetailScreen from "../Screen/JobDetailScreen/JobDetailScreen";
 import JobDetailLayout from "../layout/JobDetailLayout";
 import EditProfile from "../Screen/ProfileScreen/EditProfile/EditProfile";
-import PaymentResultScreen from '../Screen/PaymentScreen/PaymentResultScreen';
-import MembershipRegisterScreen from '../Screen/PaymentScreen/MembershipRegisterScreen';
+import PaymentResultScreen from "../Screen/PaymentScreen/PaymentResultScreen";
+import MembershipRegisterScreen from "../Screen/PaymentScreen/MembershipRegisterScreen";
 import MyJob from "../Screen/ProfileScreen/MyJob/MyJob";
 import HeaderLayout from "../layout/HeaderLayout";
 import MemberShip from "../Screen/MemberShip/MemberShip";
+import { useNotification } from "../context/notificationContext";
+import { View, Text } from "react-native";
 
 export default function Navigator() {
   const Tab = createBottomTabNavigator();
@@ -64,7 +67,7 @@ export default function Navigator() {
               <MemberShip />
             </HeaderLayout>
           )}
-        />  
+        />
       </Stack.Navigator>
     );
   };
@@ -103,11 +106,11 @@ export default function Navigator() {
           name="MemberShip"
           options={{ headerShown: false }}
           children={() => (
-             <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
+            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
               <MemberShip />
             </HeaderLayout>
           )}
-        />  
+        />
       </Stack.Navigator>
     );
   };
@@ -132,7 +135,7 @@ export default function Navigator() {
               <MemberShip />
             </HeaderLayout>
           )}
-        />  
+        />
       </Stack.Navigator>
     );
   };
@@ -152,9 +155,70 @@ export default function Navigator() {
               <MemberShip />
             </HeaderLayout>
           )}
-        />  
+        />
       </Stack.Navigator>
-      
+    );
+  };
+
+  const NotificationStack = () => {
+    return (
+      <Stack.Navigator>
+        <Stack.Screen
+          name="Notification"
+          component={NotificationScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="JobDetail"
+          options={{ headerShown: false }}
+          children={() => (
+            <JobDetailLayout>
+              <JobDetailScreen />
+            </JobDetailLayout>
+          )}
+        />
+        <Stack.Screen
+          name="Profile"
+          options={{ headerShown: false }}
+          children={() => (
+            <ProfileLayout>
+              <ProfileScreen />
+            </ProfileLayout>
+          )}
+        />
+        <Stack.Screen
+          name="MyProfile"
+          options={{ headerShown: false }}
+          children={() => (
+            <MyProfileLayout>
+              <MyProfile />
+            </MyProfileLayout>
+          )}
+        />
+        <Stack.Screen
+          name="EditProfile"
+          options={{ headerShown: false }}
+          children={() => <EditProfile />}
+        />
+        <Stack.Screen
+          name="MyJobs"
+          options={{ headerShown: false }}
+          children={() => (
+            <HeaderLayout title={"Công việc của tôi"} showBackButton={true}>
+              <MyJob />
+            </HeaderLayout>
+          )}
+        />
+        <Stack.Screen
+          name="MemberShip"
+          options={{ headerShown: false }}
+          children={() => (
+            <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
+              <MemberShip />
+            </HeaderLayout>
+          )}
+        />
+      </Stack.Navigator>
     );
   };
 
@@ -230,9 +294,46 @@ export default function Navigator() {
     );
   };
 
-
-
   const MainTab = () => {
+    const { notifications } = useNotification();
+    const unreadCount = notifications.filter((notif) => !notif.isRead).length;
+
+    // Custom badge component for notification tab
+    const NotificationTabIcon = ({ focused }) => (
+      <View style={{ position: "relative" }}>
+        <Ionicons
+          name="notifications-outline"
+          size={24}
+          color={focused ? "#FF7345" : "gray"}
+        />
+        {unreadCount > 0 && (
+          <View
+            style={{
+              position: "absolute",
+              right: -6,
+              top: -3,
+              backgroundColor: "#FF4444",
+              borderRadius: 8,
+              minWidth: 16,
+              height: 16,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 10,
+                fontWeight: "bold",
+              }}
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+
     return (
       <Tab.Navigator safeAreaInsets={{ bottom: 0 }}>
         <Tab.Screen
@@ -262,6 +363,18 @@ export default function Navigator() {
                 size={30}
                 color={focused ? "#FF7345" : "gray"}
               />
+            ),
+            tabBarActiveTintColor: "#FF7345",
+          }}
+        />
+
+        <Tab.Screen
+          name="Thông báo"
+          component={NotificationStack}
+          options={{
+            headerShown: false,
+            tabBarIcon: ({ focused }) => (
+              <NotificationTabIcon focused={focused} />
             ),
             tabBarActiveTintColor: "#FF7345",
           }}
@@ -337,7 +450,7 @@ export default function Navigator() {
           component={PaymentResultScreen}
           options={{
             headerShown: false,
-            gestureEnabled: false
+            gestureEnabled: false,
           }}
         />
         <Stack.Screen
@@ -345,7 +458,7 @@ export default function Navigator() {
           component={MembershipRegisterScreen}
           options={{
             headerShown: false,
-            gestureEnabled: true
+            gestureEnabled: true,
           }}
         />
       </Stack.Navigator>

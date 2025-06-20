@@ -4,7 +4,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import PropTypes from "prop-types";
 
 const NotificationItem = ({ notification, onPress }) => {
-  console.log("🔔 NotificationItem: ", notification);
   const getNotificationIcon = (type) => {
     switch (type) {
       case "job":
@@ -88,12 +87,24 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
+    marginHorizontal: 16,
+    marginVertical: 4,
+    borderRadius: 12,
     backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    minHeight: 80,
   },
   unreadContainer: {
     backgroundColor: "#FFF8F6",
+    borderLeftWidth: 4,
+    borderLeftColor: "#FF7345",
   },
   iconContainer: {
     width: 40,
@@ -103,16 +114,19 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginRight: 12,
+    marginTop: 4,
   },
   contentContainer: {
     flex: 1,
     justifyContent: "center",
+    paddingRight: 8,
   },
   title: {
     fontSize: 16,
     fontWeight: "500",
     color: "#333",
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 20,
   },
   unreadTitle: {
     fontWeight: "600",
@@ -122,11 +136,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#666",
     lineHeight: 20,
-    marginBottom: 4,
+    marginBottom: 6,
+    flexWrap: "wrap",
   },
   timestamp: {
     fontSize: 12,
     color: "#999",
+    marginTop: 2,
   },
   unreadDot: {
     width: 8,
@@ -135,6 +151,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FF7345",
     alignSelf: "center",
     marginLeft: 8,
+    marginRight: 4,
   },
 });
 
