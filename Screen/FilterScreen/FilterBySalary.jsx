@@ -30,7 +30,7 @@ const FilterBySalary = () => {
   const [selectedDistricts, setSelectedDistricts] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
 
-const { showLoading, isLoading, hideLoading } = useLoading();  
+  const { showLoading, isLoading, hideLoading } = useLoading();
   // New datetime states
   const [jobTimeFrom, setJobTimeFrom] = React.useState(null);
   const [jobTimeTo, setJobTimeTo] = React.useState(null);
@@ -552,12 +552,9 @@ const { showLoading, isLoading, hideLoading } = useLoading();
         <View style={styles.dateTimeRangeContainer}>
           <Text style={styles.sectionTitle}>Thời gian làm việc</Text>
           <View style={styles.dateTimeInputContainer}>
-            <TouchableOpacity 
-              onPress={() => selectDateTime('from')}
-              style={[
-                styles.dateTimeInput,
-                styles.datePickerInput
-              ]}
+            <TouchableOpacity
+              onPress={() => selectDateTime("from")}
+              style={[styles.dateTimeInput, styles.datePickerInput]}
               disabled={isLoading}
             >
               <Text
@@ -579,13 +576,10 @@ const { showLoading, isLoading, hideLoading } = useLoading();
               color="#FF7345"
               style={styles.arrowIcon}
             />
-            
-            <TouchableOpacity 
-              onPress={() => selectDateTime('to')}
-              style={[
-                styles.dateTimeInput,
-                styles.datePickerInput
-              ]}
+
+            <TouchableOpacity
+              onPress={() => selectDateTime("to")}
+              style={[styles.dateTimeInput, styles.datePickerInput]}
               disabled={isLoading}
             >
               <Text

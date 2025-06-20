@@ -11,10 +11,7 @@ class SignalRService {
   #reconnectAttempts = 0;
   #maxReconnectAttempts = 5;
   #reconnectDelay = 5000; // 5 seconds
-  #notificationCallbacks = new Map();
   #connectionCallbacks = new Map();
-
-  constructor() {}
 
   // Public getters
   get connection() {
@@ -61,9 +58,6 @@ class SignalRService {
           accessTokenFactory: () => Promise.resolve(accessToken),
           skipNegotiation: true,
           transport: signalR.HttpTransportType.WebSockets,
-          headers: accessToken
-            ? { Authorization: `Bearer ${accessToken}` }
-            : {},
         })
         .withAutomaticReconnect({
           nextRetryDelayInMilliseconds: (retryContext) => {
@@ -81,7 +75,10 @@ class SignalRService {
 
       await this.#connection.start();
 
-      setupNotificationHandlers(this);
+      setupNotificationHandlers(
+        this.#connection,
+        this.triggerCallback.bind(this)
+      );
       setupSignalRLifeCycleHandler(this);
 
       this.#isConnected = true;
@@ -127,6 +124,22 @@ class SignalRService {
       return true;
     } catch (error) {
       console.error(`SignalR: Failed to leave group ${groupName}:`, error);
+      return false;
+    }
+  }
+
+  async GetStoredNotifications(deviceId) {
+    try {
+      const notifications = await this.#connection.invoke(
+        "GetStoredNotifications",
+        deviceId
+      );
+      console.log(
+        `SignalR: Successfully got stored notifications: ${deviceId}`
+      );
+      return notifications;
+    } catch (error) {
+      console.error(`SignalR: Failed to get stored notifications:`, error);
       return false;
     }
   }
@@ -184,6 +197,7 @@ class SignalRService {
   }
 
   triggerCallback(eventName, data = null) {
+    console.log("SignalR: Triggering callback", eventName, data);
     if (this.#connectionCallbacks.has(eventName)) {
       this.#connectionCallbacks.get(eventName).forEach((callback) => {
         try {
