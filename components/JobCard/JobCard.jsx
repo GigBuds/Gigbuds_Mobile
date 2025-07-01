@@ -159,6 +159,8 @@ const JobCard = ({
         //   includeDistanceCalculation: true,
         // });
 
+          result = await JobPostService.searchJobPosts();
+
         setLocationLoading(false);
       } else if (selectedTab === "AcceptedJob" || selectedTab === "AppliedJob" || selectedTab === "JobHistory") {
         if (!isLoadMore) {
