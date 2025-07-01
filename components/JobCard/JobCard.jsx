@@ -152,12 +152,12 @@ const JobCard = ({
           setLoadingMore(true);
         }
 
-        result = await JobPostService.getRecommendedJobPosts(jobSeekerId, {
-          pageIndex: page + 1,
-          pageSize: PAGE_SIZE,
-          includeScheduleMatching: true,
-          includeDistanceCalculation: true,
-        });
+        // result = await JobPostService.getRecommendedJobPosts(jobSeekerId, {
+        //   pageIndex: page + 1,
+        //   pageSize: PAGE_SIZE,
+        //   includeScheduleMatching: true,
+        //   includeDistanceCalculation: true,
+        // });
 
         setLocationLoading(false);
       } else if (selectedTab === "AcceptedJob" || selectedTab === "AppliedJob" || selectedTab === "JobHistory") {
