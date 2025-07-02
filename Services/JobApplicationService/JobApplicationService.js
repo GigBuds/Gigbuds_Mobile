@@ -11,15 +11,22 @@ class JobApplicationService {
       if (!jobPostId || !accountId) {
         throw new Error("jobPostId, accountId are required");
       }
-      const formData = new FormData();
       
-      // Only append CV file if it exists (CV is now optional)
+      const formData = new FormData();
+      formData.append("JobPostId", jobPostId);
+      formData.append("AccountId", accountId);
       if (cvFile) {
-        formData.append("cvFile", cvFile);
+        formData.append("CvFile", cvFile);
       }
       
+      console.log("FormData contents:", {
+        JobPostId: jobPostId,
+        AccountId: accountId,
+        hasCvFile: !!cvFile
+      });
+      
       const response = await api.post(
-        `job-applications/apply?jobPostId=${jobPostId}&accountId=${accountId}`,
+        "job-applications/apply",
         formData,
         {
           headers: {
@@ -37,6 +44,7 @@ class JobApplicationService {
       return {
         success: false,
         error:
+          error.response?.data?.error ||
           error.response?.data?.message ||
           error.message ||
           "Đã xảy ra lỗi khi nộp đơn ứng tuyển.",

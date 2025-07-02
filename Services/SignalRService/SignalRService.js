@@ -43,7 +43,7 @@ class SignalRService {
       this.#isConnecting = true;
 
       // Get hub URL from environment variables
-      const hubUrl = process.env.HUB_URL || process.env.EXPO_PUBLIC_HUB_URL;
+      const hubUrl = process.env.EXPO_PUBLIC_HUB_URL || process.env.HUB_URL;
       console.log("hubUrl", hubUrl);
       if (!hubUrl) {
         throw new Error("HUB_URL not found in environment variables");

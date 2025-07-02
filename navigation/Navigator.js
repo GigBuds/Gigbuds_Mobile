@@ -31,6 +31,7 @@ import MembershipRegisterScreen from "../Screen/PaymentScreen/MembershipRegister
 import MyJob from "../Screen/ProfileScreen/MyJob/MyJob";
 import HeaderLayout from "../layout/HeaderLayout";
 import MemberShip from "../Screen/MemberShip/MemberShip";
+import EmployerProfile from "../Screen/EmployerProfile/EmployerProfile";
 import { useNotification } from "../context/notificationContext";
 import { View, Text } from "react-native";
 
@@ -67,6 +68,11 @@ export default function Navigator() {
               <MemberShip />
             </HeaderLayout>
           )}
+        />
+        <Stack.Screen
+          name="EmployerProfile"
+          options={{ headerShown: false }}
+          children={() => <EmployerProfile />}
         />
       </Stack.Navigator>
     );
@@ -110,6 +116,11 @@ export default function Navigator() {
               <MemberShip />
             </HeaderLayout>
           )}
+        />
+        <Stack.Screen
+          name="EmployerProfile"
+          options={{ headerShown: false }}
+          children={() => <EmployerProfile />}
         />
       </Stack.Navigator>
     );
