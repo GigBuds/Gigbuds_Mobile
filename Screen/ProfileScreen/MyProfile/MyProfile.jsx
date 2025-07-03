@@ -113,6 +113,7 @@ const MyProfile = () => {
               feedbackType="EmployerToJobSeeker"
               title="Đánh giá từ nhà tuyển dụng"
               isEmployer={false}
+              existingFeedbacks={userProfile.feedbacks}
             />
           )}
         </ScrollView>

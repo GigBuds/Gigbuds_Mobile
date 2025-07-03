@@ -6,6 +6,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { useLoading } from "../../context/LoadingContext";
 import JobApplicationService from "../../Services/JobApplicationService/JobApplicationService";
+import FeedbackDialog from "../FeedbackDialog/FeedbackDialog";
 
 const JobCard = ({
   appliedFilters,
@@ -24,6 +25,8 @@ const JobCard = ({
   const [hasMoreData, setHasMoreData] = React.useState(true);
   const [totalItems, setTotalItems] = React.useState(0);
   const [debouncedSearchInput, setDebouncedSearchInput] = React.useState(searchInput || "");
+  const [feedbackDialogVisible, setFeedbackDialogVisible] = React.useState(false);
+  const [selectedJobForFeedback, setSelectedJobForFeedback] = React.useState(null);
   const navigate = useNavigation();
 
   const PAGE_SIZE = 5;
@@ -100,6 +103,14 @@ const JobCard = ({
       return distanceKm <= 50;
     });
   }, [selectedTab]);
+
+  // Helper function to check if job seeker has already given feedback
+  const hasJobSeekerGivenFeedback = useCallback((job) => {
+    return job.isJobSeekerFeedback || 
+           job.IsJobSeekerFeedback || 
+           job.isFeedback ||
+           false;
+  }, []);
 
   // Updated filterJobsByTitle function - only for specific tabs
   const filterJobsByTitle = useCallback((jobs) => {
@@ -212,7 +223,7 @@ const JobCard = ({
         } else if (selectedTab === "AcceptedJob" || selectedTab === "AppliedJob" || selectedTab === "JobHistory") {
           // Apply client-side title filtering for these tabs if debouncedSearchInput exists
           if (debouncedSearchInput && debouncedSearchInput.trim()) {
-            processedData = filterJobsByTitle(rawData);
+            processedData = filterJobsByTitle(processedData);
           }
         }
         // For other tabs (search), the API already handles jobName filtering, so no client-side filtering needed
@@ -416,19 +427,35 @@ const JobCard = ({
     );
   };
 
+  const handleFeedbackPress = (job) => {
+    setSelectedJobForFeedback(job);
+    setFeedbackDialogVisible(true);
+  };
+
+  const handleFeedbackSubmitted = () => {
+    // Refresh the job data after feedback is submitted to filter out the job
+    resetAndFetch();
+  };
+
+  const handleCloseFeedbackDialog = () => {
+    setFeedbackDialogVisible(false);
+    setSelectedJobForFeedback(null);
+  };
+
   return (
-    <ScrollView 
-      bouncesZoom={true} 
-      style={{ marginBottom: marginBottom }}
-      onScroll={handleScroll}
-      scrollEventThrottle={16} // Reduced for better responsiveness
-    >
+    <>
+      <ScrollView 
+        bouncesZoom={true} 
+        style={{ marginBottom: marginBottom }}
+        onScroll={handleScroll}
+        scrollEventThrottle={16} // Reduced for better responsiveness
+      >
       {jobData.map((job, index) => (
         <TouchableOpacity
           key={job.id || job.jobPostId || `job-${index}`}
           style={{
             width: "100%",
-            height: 150,
+            height: selectedTab === "JobHistory" && !hasJobSeekerGivenFeedback(job) ? 190 : 150, // Increased height significantly for feedback button
             backgroundColor: "white",
             position: "relative",
             marginBottom: 20,
@@ -445,25 +472,35 @@ const JobCard = ({
             });
           }}
         >
-          <Ionicons
-            name="bookmark-outline"
-            size={28}
-            color="gray"
-            style={{ position: "absolute", top: 15, right: 15 }}
-          />
+          <View style={{ 
+            position: "absolute", 
+            top: 15, 
+            right: 15, 
+            flexDirection: "row", 
+            alignItems: "center",
+            gap: 8,
+            zIndex: 10
+          }}>
+            
+            <Ionicons
+              name="bookmark-outline"
+              size={28}
+              color="gray"
+            />
+          </View>
           <View
             style={{
               flexDirection: "row",
               alignItems: "center",
-              height: "50%",
+              height: 50, // Fixed height instead of percentage
             }}
           >
             <Image
               source={{ uri: job.companyLogo }}
               style={{
-                width: "17%",
-                height: "100%",
-                borderRadius: 100,
+                width: 50,
+                height: 50,
+                borderRadius: 25,
                 marginBottom: 10,
                 backgroundColor: "black",
               }}
@@ -525,7 +562,15 @@ const JobCard = ({
                 : "Giờ"}
             </Text>
           </View>
-          <View style={{ flexDirection: "row", gap: 5, marginTop: "3%" }}>
+
+
+          <View style={{ 
+            flexDirection: "row", 
+            gap: 5, 
+            marginTop: "3%",
+            marginBottom: selectedTab === "JobHistory" && !hasJobSeekerGivenFeedback(job) ? 60 : 0, // Increased bottom margin when feedback button present
+            paddingBottom: selectedTab === "JobHistory" && !hasJobSeekerGivenFeedback(job) ? 10 : 0, // Added padding bottom
+          }}>
             {[
               getExperienceRequirement(job.experienceRequirement) ===
               "Không yêu cầu kinh nghiệm"
@@ -597,6 +642,41 @@ const JobCard = ({
               </View>
             )}
           </View>
+
+          {/* Feedback Button - Moved to bottom left of card */}
+          {selectedTab === "JobHistory" && !hasJobSeekerGivenFeedback(job) && (
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                bottom: 10,
+                left: 15,
+                backgroundColor: "#2558B6",
+                paddingHorizontal: 16,
+                paddingVertical: 8,
+                borderRadius: 10,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                elevation: 5,
+                zIndex: 20,
+              }}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleFeedbackPress(job);
+              }}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="star" size={14} color="white" />
+              <Text style={{ 
+                color: "white", 
+                fontSize: 12, 
+                fontWeight: "600" 
+              }}>
+                Đánh giá
+              </Text>
+            </TouchableOpacity>
+          )}
         </TouchableOpacity>
       ))}
       
@@ -630,11 +710,21 @@ const JobCard = ({
             fontSize: 14,
             fontStyle: 'italic'
           }}>
-            Đã hiển thị tất cả {jobData.length} công việc
+             Đã hiển thị tất cả {jobData.length} công việc
           </Text>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+
+      {/* Feedback Dialog */}
+      <FeedbackDialog
+        visible={feedbackDialogVisible}
+        onClose={handleCloseFeedbackDialog}
+        jobData={selectedJobForFeedback}
+        jobSeekerId={jobSeekerId}
+        onFeedbackSubmitted={handleFeedbackSubmitted}
+      />
+    </>
   );
 };
 

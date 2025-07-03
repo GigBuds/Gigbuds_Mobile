@@ -15,16 +15,26 @@ const FeedbackSection = ({
   accountId, 
   feedbackType = "All", 
   title = "Đánh giá", 
-  isEmployer = false 
+  isEmployer = false,
+  existingFeedbacks = null
 }) => {
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAll, setShowAll] = useState(false);
+  const [failedImages, setFailedImages] = useState(new Set());
 
   useEffect(() => {
-    fetchFeedbacks();
-  }, [accountId, feedbackType]);
+    if (existingFeedbacks) {
+      // Use existing feedback data from profile (which has correct companyLogo)
+      console.log('Using existing feedbacks from profile:', existingFeedbacks);
+      setFeedbacks(existingFeedbacks);
+      setLoading(false);
+    } else {
+      // Fallback to API call if no existing data
+      fetchFeedbacks();
+    }
+  }, [accountId, feedbackType, existingFeedbacks]);
 
   const fetchFeedbacks = async () => {
     try {
@@ -124,11 +134,45 @@ const FeedbackSection = ({
   const getDisplayAvatar = (feedback) => {
     if (isEmployer) {
       // For employer profile, show job seeker avatar
+      console.log(feedback.accountAvatar);
       return feedback.accountAvatar;
+          } else {
+        // For job seeker profile, show company logo
+        console.log('Company logo URL:', feedback.companyLogo);
+        return feedback.companyLogo;
+      }
+  };
+
+  const getAvatarFallback = (feedback) => {
+    if (isEmployer) {
+      // For employer profile, use initials from job seeker name
+      const name = feedback.accountName || 'N/A';
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=2558B6&color=fff&size=40&format=png`;
     } else {
-      // For job seeker profile, show company logo
-      return feedback.companyLogo;
+      // For job seeker profile, use company name initials or company icon
+      const companyName = feedback.employerName || feedback.companyName || 'Company';
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName)}&background=FF9500&color=fff&size=40&format=png`;
     }
+  };
+
+  const renderAvatar = (feedback, index) => {
+    const primaryUri = getDisplayAvatar(feedback);
+    const fallbackUri = getAvatarFallback(feedback);
+    const imageKey = `${index}-${primaryUri}`;
+    const shouldUseFallback = !primaryUri || failedImages.has(imageKey);
+
+    return (
+      <Image
+        source={{ 
+          uri: shouldUseFallback ? fallbackUri : primaryUri
+        }}
+        style={styles.avatar}
+        onError={() => {
+          console.log('Avatar failed to load, using fallback for:', getDisplayName(feedback));
+          setFailedImages(prev => new Set(prev).add(imageKey));
+        }}
+      />
+    );
   };
 
   // Ensure feedbacks is always an array before using array methods
@@ -193,12 +237,7 @@ const FeedbackSection = ({
         {displayedFeedbacks.map((feedback, index) => (
           <View key={index} style={styles.feedbackItem}>
             <View style={styles.feedbackHeader}>
-              <Image
-                source={{ 
-                  uri: getDisplayAvatar(feedback) || 'https://via.placeholder.com/40x40?text=?' 
-                }}
-                style={styles.avatar}
-              />
+              {renderAvatar(feedback, index)}
               <View style={styles.feedbackInfo}>
                 <Text style={styles.feedbackName}>{getDisplayName(feedback)}</Text>
                 <View style={styles.feedbackRating}>
