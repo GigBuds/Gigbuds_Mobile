@@ -7,7 +7,9 @@ class FeedbackService {
                 throw new Error('Account ID is required');
             }
 
-            const response = await api.get(`feedbacks/account/${accountId}?feedbackType=${feedbackType}`);
+            // Add pagination parameters to get all feedbacks (using a large page size)
+            const response = await api.get(`feedbacks/account/${accountId}?feedbackType=${feedbackType}&pageIndex=1&pageSize=100`);
+            
             return {
                 success: true,
                 data: response.data,

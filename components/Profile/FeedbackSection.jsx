@@ -233,7 +233,11 @@ const FeedbackSection = ({
         </View>
       </View>
 
-      <ScrollView style={styles.feedbackList} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.feedbackList} 
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+      >
         {displayedFeedbacks.map((feedback, index) => (
           <View key={index} style={styles.feedbackItem}>
             <View style={styles.feedbackHeader}>
@@ -251,6 +255,15 @@ const FeedbackSection = ({
             )}
           </View>
         ))}
+        
+        {/* Show a visual indicator when more feedbacks are displayed */}
+        {showAll && safeFeedbacks.length > 3 && (
+          <View style={styles.showAllIndicator}>
+            <Text style={styles.showAllText}>
+              Hiển thị tất cả {safeFeedbacks.length} đánh giá
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       {safeFeedbacks.length > 3 && (
@@ -405,6 +418,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     marginTop: 8,
+  },
+  showAllIndicator: {
+    alignItems: 'center',
+    paddingVertical: 16,
+  },
+  showAllText: {
+    fontSize: 14,
+    color: '#999',
   },
 });
 
