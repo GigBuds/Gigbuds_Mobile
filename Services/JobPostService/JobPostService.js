@@ -357,6 +357,27 @@ class JobPostService {
             };
         }
     }
+
+    static async getJobPostsByCompanyId(companyId) {
+        try {
+            if (!companyId) {
+                throw new Error('Company ID is required');
+            }
+            const response = await api.get(`job-posts/employer/${companyId}`);
+            return {
+                success: true,
+                data: response.data,
+                status: response.status
+            };
+        } catch (error) {
+            console.error('Error in getJobPostsByCompanyId:', error);
+            return {
+                success: false,
+                error: error.response?.data?.message || error.message || "Đã xảy ra lỗi khi lấy công việc của công ty.",
+                status: error.response?.status
+            };
+        }
+    }
 }
 
 export default JobPostService;

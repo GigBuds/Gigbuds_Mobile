@@ -57,7 +57,7 @@ const HomeScreen = () => {
           </Text>
         </TouchableOpacity>
       </View>
-      <JobCard searchInput={searchInput} searchParams={searchParams} marginBottom={-170} />
+      <JobCard searchInput={searchInput} searchParams={searchParams} marginBottom={-200} />
     </View>
   );
 };

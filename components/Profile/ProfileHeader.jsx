@@ -7,16 +7,16 @@ const ProfileHeader = ({ userProfile }) => {
            "Chưa cập nhật vị trí công việc";
   };
 
-  const followerCount = userProfile?.followerCount || 0;
-  const completedJobs = userProfile?.accountExperienceTags?.length || 0;
-  const totalFeedbacks = userProfile?.totalFeedbacks || 0;
+  const followerCount = userProfile?.numOfFollowers || 0;
+  const completedJobs = userProfile?.numOfAvailablePost?.length || 0;
+  const totalFeedbacks = userProfile?.averageRating  || 0;
 
   return (
     <View style={styles.container}>
       {/* Avatar */}
       <Image
         source={{
-          uri: userProfile?.avatarUrl || "https://via.placeholder.com/150",
+          uri: userProfile?.avatarUrl || userProfile?.companyLogo || "https://via.placeholder.com/150",
         }}
         style={styles.avatar}
       />
@@ -24,7 +24,13 @@ const ProfileHeader = ({ userProfile }) => {
       {/* User Info */}
       <View style={styles.userInfo}>
         <Text style={styles.userName}>
-          {userProfile?.lastName} {userProfile?.firstName}
+        {
+          userProfile?.firstName && userProfile?.lastName
+            ? `${userProfile.firstName} ${userProfile.lastName}`
+              : userProfile?.companyName
+              ? userProfile.companyName
+                : "Chưa cập nhật tên"
+        }
         </Text>
         {/* <Text style={styles.jobPosition}>
           {getJobPosition()}
@@ -39,7 +45,7 @@ const ProfileHeader = ({ userProfile }) => {
           
           <View style={styles.statItem}>
             <Text style={styles.statValue}>{completedJobs}</Text>
-            <Text style={styles.statLabel}> công việc hoàn thành</Text>
+            <Text style={styles.statLabel}> công việc hiện tại </Text>
           </View>
           
           <View style={styles.statItem}>

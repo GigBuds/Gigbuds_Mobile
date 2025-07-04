@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     color: "#333",
-    fontSize: 20,
+    fontSize: 16,
     textAlign: 'center',
     // Android text rendering improvements
     ...Platform.select({
