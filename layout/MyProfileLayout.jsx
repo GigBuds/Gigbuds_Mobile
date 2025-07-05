@@ -16,8 +16,8 @@ import { useNavigation } from "@react-navigation/native";
 import LoadingComponent from "../components/Common/LoadingComponent";
 import { useLoading } from "../context/LoadingContext";
 
-export default function MyProfileLayout({ children }) {
-  const navigatetion = useNavigation();
+export default function MyProfileLayout({ children, showBackButton = true, onBackPress }) {
+  const navigation = useNavigation(); // Fixed typo: was "navigatetion"
   const [userName, setUserName] = useState("");
   const { isLoading } = useLoading();
 
@@ -36,6 +36,14 @@ export default function MyProfileLayout({ children }) {
 
     fetchUserName();
   }, []);
+
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      navigation.goBack();
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -64,6 +72,19 @@ export default function MyProfileLayout({ children }) {
         style={styles.backgroundImage}
         resizeMode="cover"
       />
+      
+      {/* Back Button */}
+      {showBackButton && (
+        <SafeAreaView style={styles.backButtonContainer}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBackPress}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+        </SafeAreaView>
+      )}
+      
       <View style={styles.formContainer}>{children}</View>
     </View>
   );
@@ -80,6 +101,28 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     position: "absolute",
+  },
+  backButtonContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   headerContainer: {
     justifyContent: "center",
@@ -110,9 +153,11 @@ const styles = StyleSheet.create({
   formContainer: {
     width: "100%",
     height: "82%",
+    paddingHorizontal: "3%",
+    paddingTop: "5%",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     backgroundColor: "#F3F7FF",
-    padding: 20,
+    
   },
 });

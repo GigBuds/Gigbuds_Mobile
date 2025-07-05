@@ -18,6 +18,8 @@ import EmployerService from '../../Services/EmployerService/EmployerService';
 import FeedbackSection from '../../components/Profile/FeedbackSection';
 import { useLoading } from '../../context/LoadingContext';
 import ErrorComponent from '../../components/Common/ErrorComponent';
+import Profile from '../ProfileScreen/ProfileScreen';
+import ProfileHeader from '../../components/Profile/ProfileHeader';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -121,82 +123,11 @@ const EmployerProfile = () => {
     return number.toString();
   };
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
-  if (error) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" size={24} color="#333" />
-          </TouchableOpacity>
-        </View>
-        <ErrorComponent error={error} onRetry={handleRetry} />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Company Profile Card */}
-        <View style={styles.profileCard}>
-          <Image
-            source={{ 
-              uri: employerData?.companyLogo || 'https://via.placeholder.com/100x100?text=Company' 
-            }}
-            style={styles.companyLogo}
-          />
-          <Text style={styles.companyName}>{employerData?.companyName}</Text>
-          
-          {/* Stats */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {formatNumber(employerData?.followersCount || 0)}
-              </Text>
-              <Text style={styles.statLabel}>người theo dõi</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {formatNumber(employerData?.jobPostsCount || 0)}
-              </Text>
-              <Text style={styles.statLabel}>tin tuyển dụng</Text>
-            </View>
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {employerData?.averageRating ? employerData.averageRating.toFixed(1) : '0.0'}
-              </Text>
-              <Text style={styles.statLabel}>đánh giá</Text>
-            </View>
-          </View>
-        </View>
+      <ProfileHeader userProfile={employerData}/>
 
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
@@ -218,6 +149,7 @@ const EmployerProfile = () => {
           </TouchableOpacity>
         </View>
 
+      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, height:200 }}>
         {activeTab === 'info' ? (
           <>
             {/* Company Description */}
@@ -271,10 +203,26 @@ const EmployerProfile = () => {
                           region={coordinates}
                           showsUserLocation={false}
                           showsMyLocationButton={false}
-                          scrollEnabled={true}
-                          zoomEnabled={true}
+                          scrollEnabled={false}
+                          zoomEnabled={false}
                         >
-                          <Marker coordinate={coordinates} title={employerData.companyName} />
+                           <Marker
+                                      coordinate={{
+                                        latitude: coordinates.latitude,
+                                        longitude: coordinates.longitude,
+                                      }}
+                                      title={employerData?.companyName || "Địa điểm làm việc"}
+                                      description={employerData?.jobLocation}
+                                    >
+                                      <Image
+                                        source={{
+                                          uri:
+                                            employerData?.companyLogo || "https://via.placeholder.com/50",
+                                        }}
+                                        style={{ width: 50, height: 50, borderRadius: 10 }}
+                                        resizeMode="center"
+                                      />
+                                    </Marker>
                         </MapView>
                       )}
                     </View>
@@ -304,7 +252,6 @@ const EmployerProfile = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   header: {
     flexDirection: 'row',
@@ -313,50 +260,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: 'white',
   },
-  backButton: {
-    padding: 8,
-  },
-  profileCard: {
-    backgroundColor: 'white',
-    alignItems: 'center',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-  },
-  companyLogo: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 12,
-  },
-  companyName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2558B6',
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: 'white',
-    marginTop: 1,
+    marginTop: 10,
   },
   tab: {
     flex: 1,
@@ -377,8 +283,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   section: {
+    marginTop: 16,
     backgroundColor: 'white',
-    margin: 16,
     borderRadius: 12,
     padding: 16,
     shadowColor: '#000',

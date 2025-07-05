@@ -19,37 +19,11 @@ const GradientButton = ({
   colors = ["#FF7345", "#FFDC95"],
   start = { x: 0, y: 0 },
   end = { x: 1.5, y: 0 },
+  hasApplied,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPDF, setSelectedPDF] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
-  const [hasApplied, setHasApplied] = useState(false);
-
-  useEffect(() => {
-    const checkIfApplied = async () => {
-      try {
-        const userId = await AsyncStorage.getItem("userId");
-        if (!userId || !jobDetails?.id) {
-          setHasApplied(false);
-          return;
-        }
-        const response = await JobApplicationService.checkIfApplied(
-          jobDetails.id,
-          userId
-        );
-        console.log("Check application response:", response);
-        if (response.success) {
-          setHasApplied(false); // Assuming API returns hasApplied boolean
-        } else {
-          setHasApplied(true);
-        }
-      } catch (error) {
-        console.error("Error checking application:", error);
-        setHasApplied(false); // Default to false if error occurs
-      } 
-    };
-    checkIfApplied();
-  }, [jobDetails]);
 
   const getButtonText = () => {
     if (hasApplied) {

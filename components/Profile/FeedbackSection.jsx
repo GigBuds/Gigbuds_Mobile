@@ -179,31 +179,7 @@ const FeedbackSection = ({
   const safeFeedbacks = Array.isArray(feedbacks) ? feedbacks : [];
   const displayedFeedbacks = showAll ? safeFeedbacks : safeFeedbacks.slice(0, 3);
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="small" color="#2558B6" />
-          <Text style={styles.loadingText}>Đang tải đánh giá...</Text>
-        </View>
-      </View>
-    );
-  }
 
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Không thể tải đánh giá</Text>
-          <TouchableOpacity onPress={fetchFeedbacks} style={styles.retryButton}>
-            <Text style={styles.retryText}>Thử lại</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   if (safeFeedbacks.length === 0) {
     return (
@@ -288,9 +264,9 @@ const FeedbackSection = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
-    margin: 16,
     borderRadius: 12,
     padding: 16,
+    marginTop: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,

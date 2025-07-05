@@ -69,10 +69,16 @@ export default function Navigator() {
             </HeaderLayout>
           )}
         />
+        
         <Stack.Screen
           name="EmployerProfile"
           options={{ headerShown: false }}
-          children={() => <EmployerProfile />}
+          children={() => (
+            <MyProfileLayout showBackButton={false}>
+              <EmployerProfile />
+            </MyProfileLayout>
+          )
+          }
         />
       </Stack.Navigator>
     );
@@ -120,7 +126,11 @@ export default function Navigator() {
         <Stack.Screen
           name="EmployerProfile"
           options={{ headerShown: false }}
-          children={() => <EmployerProfile />}
+          children={() => (
+            <MyProfileLayout>
+              <EmployerProfile />
+            </MyProfileLayout>
+          )}
         />
       </Stack.Navigator>
     );
@@ -192,7 +202,7 @@ export default function Navigator() {
           name="Profile"
           options={{ headerShown: false }}
           children={() => (
-            <ProfileLayout>
+            <ProfileLayout >
               <ProfileScreen />
             </ProfileLayout>
           )}
@@ -240,7 +250,7 @@ export default function Navigator() {
           name="Profile"
           options={{ headerShown: false }}
           children={() => (
-            <ProfileLayout>
+            <ProfileLayout showBackButton={false}>
               <ProfileScreen />
             </ProfileLayout>
           )}
