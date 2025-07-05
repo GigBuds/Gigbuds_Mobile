@@ -1,4 +1,4 @@
-import { View, ScrollView, Text, ActivityIndicator } from "react-native";
+import { View, ScrollView, Text, ActivityIndicator, StyleSheet } from "react-native";
 import React, { useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
@@ -6,7 +6,14 @@ import { useLoading } from "../../context/LoadingContext";
 import { useJobData } from "./hooks/useJobData";
 import JobCardItem from "./JobCardItem";
 import JobCardLoadingStates from "./JobCardLoadingStates";
-import { getDistrict, getExperienceRequirement, getTimeAgo, getCity, getJobId } from "./utils/jobCardUtils";
+import {
+  getDistrict,
+  getExperienceRequirement,
+  getTimeAgo,
+  getCity,
+  getJobId,
+} from "./utils/jobCardUtils";
+import FeedbackDialog from "../FeedbackDialog/FeedbackDialog";
 
 const JobCard = ({
   appliedFilters,
@@ -17,9 +24,9 @@ const JobCard = ({
   employerId,
 }) => {
   const { showLoading, hideLoading } = useLoading();
-  const { fetchJobPosts, debounceTimerRef, previousSearchInputRef } = useJobData(showLoading, hideLoading);
+  const { fetchJobPosts, debounceTimerRef, previousSearchInputRef } =
+    useJobData(showLoading, hideLoading);
   const navigate = useNavigation();
-
   // State management
   const [jobData, setJobData] = React.useState([]);
   const [jobSeekerId, setJobSeekerId] = React.useState(null);
@@ -28,7 +35,13 @@ const JobCard = ({
   const [currentPage, setCurrentPage] = React.useState(0);
   const [hasMoreData, setHasMoreData] = React.useState(true);
   const [totalItems, setTotalItems] = React.useState(0);
-  const [debouncedSearchInput, setDebouncedSearchInput] = React.useState(searchInput || "");
+  const [debouncedSearchInput, setDebouncedSearchInput] = React.useState(
+    searchInput || ""
+  );
+  const [feedbackDialogVisible, setFeedbackDialogVisible] =
+    React.useState(false);
+  const [selectedJobForFeedback, setSelectedJobForFeedback] =
+    React.useState(null);
 
   // Constants
   const PAGE_SIZE = 5;
@@ -48,10 +61,10 @@ const JobCard = ({
   // Debounce search input
   React.useEffect(() => {
     const currentSearchInput = searchInput || "";
-    
+
     if (previousSearchInputRef.current !== currentSearchInput) {
       previousSearchInputRef.current = currentSearchInput;
-      
+
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
@@ -69,53 +82,68 @@ const JobCard = ({
   }, [searchInput, DEBOUNCE_DELAY]);
 
   // Fetch job posts with new hook
-  const handleFetchJobPosts = useCallback(async (page = 0, isLoadMore = false) => {
-    if (isLoadMore) {
-      setLoadingMore(true);
-    } else {
-      setLocationLoading(true);
-    }
+  const handleFetchJobPosts = useCallback(
+    async (page = 0, isLoadMore = false) => {
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLocationLoading(true);
+      }
 
-    const result = await fetchJobPosts({
+      const result = await fetchJobPosts({
+        searchParams,
+        selectedTab,
+        jobSeekerId,
+        employerId,
+        debouncedSearchInput,
+        page,
+        pageSize: PAGE_SIZE,
+        isLoadMore,
+      });
+
+      if (result.success) {
+        if (isLoadMore) {
+          setJobData((prevData) => {
+            const existingIds = new Set(
+              prevData.map((job) => job.jobPostId || job.id)
+            );
+            const newJobs = result.data.filter(
+              (job) => !existingIds.has(job.jobPostId || job.id)
+            );
+            return [...prevData, ...newJobs];
+          });
+        } else {
+          setJobData(result.data);
+        }
+
+        setTotalItems(result.totalCount);
+        setCurrentPage(result.page);
+        setHasMoreData(result.hasMore);
+      } else {
+        console.error("Error fetching job posts:", result.error);
+        if (!isLoadMore) {
+          setJobData([]);
+        }
+        setHasMoreData(false);
+      }
+
+      setLocationLoading(false);
+      setLoadingMore(false);
+    },
+    [
+      fetchJobPosts,
       searchParams,
       selectedTab,
       jobSeekerId,
       employerId,
       debouncedSearchInput,
-      page,
-      pageSize: PAGE_SIZE,
-      isLoadMore
-    });
-
-    if (result.success) {
-      if (isLoadMore) {
-        setJobData(prevData => {
-          const existingIds = new Set(prevData.map(job => job.jobPostId || job.id));
-          const newJobs = result.data.filter(job => !existingIds.has(job.jobPostId || job.id));
-          return [...prevData, ...newJobs];
-        });
-      } else {
-        setJobData(result.data);
-      }
-
-      setTotalItems(result.totalCount);
-      setCurrentPage(result.page);
-      setHasMoreData(result.hasMore);
-    } else {
-      console.error("Error fetching job posts:", result.error);
-      if (!isLoadMore) {
-        setJobData([]);
-      }
-      setHasMoreData(false);
-    }
-
-    setLocationLoading(false);
-    setLoadingMore(false);
-  }, [fetchJobPosts, searchParams, selectedTab, jobSeekerId, employerId, debouncedSearchInput, PAGE_SIZE]);
+      PAGE_SIZE,
+    ]
+  );
   // Load more function
   const loadMoreJobs = useCallback(async () => {
     if (loadingMore || !hasMoreData) return;
-    
+
     const nextPage = currentPage + 1;
     console.log(`Loading more jobs - Next page: ${nextPage}`);
     await handleFetchJobPosts(nextPage, true);
@@ -137,16 +165,38 @@ const JobCard = ({
   }, [searchParams, selectedTab, jobSeekerId, debouncedSearchInput]);
 
   // Handle scroll to load more
-  const handleScroll = useCallback((event) => {
-    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    const paddingToBottom = 100;
-    const isCloseToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom;
-    
-    if (isCloseToBottom && hasMoreData && !loadingMore) {
-      loadMoreJobs();
-    }
-  }, [hasMoreData, loadingMore, loadMoreJobs]);
+  const handleScroll = useCallback(
+    (event) => {
+      const { layoutMeasurement, contentOffset, contentSize } =
+        event.nativeEvent;
+      const paddingToBottom = 100;
+      const isCloseToBottom =
+        layoutMeasurement.height + contentOffset.y >=
+        contentSize.height - paddingToBottom;
+
+      if (isCloseToBottom && hasMoreData && !loadingMore) {
+        loadMoreJobs();
+      }
+    },
+    [hasMoreData, loadingMore, loadMoreJobs]
+  );
   // Show loading or no data states
+
+  const handleFeedbackPress = (job) => {
+    setSelectedJobForFeedback(job);
+    setFeedbackDialogVisible(true);
+  };
+
+  const handleFeedbackSubmitted = () => {
+    // Refresh the job data after feedback is submitted to filter out the job
+    resetAndFetch();
+  };
+
+  const handleCloseFeedbackDialog = () => {
+    setFeedbackDialogVisible(false);
+    setSelectedJobForFeedback(null);
+  };
+
   if (locationLoading) {
     return (
       <JobCardLoadingStates
@@ -170,53 +220,59 @@ const JobCard = ({
         debouncedSearchInput={debouncedSearchInput}
         selectedTab={selectedTab}
       />
-    );
-  }
+    );  }
   return (
     <>
-    <ScrollView 
-      bouncesZoom={true} 
-      style={{ marginBottom: marginBottom }}
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-    >
-      {jobData.map((job, index) => (
-        <JobCardItem
-          key={job.id || job.jobPostId || `job-${index}`}
-          job={job}
-          index={index}
-          selectedTab={selectedTab}
-          debouncedSearchInput={debouncedSearchInput}
-          onPress={() => {
-            navigate.navigate("JobDetail", {
-              jobId: getJobId(job, selectedTab)
-            });
-          }}
-          getCity={getCity}
-          getTimeAgo={getTimeAgo}
-          getDistrict={getDistrict}
-          getExperienceRequirement={getExperienceRequirement}
-        />      
-      ))}
-
-      {/* Load More Indicator */}
-      {loadingMore && (
-        <View style={{ paddingVertical: 20, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color="#FF7345" />
-          <Text style={{ marginTop: 10, color: 'gray', fontSize: 14 }}>
-            Đang tải thêm công việc...
-          </Text>
-        </View>
-      )}
-
-      {/* End of List Indicator */}
-      {!hasMoreData && jobData.length > 0 && (
-        <View style={{ paddingVertical: 20, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={{ color: 'gray', fontSize: 14, fontStyle: 'italic' }}>
-            Đã hiển thị tất cả {jobData.length} công việc
-          </Text>
-        </View>
-      )}
+      <ScrollView
+        bouncesZoom={true}
+        style={[styles.scrollView, { marginBottom: marginBottom }]}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >        {jobData.map((job, index) => {
+          // Ensure job object exists and has required properties
+          if (!job || !job.jobTitle) {
+            console.warn('Invalid job data at index:', index, job);
+            return null;
+          }
+          
+          return (
+            <JobCardItem
+              key={job.id || job.jobPostId || `job-${index}`}
+              job={job}
+              index={index}
+              selectedTab={selectedTab}
+              debouncedSearchInput={debouncedSearchInput}
+              onPress={() => {
+                navigate.navigate("JobDetail", {
+                  jobId: getJobId(job, selectedTab),
+                });
+              }}
+              onFeedbackPress={() => handleFeedbackPress(job)}
+              getCity={getCity}
+              getTimeAgo={getTimeAgo}
+              getDistrict={getDistrict}
+              getExperienceRequirement={getExperienceRequirement}
+            />
+          );
+        })}
+        
+        {/* Load More Indicator */}
+        {loadingMore && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF7345" />
+            <Text style={styles.loadingText}>
+              Đang tải thêm công việc...
+            </Text>
+          </View>
+        )}
+        {/* End of List Indicator */}
+        {!hasMoreData && jobData.length > 0 && (
+          <View style={styles.endOfListContainer}>
+            <Text style={styles.endOfListText}>
+              Đã hiển thị tất cả {jobData.length} công việc
+            </Text>
+          </View>
+        )}
       </ScrollView>
 
       <FeedbackDialog
@@ -229,5 +285,31 @@ const JobCard = ({
     </>
   );
 };
+
+const styles = StyleSheet.create({
+  scrollView: {
+    // marginBottom will be set dynamically
+  },
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: 'gray',
+    fontSize: 14,
+  },
+  endOfListContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  endOfListText: {
+    color: 'gray',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+});
 
 export default JobCard;

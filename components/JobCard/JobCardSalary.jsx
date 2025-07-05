@@ -34,8 +34,7 @@ const JobCardSalary = ({ salary, salaryUnit }) => {
           shadowOpacity: 0.3,
           shadowRadius: 4,
         }}
-      >
-        <Text
+      >        <Text
           style={{ 
             color: "white", 
             fontSize: 18, 
@@ -45,10 +44,13 @@ const JobCardSalary = ({ salary, salaryUnit }) => {
             textShadowRadius: 2,
           }}
         >
-          {salary?.toLocaleString("vi-VN", {
-            style: "currency",
-            currency: "VND",
-          })}
+          {salary && typeof salary === 'number' ? 
+            salary.toLocaleString("vi-VN", {
+              style: "currency",
+              currency: "VND",
+            }) : 
+            salary || 'N/A'
+          }
         </Text>
         <Text style={{ 
           color: "rgba(255,255,255,0.8)", 

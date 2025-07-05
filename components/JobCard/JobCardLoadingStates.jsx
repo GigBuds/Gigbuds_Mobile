@@ -1,22 +1,22 @@
-import React from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
+import React from "react";
+import { View, Text, ActivityIndicator } from "react-native";
 
-const JobCardLoadingStates = ({ 
-  locationLoading, 
-  loadingMore, 
-  hasMoreData, 
+const JobCardLoadingStates = ({
+  locationLoading,
+  loadingMore,
+  hasMoreData,
   jobDataLength,
   debouncedSearchInput,
-  selectedTab 
+  selectedTab,
 }) => {
   // Loading initial data
   if (locationLoading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#FF7345" />
-        <Text style={styles.loadingText}>
-          Đang tải công việc...
+        <Text>
+          <ActivityIndicator size="large" color="#FF7345" />
         </Text>
+        <Text style={styles.loadingText}>Đang tải công việc...</Text>
       </View>
     );
   }
@@ -25,10 +25,10 @@ const JobCardLoadingStates = ({
   if (loadingMore) {
     return (
       <View style={styles.loadMoreContainer}>
-        <ActivityIndicator size="large" color="#FF7345" />
-        <Text style={styles.loadMoreText}>
-          Đang tải thêm công việc...
+        <Text>
+          <ActivityIndicator size="large" color="#FF7345" />
         </Text>
+        <Text style={styles.loadMoreText}>Đang tải thêm công việc...</Text>
       </View>
     );
   }
@@ -57,9 +57,7 @@ const JobCardLoadingStates = ({
 
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.noDataText}>
-          {getNoDataMessage()}
-        </Text>
+        <Text style={styles.noDataText}>{getNoDataMessage()}</Text>
       </View>
     );
   }
@@ -79,33 +77,33 @@ const styles = {
     fontSize: 16,
     color: "gray",
     textAlign: "center",
-    marginTop: 10
+    marginTop: 10,
   },
   loadMoreContainer: {
     paddingVertical: 20,
-    alignItems: 'center',
-    justifyContent: 'center'
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadMoreText: {
     marginTop: 10,
-    color: 'gray',
-    fontSize: 14
+    color: "gray",
+    fontSize: 14,
   },
   endOfListContainer: {
     paddingVertical: 20,
-    alignItems: 'center',
-    justifyContent: 'center'
+    alignItems: "center",
+    justifyContent: "center",
   },
   endOfListText: {
-    color: 'gray',
+    color: "gray",
     fontSize: 14,
-    fontStyle: 'italic'
+    fontStyle: "italic",
   },
   noDataText: {
     fontSize: 16,
     color: "gray",
-    textAlign: "center"
-  }
+    textAlign: "center",
+  },
 };
 
 export default JobCardLoadingStates;
