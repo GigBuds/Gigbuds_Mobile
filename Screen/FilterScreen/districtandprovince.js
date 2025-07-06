@@ -21,7 +21,7 @@ export const vietnamCities = [
       { id: 115, name: "Quận Phú Nhuận", code: "PN" },
       { id: 116, name: "Quận Tân Bình", code: "TB" },
       { id: 117, name: "Quận Tân Phú", code: "TP" },
-      { id: 118, name: "Quận Thủ Đức", code: "TD" },
+      { id: 118, name: "Quận Thủ Đức", code: "Thủ Đức" },
       { id: 119, name: "Huyện Bình Chánh", code: "BC" },
       { id: 120, name: "Huyện Cần Giờ", code: "CG" },
       { id: 121, name: "Huyện Củ Chi", code: "CC" },

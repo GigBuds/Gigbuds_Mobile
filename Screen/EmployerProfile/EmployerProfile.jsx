@@ -1,27 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   SafeAreaView,
-  Image,
   TouchableOpacity,
-  ActivityIndicator,
-  Dimensions,
-} from 'react-native';
-import { useRoute, useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
-import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
-import EmployerService from '../../Services/EmployerService/EmployerService';
-import FeedbackSection from '../../components/Profile/FeedbackSection';
-import { useLoading } from '../../context/LoadingContext';
-import ErrorComponent from '../../components/Common/ErrorComponent';
-import Profile from '../ProfileScreen/ProfileScreen';
-import ProfileHeader from '../../components/Profile/ProfileHeader';
-
-const { width: screenWidth } = Dimensions.get('window');
+} from "react-native";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import * as Location from "expo-location";
+import EmployerService from "../../Services/EmployerService/EmployerService";
+import { useLoading } from "../../context/LoadingContext";
+import ProfileHeader from "../../components/Profile/ProfileHeader";
+import InfoSection from "./InfoSection";
+import JobsSection from "./JobsSection";
 
 const EmployerProfile = () => {
   const route = useRoute();
@@ -34,13 +26,13 @@ const EmployerProfile = () => {
   const [error, setError] = useState(null);
   const [coordinates, setCoordinates] = useState(null);
   const [locationLoading, setLocationLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('info'); // 'info' or 'jobs'
+  const [activeTab, setActiveTab] = useState("info"); // 'info' or 'jobs'
 
   useEffect(() => {
     if (employerId) {
       fetchEmployerProfile();
     } else {
-      setError('Không tìm thấy thông tin nhà tuyển dụng');
+      setError("Không tìm thấy thông tin nhà tuyển dụng");
       hideLoading();
     }
   }, [employerId]);
@@ -54,17 +46,17 @@ const EmployerProfile = () => {
 
       if (response.success) {
         setEmployerData(response.data);
-        
+
         // Convert address to coordinates if available
         if (response.data?.companyAddress) {
           await convertAddressToCoordinates(response.data.companyAddress);
         }
       } else {
-        setError(response.error || 'Không thể tải thông tin nhà tuyển dụng');
+        setError(response.error || "Không thể tải thông tin nhà tuyển dụng");
       }
     } catch (err) {
-      console.error('Error fetching employer profile:', err);
-      setError('Đã xảy ra lỗi khi tải thông tin nhà tuyển dụng');
+      console.error("Error fetching employer profile:", err);
+      setError("Đã xảy ra lỗi khi tải thông tin nhà tuyển dụng");
     } finally {
       hideLoading();
       setLoading(false);
@@ -74,13 +66,11 @@ const EmployerProfile = () => {
   const convertAddressToCoordinates = async (address) => {
     try {
       setLocationLoading(true);
-      console.log('Converting address to coordinates:', address);
 
       const geocodedLocation = await Location.geocodeAsync(address);
 
       if (geocodedLocation && geocodedLocation.length > 0) {
         const { latitude, longitude } = geocodedLocation[0];
-        console.log('Coordinates found:', { latitude, longitude });
 
         setCoordinates({
           latitude,
@@ -89,7 +79,7 @@ const EmployerProfile = () => {
           longitudeDelta: 0.005,
         });
       } else {
-        console.warn('No coordinates found for address:', address);
+        console.warn("No coordinates found for address:", address);
         // Fallback to default Ho Chi Minh City coordinates
         setCoordinates({
           latitude: 10.8231,
@@ -99,7 +89,7 @@ const EmployerProfile = () => {
         });
       }
     } catch (error) {
-      console.error('Error geocoding address:', error);
+      console.error("Error geocoding address:", error);
       // Fallback to default coordinates
       setCoordinates({
         latitude: 10.8231,
@@ -118,131 +108,60 @@ const EmployerProfile = () => {
 
   const formatNumber = (number) => {
     if (number >= 1000) {
-      return (number / 1000).toFixed(1) + 'k';
+      return (number / 1000).toFixed(1) + "k";
     }
     return number.toString();
   };
 
-
-
   return (
     <SafeAreaView style={styles.container}>
-      <ProfileHeader userProfile={employerData}/>
+      <ProfileHeader userProfile={employerData} employerId={employerId} />
 
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        style={{ flex: 1, height: 200 }}
+      >
         {/* Tab Navigation */}
         <View style={styles.tabContainer}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'info' && styles.activeTab]}
-            onPress={() => setActiveTab('info')}
+            style={[styles.tab, activeTab === "info" && styles.activeTab]}
+            onPress={() => setActiveTab("info")}
           >
-            <Text style={[styles.tabText, activeTab === 'info' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "info" && styles.activeTabText,
+              ]}
+            >
               Giới thiệu
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'jobs' && styles.activeTab]}
-            onPress={() => setActiveTab('jobs')}
+            style={[styles.tab, activeTab === "jobs" && styles.activeTab]}
+            onPress={() => setActiveTab("jobs")}
           >
-            <Text style={[styles.tabText, activeTab === 'jobs' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "jobs" && styles.activeTabText,
+              ]}
+            >
               Tin tuyển dụng
             </Text>
-          </TouchableOpacity>
-        </View>
+          </TouchableOpacity>        </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1, height:200 }}>
-        {activeTab === 'info' ? (
-          <>
-            {/* Company Description */}
-            {employerData?.companyDescription && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Mô tả</Text>
-                <View style={styles.descriptionContainer}>
-                  <Ionicons name="business-outline" size={20} color="#2558B6" />
-                  <Text style={styles.description}>{employerData.companyDescription}</Text>
-                </View>
-              </View>
-            )}
-
-            {/* Benefits */}
-            {employerData?.benefits && employerData.benefits.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Quyền lợi</Text>
-                <View style={styles.benefitsContainer}>
-                  {employerData.benefits.map((benefit, index) => (
-                    <View key={index} style={styles.benefitItem}>
-                      <Ionicons name="checkmark-circle" size={16} color="#4CAF50" />
-                      <Text style={styles.benefitText}>{benefit}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {/* Location */}
-            {employerData?.companyAddress && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Địa chỉ</Text>
-                <View style={styles.locationContainer}>
-                  <Ionicons name="location-outline" size={20} color="#2558B6" />
-                  <Text style={styles.address}>{employerData.companyAddress}</Text>
-                </View>
-                
-                {/* Map */}
-                {coordinates && (
-                  <View style={styles.mapContainer}>
-                    <Text style={styles.mapTitle}>Xem bản đồ</Text>
-                    <View style={styles.mapWrapper}>
-                      {locationLoading ? (
-                        <View style={styles.mapLoadingContainer}>
-                          <ActivityIndicator size="small" color="#2558B6" />
-                          <Text style={styles.mapLoadingText}>Đang tải bản đồ...</Text>
-                        </View>
-                      ) : (
-                        <MapView
-                          style={styles.map}
-                          region={coordinates}
-                          showsUserLocation={false}
-                          showsMyLocationButton={false}
-                          scrollEnabled={false}
-                          zoomEnabled={false}
-                        >
-                           <Marker
-                                      coordinate={{
-                                        latitude: coordinates.latitude,
-                                        longitude: coordinates.longitude,
-                                      }}
-                                      title={employerData?.companyName || "Địa điểm làm việc"}
-                                      description={employerData?.jobLocation}
-                                    >
-                                      <Image
-                                        source={{
-                                          uri:
-                                            employerData?.companyLogo || "https://via.placeholder.com/50",
-                                        }}
-                                        style={{ width: 50, height: 50, borderRadius: 10 }}
-                                        resizeMode="center"
-                                      />
-                                    </Marker>
-                        </MapView>
-                      )}
-                    </View>
-                  </View>
-                )}
-              </View>
-            )}
-
-            {/* Feedback Section */}
-            <FeedbackSection
-              accountId={employerId}
-              feedbackType="JobSeekerToEmployer"
-              title="Đánh giá từ người tìm việc"
-              isEmployer={true}
-            />
-          </>
+        {activeTab === "info" ? (
+          <InfoSection 
+            employerData={employerData}
+            employerId={employerId}
+            coordinates={coordinates}
+            locationLoading={locationLoading}
+          />
         ) : (
-          <View style={styles.jobsSection}>
-            <Text style={styles.comingSoonText}>Tin tuyển dụng sẽ được hiển thị ở đây</Text>
-          </View>
+          <JobsSection 
+            employerId={employerId}
+            employerData={employerData}
+          />
         )}
       </ScrollView>
     </SafeAreaView>
@@ -254,129 +173,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'white',
+    backgroundColor: "white",
   },
   tabContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginTop: 10,
   },
   tab: {
     flex: 1,
     paddingVertical: 16,
-    alignItems: 'center',
+    alignItems: "center",
     borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
+    borderBottomColor: "transparent",
   },
   activeTab: {
-    borderBottomColor: '#2558B6',
+    borderBottomColor: "#2558B6",
   },
   tabText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   activeTabText: {
-    color: '#2558B6',
-    fontWeight: '600',
-  },
-  section: {
-    marginTop: 16,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  descriptionContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  description: {
-    flex: 1,
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-    marginLeft: 8,
-  },
-  benefitsContainer: {
-    gap: 8,
-  },
-  benefitItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  benefitText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
-    flex: 1,
-  },
-  locationContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  address: {
-    flex: 1,
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
-  },
-  mapContainer: {
-    marginTop: 8,
-  },
-  mapTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  mapWrapper: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    height: 200,
-  },
-  map: {
-    flex: 1,
-  },
-  mapLoadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  mapLoadingText: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#666',
-  },
-  jobsSection: {
-    backgroundColor: 'white',
-    margin: 16,
-    borderRadius: 12,
-    padding: 32,
-    alignItems: 'center',
-  },
-  comingSoonText: {
-    fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
+    color: "#2558B6",
+    fontWeight: "600",
   },
 });
 
-export default EmployerProfile; 
+export default EmployerProfile;

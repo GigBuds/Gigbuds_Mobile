@@ -86,6 +86,7 @@ class FeedbackService {
             };
         }
     }
+
 }
 
 export default FeedbackService; 
