@@ -34,11 +34,9 @@ const JobDetailScreen = () => {
 
   const fetchJobDetails = async (id) => {
     try {
-      console.log("Fetching job details for job ID:", id);
       const response = await JobPostService.getJobPostById(id);
       const jobDetails = await response.data;
       setJobDetails(jobDetails);
-      console.log("Job Details:", jobDetails);
 
       // Convert job location to coordinates after getting job details
       if (jobDetails?.jobLocation) {
@@ -60,7 +58,6 @@ const JobDetailScreen = () => {
           jobId,
           userId
         );
-        console.log("Check application response:", response);
         if (response.success) {
           setHasApplied(false); // Assuming API returns hasApplied boolean
         } else {
@@ -76,14 +73,12 @@ const JobDetailScreen = () => {
   const convertAddressToCoordinates = async (address) => {
     try {
       setLocationLoading(true);
-      console.log("Converting address to coordinates:", address);
 
       // Use expo-location geocoding to convert address to coordinates
       const geocodedLocation = await Location.geocodeAsync(address);
 
       if (geocodedLocation && geocodedLocation.length > 0) {
         const { latitude, longitude } = geocodedLocation[0];
-        console.log("Coordinates found:", { latitude, longitude });
 
         setCoordinates({
           latitude,
@@ -140,7 +135,6 @@ const JobDetailScreen = () => {
 
   // Handle button press for applying to job
   const handleApplyPress = () => {
-    console.log("Apply button pressed for job:", jobId);
     // Add your apply logic here
     // For example: navigate to application screen, show modal, etc.
   };

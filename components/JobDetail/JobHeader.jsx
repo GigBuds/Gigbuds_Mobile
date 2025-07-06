@@ -16,7 +16,6 @@ const JobHeader = ({ jobDetails }) => {
         employerId: employerId
       });
     } else {
-      console.log('Account ID not available in jobDetails. Available keys:', Object.keys(jobDetails || {}));
     }
   };
 

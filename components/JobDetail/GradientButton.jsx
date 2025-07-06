@@ -61,7 +61,6 @@ const GradientButton = ({
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         setSelectedPDF(file);
-        console.log("Selected PDF:", file);
       }
     } catch (error) {
       console.error("Error picking PDF:", error);
@@ -111,9 +110,7 @@ const GradientButton = ({
         );
         return;
       } else {
-        // Update hasApplied state after successful application
-        setHasApplied(true);
-        
+        // Update hasApplied state after successful application        
         Alert.alert(
           "Thành công",
           "Ứng tuyển thành công! Chúng tôi sẽ liên hệ với bạn sớm.",

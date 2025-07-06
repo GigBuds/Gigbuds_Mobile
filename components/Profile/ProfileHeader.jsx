@@ -12,7 +12,6 @@ const ProfileHeader = ({ userProfile, employerId }) => {
   const [followerCount, setFollowerCount] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
   const [currentUserId, setCurrentUserId] = React.useState(null);
-  console.log("User Profile:", userProfile);
 
   React.useEffect(() => {
     const getCurrentUser = async () => {

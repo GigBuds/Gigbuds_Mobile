@@ -145,13 +145,11 @@ const JobCard = ({
     if (loadingMore || !hasMoreData) return;
 
     const nextPage = currentPage + 1;
-    console.log(`Loading more jobs - Next page: ${nextPage}`);
     await handleFetchJobPosts(nextPage, true);
   }, [loadingMore, hasMoreData, currentPage, handleFetchJobPosts]);
 
   // Reset and fetch initial data
   const resetAndFetch = useCallback(async () => {
-    console.log("Resetting pagination and fetching initial data");
     setCurrentPage(0);
     setHasMoreData(true);
     setJobData([]);

@@ -18,7 +18,6 @@ export default function ProfileLayout({ children, showBackButton = true, onBackP
     const fetchUserName = async () => {
       try {
         const storedUserName = await AsyncStorage.getItem("userName");
-        console.log("Stored User Name:", storedUserName);
         if (storedUserName !== null) {
           setUserName(storedUserName);
         }

@@ -24,9 +24,6 @@ const JobCardItem = ({
     if (job.isOutstandingPost) {
       return ["#FFE0B2", "#FFCC80", "#FFB74D"]; // Orange gradient for urgent jobs
     }
-    if (selectedTab === "Gợi Ý") {
-      return ["#E3F2FD", "#BBDEFB", "#90CAF9"]; // Blue gradient for suggestions
-    }
     return ["#F5F5F5", "#FFFFFF", "#F9F9F9"]; // Default subtle gradient
   };
 

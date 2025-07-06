@@ -25,7 +25,6 @@ export default function MyProfileLayout({ children, showBackButton = true, onBac
     const fetchUserName = async () => {
       try {
         const storedUserName = await AsyncStorage.getItem("userName");
-        console.log("Stored User Name:", storedUserName);
         if (storedUserName !== null) {
           setUserName(storedUserName);
         }

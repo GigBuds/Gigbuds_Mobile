@@ -24,7 +24,6 @@ const SkillsForm = ({
         const fetchSkills = async () => {
             try {
                 const fetchedSkills = await JobSeekerService.getSkillTags();
-                console.log('Fetched skills:', fetchedSkills.data);
                 setSkills(fetchedSkills.data || []);
             } catch (error) {
                 console.error("Error fetching skills:", error);
@@ -35,8 +34,6 @@ const SkillsForm = ({
     }, []);
 
     const selectSkill = () => {
-        console.log('selectSkill called, Platform:', Platform.OS);
-        console.log('Skills available:', skills.length);
         
         if (skills.length === 0) {
             Alert.alert('Thông báo', 'Không có kỹ năng nào để chọn');
@@ -51,7 +48,6 @@ const SkillsForm = ({
 
         // Check if we're actually on iOS
         if (Platform.OS !== 'ios') {
-            console.log('Not iOS, showing modal instead');
             setIsModalVisible(true);
             return;
         }
