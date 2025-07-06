@@ -8,6 +8,8 @@ import {
   Platform,
   ScrollView,
   ActionSheetIOS,
+  Modal,
+  SafeAreaView,
 } from "react-native";
 import React from "react";
 import { RadioButton } from "react-native-paper";
@@ -29,8 +31,12 @@ const FilterBySalary = () => {
   const [selectedCity, setSelectedCity] = React.useState("");
   const [selectedDistricts, setSelectedDistricts] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
-
   const { showLoading, isLoading, hideLoading } = useLoading();
+  
+  // Modal states
+  const [cityModalVisible, setCityModalVisible] = React.useState(false);
+  const [districtModalVisible, setDistrictModalVisible] = React.useState(false);
+  
   // New datetime states
   const [jobTimeFrom, setJobTimeFrom] = React.useState(null);
   const [jobTimeTo, setJobTimeTo] = React.useState(null);
@@ -140,70 +146,12 @@ const FilterBySalary = () => {
       { text: "Hủy", style: "cancel" },
     ]);
   };
-
   const selectCity = () => {
-    const options = [
-      ...vietnamCities.map((city) => ({
-        text: city.name,
-        onPress: () => handleCityChange(city.id.toString()),
-      })),
-      { text: "Không chọn", onPress: () => handleCityChange("") },
-      { text: "Hủy", style: "cancel" },
-    ];
-
-    Alert.alert("Chọn thành phố", "", options);
+    setCityModalVisible(true);
   };
 
   const selectDistrict = () => {
-    const availableDistricts = getAvailableDistricts();
-
-    if (Platform.OS === "ios") {
-      // iOS ActionSheet
-      const options = [
-        ...availableDistricts.map((district) => district.name),
-        "Xóa tất cả",
-        "Hủy",
-      ];
-
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: options,
-          cancelButtonIndex: options.length - 1,
-          destructiveButtonIndex: options.length - 2,
-          title: "Chọn quận/huyện",
-        },
-        (buttonIndex) => {
-          if (buttonIndex === options.length - 2) {
-            // Clear all districts
-            setSelectedDistricts([]);
-          } else if (buttonIndex < availableDistricts.length) {
-            // Toggle district selection
-            const district = availableDistricts[buttonIndex];
-            handleDistrictToggle(district.code);
-          }
-        }
-      );
-    } else {
-      // Android Alert with multiple options
-      const districtOptions = availableDistricts.map((district) => ({
-        text: `${selectedDistricts.includes(district.code) ? "✓ " : ""}${
-          district.name
-        }`,
-        onPress: () => handleDistrictToggle(district.code),
-      }));
-
-      const allOptions = [
-        ...districtOptions,
-        { text: "Xóa tất cả", onPress: () => setSelectedDistricts([]) },
-        { text: "Hủy", style: "cancel" },
-      ];
-
-      Alert.alert(
-        "Chọn quận/huyện",
-        "Nhấn để chọn/bỏ chọn quận/huyện",
-        allOptions
-      );
-    }
+    setDistrictModalVisible(true);
   };
 
   const handleCityChange = (cityId) => {
@@ -441,44 +389,24 @@ const FilterBySalary = () => {
               </Picker>
             )}
           </View>
-        </View> */}
-
-        {/* City Picker Section */}
+        </View> */}        {/* City Picker Section */}
         <View style={styles.locationContainer}>
           <Text style={styles.sectionTitle}>Thành phố</Text>
-          <View style={styles.pickerContainer}>
-            {Platform.OS === "ios" ? (
-              <TouchableOpacity onPress={selectCity} disabled={isLoading}>
-                <Text
-                  style={{
-                    padding: 12,
-                    color: selectedCity === "" ? "gray" : "black",
-                  }}
-                >
-                  {getSelectedCityName()}
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <Picker
-                selectedValue={selectedCity}
-                onValueChange={handleCityChange}
-                style={styles.picker}
-                prompt="Chọn thành phố"
-                dropdownIconColor="#FF7345"
-                mode="dropdown"
-                enabled={!isLoading}
-              >
-                <Picker.Item label="Chọn thành phố" value="" />
-                {vietnamCities.map((city) => (
-                  <Picker.Item
-                    key={city.id}
-                    label={city.name}
-                    value={city.id.toString()}
-                  />
-                ))}
-              </Picker>
-            )}
-          </View>
+          <TouchableOpacity 
+            onPress={selectCity} 
+            style={[styles.pickerContainer, styles.modalTrigger]}
+            disabled={isLoading}
+          >
+            <Text
+              style={[
+                styles.pickerText,
+                selectedCity === "" ? styles.pickerPlaceholder : styles.pickerSelected
+              ]}
+            >
+              {getSelectedCityName()}
+            </Text>
+            <Ionicons name="chevron-down" size={20} color="#666" />
+          </TouchableOpacity>
         </View>
 
         {/* District Action Sheet Section */}
@@ -487,17 +415,18 @@ const FilterBySalary = () => {
             <Text style={styles.sectionTitle}>Quận/Huyện</Text>
             <TouchableOpacity
               onPress={selectDistrict}
-              style={styles.pickerContainer}
+              style={[styles.pickerContainer, styles.modalTrigger]}
               disabled={isLoading}
             >
               <Text
-                style={{
-                  padding: 12,
-                  color: selectedDistricts.length === 0 ? "gray" : "black",
-                }}
+                style={[
+                  styles.pickerText,
+                  selectedDistricts.length === 0 ? styles.pickerPlaceholder : styles.pickerSelected
+                ]}
               >
                 {getSelectedDistrictsText()}
               </Text>
+              <Ionicons name="chevron-down" size={20} color="#666" />
             </TouchableOpacity>
             {selectedDistricts.length > 0 && (
               <View style={styles.selectedDistrictsContainer}>
@@ -594,15 +523,135 @@ const FilterBySalary = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
-
-      <FilterActionButton
+      </View>      <FilterActionButton
         onClear={handleClearFilter}
         onApply={handleApplyFilter}
         clearText="Xoá bộ lọc"
         applyText={isLoading ? "Đang tìm kiếm..." : "Áp dụng bộ lọc"}
         disabled={isLoading}
       />
+
+      {/* City Modal */}
+      <Modal
+        visible={cityModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setCityModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setCityModalVisible(false)}>
+              <Text style={styles.cancelButton}>Hủy</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Chọn thành phố</Text>
+            <View style={{ width: 50 }} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <TouchableOpacity
+              style={[
+                styles.modalOption,
+                selectedCity === "" && styles.selectedModalOption
+              ]}
+              onPress={() => {
+                handleCityChange("");
+                setCityModalVisible(false);
+              }}
+            >
+              <Text style={[
+                styles.modalOptionText,
+                selectedCity === "" && styles.selectedModalOptionText
+              ]}>
+                Tất cả thành phố
+              </Text>
+            </TouchableOpacity>
+
+            {vietnamCities.map((city) => (
+              <TouchableOpacity
+                key={city.id}
+                style={[
+                  styles.modalOption,
+                  selectedCity === city.id.toString() && styles.selectedModalOption
+                ]}
+                onPress={() => {
+                  handleCityChange(city.id.toString());
+                  setCityModalVisible(false);
+                }}
+              >
+                <Text style={[
+                  styles.modalOptionText,
+                  selectedCity === city.id.toString() && styles.selectedModalOptionText
+                ]}>
+                  {city.name}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      {/* District Modal */}
+      <Modal
+        visible={districtModalVisible}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setDistrictModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setDistrictModalVisible(false)}>
+              <Text style={styles.cancelButton}>Hủy</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Chọn quận/huyện</Text>
+            <TouchableOpacity onPress={() => setDistrictModalVisible(false)}>
+              <Text style={styles.doneButton}>Xong</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <TouchableOpacity
+              style={[
+                styles.modalOption,
+                selectedDistricts.length === 0 && styles.selectedModalOption
+              ]}
+              onPress={() => {
+                setSelectedDistricts([]);
+                setDistrictModalVisible(false);
+              }}
+            >
+              <Text style={[
+                styles.modalOptionText,
+                selectedDistricts.length === 0 && styles.selectedModalOptionText
+              ]}>
+                Tất cả quận/huyện
+              </Text>
+            </TouchableOpacity>
+
+            {getAvailableDistricts().map((district) => (
+              <TouchableOpacity
+                key={district.code}
+                style={[
+                  styles.modalOption,
+                  selectedDistricts.includes(district.code) && styles.selectedModalOption
+                ]}
+                onPress={() => handleDistrictToggle(district.code)}
+              >
+                <View style={styles.districtOptionContainer}>
+                  <Text style={[
+                    styles.modalOptionText,
+                    selectedDistricts.includes(district.code) && styles.selectedModalOptionText
+                  ]}>
+                    {district.name}
+                  </Text>
+                  {selectedDistricts.includes(district.code) && (
+                    <Ionicons name="checkmark" size={20} color="#FF7345" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </ScrollView>
   );
 };
@@ -664,13 +713,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#333",
     lineHeight: 18,
-  },
-  pickerContainer: {
+  },  pickerContainer: {
     borderWidth: 1,
     borderColor: "#ccc",
     borderRadius: 5,
     backgroundColor: "white",
     overflow: "hidden",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  modalTrigger: {
+    minHeight: 48,
+  },
+  pickerText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  pickerPlaceholder: {
+    color: "#a9a9a9",
+  },
+  pickerSelected: {
+    color: "#333",
+    fontWeight: '500',
   },
   picker: {
     height: 50,
@@ -759,11 +826,68 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#000",
     textAlign: "center",
-  },
-  datePickerPlaceholder: {
+  },  datePickerPlaceholder: {
     fontSize: 14,
     color: "#a9a9a9",
     textAlign: "center",
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  cancelButton: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  doneButton: {
+    fontSize: 16,
+    color: '#FF7345',
+    fontWeight: '600',
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  modalOption: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  selectedModalOption: {
+    backgroundColor: '#FFF5F0',
+    borderColor: '#FF7345',
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  selectedModalOptionText: {
+    color: '#FF7345',
+    fontWeight: '600',
+  },
+  districtOptionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });
 

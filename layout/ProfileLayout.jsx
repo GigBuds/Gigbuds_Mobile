@@ -9,8 +9,8 @@ import { useNavigation } from "@react-navigation/native";
 import { useLoading } from "../context/LoadingContext";
 import LoadingComponent from "../components/Common/LoadingComponent";
 
-export default function ProfileLayout({ children }) {
-    const navigatetion = useNavigation();
+export default function ProfileLayout({ children, showBackButton = true, onBackPress }) {
+  const navigation = useNavigation();
   const [userName, setUserName] = useState("");
   const { isLoading } = useLoading();
 
@@ -18,7 +18,6 @@ export default function ProfileLayout({ children }) {
     const fetchUserName = async () => {
       try {
         const storedUserName = await AsyncStorage.getItem("userName");
-        console.log("Stored User Name:", storedUserName);
         if (storedUserName !== null) {
           setUserName(storedUserName);
         }
@@ -30,9 +29,17 @@ export default function ProfileLayout({ children }) {
     fetchUserName();
   }, []);
 
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      navigation.goBack();
+    }
+  };
+
   return (
     <View style={styles.container}>
-     {isLoading && (
+      {isLoading && (
         <SafeAreaView
           style={{
             zIndex: 1000,
@@ -51,30 +58,36 @@ export default function ProfileLayout({ children }) {
           />
         </SafeAreaView>
       )}
+      
       <Image
         source={mainBg}
         style={styles.backgroundImage}
         resizeMode="cover"
       />
+      
+      {/* Back Button */}
+      {showBackButton && (
+        <SafeAreaView style={styles.backButtonContainer}>
+          <TouchableOpacity 
+            style={styles.backButton} 
+            onPress={handleBackPress}
+          >
+            <Ionicons name="arrow-back" size={24} color="#fff" />
+          </TouchableOpacity>
+        </SafeAreaView>
+      )}
+      
       <View style={styles.headerContainer}>
         <Image source={logo} resizeMode="center" style={styles.logo} />
         <Text style={styles.headerText}>{userName || "Người dùng"}</Text>
         <TouchableOpacity
-            onPress={() => navigatetion.navigate("MyProfile")}
-          style={{
-            color: "white",
-            fontSize: 16,
-            color: "#FF7345",
-            marginTop: 5,
-            alignContent: "center",
-            flexDirection: "row",
-            alignItems: "center",
-          }}
+          onPress={() => navigation.navigate("MyProfile")}
+          style={styles.profileButton}
         >
-          <Text style={{ color: "white", fontSize: 16, color: "#FF7345" }}>
+          <Text style={styles.profileButtonText}>
             Xem hồ sơ 
           </Text>
-           <Ionicons name="chevron-forward-outline" size={16} color="#FF7345" />
+          <Ionicons name="chevron-forward-outline" size={16} color="#FF7345" />
         </TouchableOpacity>
       </View>
       <View style={styles.formContainer}>{children}</View>
@@ -93,6 +106,28 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
     position: "absolute",
+  },
+  backButtonContainer: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   headerContainer: {
     justifyContent: "center",
@@ -116,6 +151,15 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     marginTop: 15,
+  },
+  profileButton: {
+    marginTop: 5,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profileButtonText: {
+    color: "#FF7345",
+    fontSize: 16,
   },
   formContainer: {
     width: "100%",

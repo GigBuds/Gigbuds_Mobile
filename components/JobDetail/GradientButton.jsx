@@ -19,38 +19,12 @@ const GradientButton = ({
   colors = ["#FF7345", "#FFDC95"],
   start = { x: 0, y: 0 },
   end = { x: 1.5, y: 0 },
+  hasApplied,
 }) => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPDF, setSelectedPDF] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
-  const [hasApplied, setHasApplied] = useState(false);
-
-  useEffect(() => {
-    const checkIfApplied = async () => {
-      try {
-        const userId = await AsyncStorage.getItem("userId");
-        if (!userId || !jobDetails?.id) {
-          setHasApplied(false);
-          return;
-        }
-        const response = await JobApplicationService.checkIfApplied(
-          jobDetails.id,
-          userId
-        );
-        console.log("Check application response:", response);
-        if (response.success) {
-          setHasApplied(false); // Assuming API returns hasApplied boolean
-        } else {
-          setHasApplied(true);
-        }
-      } catch (error) {
-        console.error("Error checking application:", error);
-        setHasApplied(false); // Default to false if error occurs
-      } 
-    };
-    checkIfApplied();
-  }, [jobDetails]);
 
   const getButtonText = () => {
     if (hasApplied) {
@@ -88,7 +62,6 @@ const GradientButton = ({
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         setSelectedPDF(file);
-        console.log("Selected PDF:", file);
       }
     } catch (error) {
       console.error("Error picking PDF:", error);
@@ -98,10 +71,11 @@ const GradientButton = ({
 
   // Handle job application
   const applyForJob = async () => {
-    if (!selectedPDF) {
-      Alert.alert("Thông báo", "Vui lòng chọn file CV (PDF)");
-      return;
-    }
+    // Remove the PDF validation - CV is now optional
+    // if (!selectedPDF) {
+    //   Alert.alert("Thông báo", "Vui lòng chọn file CV (PDF)");
+    //   return;
+    // }
 
     try {
       setIsApplying(true);
@@ -112,13 +86,17 @@ const GradientButton = ({
         return;
       }
 
-      const cvFile = {
-        uri: selectedPDF.uri,
-        type: selectedPDF.mimeType || 'application/pdf',
-        name: selectedPDF.name,
-      };
+      // CV file is now optional
+      let cvFile = null;
+      if (selectedPDF) {
+        cvFile = {
+          uri: selectedPDF.uri,
+          type: selectedPDF.mimeType || 'application/pdf',
+          name: selectedPDF.name,
+        };
+      }
 
-      // Submit job application with the file
+      // Submit job application with optional CV file
       const response = await JobApplicationService.applyForJob(
         jobDetails.id,
         userId,
@@ -133,9 +111,7 @@ const GradientButton = ({
         );
         return;
       } else {
-        // Update hasApplied state after successful application
-        setHasApplied(true);
-        
+        // Update hasApplied state after successful application        
         Alert.alert(
           "Thành công",
           "Ứng tuyển thành công! Chúng tôi sẽ liên hệ với bạn sớm.",
@@ -211,7 +187,7 @@ const GradientButton = ({
 
             {/* PDF Upload Section */}
             <View style={styles.uploadSection}>
-              <Text style={styles.uploadLabel}>Tải lên CV (PDF) *</Text>
+              <Text style={styles.uploadLabel}>Tải lên CV (PDF) (Tùy chọn)</Text>
 
               <TouchableOpacity
                 style={styles.uploadButton}
@@ -247,10 +223,10 @@ const GradientButton = ({
               <TouchableOpacity
                 style={[
                   styles.confirmButton,
-                  (!selectedPDF || isApplying) && styles.disabledButton,
+                  isApplying && styles.disabledButton,
                 ]}
                 onPress={applyForJob}
-                disabled={!selectedPDF || isApplying}
+                disabled={isApplying}
               >
                 <Text style={styles.confirmButtonText}>
                   {isApplying ? "Đang ứng tuyển..." : "Ứng tuyển"}

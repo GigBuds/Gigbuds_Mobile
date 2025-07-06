@@ -22,31 +22,6 @@ const HomeScreen = () => {
   return (
     <View>
       <AdBanner />
-      
-      {/* Test Payment Button */}
-      <TouchableOpacity
-        style={styles.paymentTestButton}
-        onPress={() =>
-          navigation.navigate("MembershipRegister")
-        }
-      >
-        <Ionicons name="card" size={20} color="white" />
-        <Text style={styles.paymentTestButtonText}>Test Payment Flow</Text>
-      </TouchableOpacity>
-
-      {/* Add Deep Link Test Button */}
-      <TouchableOpacity
-        style={[styles.paymentTestButton, { backgroundColor: '#28a745' }]}
-        onPress={() =>
-          navigation.navigate("PaymentResult", {
-            status: "PAID",
-            orderCode: "413982193"
-          })
-        }
-      >
-        <Ionicons name="checkmark-circle" size={20} color="white" />
-        <Text style={styles.paymentTestButtonText}>Test Payment Result</Text>
-      </TouchableOpacity>
 
       <View
         style={{
@@ -82,7 +57,7 @@ const HomeScreen = () => {
           </Text>
         </TouchableOpacity>
       </View>
-      <JobCard searchInput={searchInput} searchParams={searchParams} marginBottom={-170} />
+      <JobCard searchInput={searchInput} searchParams={searchParams} marginBottom={-200} />
     </View>
   );
 };

@@ -1,11 +1,19 @@
-import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import React from "react";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import JobPostService from "../../Services/JobPostService/JobPostService";
+import { View, ScrollView, Text, ActivityIndicator, StyleSheet } from "react-native";
+import React, { useCallback, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import { useLoading } from "../../context/LoadingContext";
-import JobApplicationService from "../../Services/JobApplicationService/JobApplicationService";
+import { useJobData } from "./hooks/useJobData";
+import JobCardItem from "./JobCardItem";
+import JobCardLoadingStates from "./JobCardLoadingStates";
+import {
+  getDistrict,
+  getExperienceRequirement,
+  getTimeAgo,
+  getCity,
+  getJobId,
+} from "./utils/jobCardUtils";
+import FeedbackDialog from "../FeedbackDialog/FeedbackDialog";
 
 const JobCard = ({
   appliedFilters,
@@ -13,13 +21,32 @@ const JobCard = ({
   searchParams,
   selectedTab,
   searchInput,
+  employerId,
 }) => {
   const { showLoading, hideLoading } = useLoading();
-
-  const [jobData, setJobData] = React.useState(null);
+  const { fetchJobPosts, debounceTimerRef, previousSearchInputRef } =
+    useJobData(showLoading, hideLoading);
+  const navigate = useNavigation();
+  // State management
+  const [jobData, setJobData] = React.useState([]);
   const [jobSeekerId, setJobSeekerId] = React.useState(null);
   const [locationLoading, setLocationLoading] = React.useState(false);
-  const navigate = useNavigation();
+  const [loadingMore, setLoadingMore] = React.useState(false);
+  const [currentPage, setCurrentPage] = React.useState(0);
+  const [hasMoreData, setHasMoreData] = React.useState(true);
+  const [totalItems, setTotalItems] = React.useState(0);
+  const [debouncedSearchInput, setDebouncedSearchInput] = React.useState(
+    searchInput || ""
+  );
+  const [feedbackDialogVisible, setFeedbackDialogVisible] =
+    React.useState(false);
+  const [selectedJobForFeedback, setSelectedJobForFeedback] =
+    React.useState(null);
+
+  // Constants
+  const PAGE_SIZE = 5;
+  const DEBOUNCE_DELAY = 1000;
+
   React.useEffect(() => {
     const getUserId = async () => {
       try {
@@ -31,430 +58,256 @@ const JobCard = ({
     };
     getUserId();
   }, []);
-
-  // Helper function to extract distance in km
-  const getDistanceInKm = (formattedDistance) => {
-    if (!formattedDistance) return Infinity;
-
-    // Remove all non-numeric and non-decimal characters, keep the number
-    const numericValue = parseFloat(formattedDistance.replace(/[^\d.]/g, ""));
-
-    // Check if the distance is in meters (contains 'm' but not 'km')
-    if (formattedDistance.includes("m") && !formattedDistance.includes("km")) {
-      return numericValue / 1000; // Convert meters to kilometers
-    }
-
-    // Otherwise assume it's in kilometers
-    return numericValue || Infinity;
-  };
-
-  // Filter function to get jobs within 50km (only for "Gợi Ý" tab)
-  const filterJobsByDistance = (jobs) => {
-    if (!jobs || !Array.isArray(jobs)) return [];
-
-    // Only filter for "Gợi Ý" tab
-    if (selectedTab !== "Gợi Ý") {
-      return jobs;
-    }
-
-    return jobs.filter((job) => {
-      const distanceKm = getDistanceInKm(job.formattedDistance);
-      return distanceKm <= 50;
-    });
-  };
-
-  // Filter function for search input (jobTitle)
-  const filterJobsByTitle = (jobs) => {
-    if (!jobs || !Array.isArray(jobs) || !searchInput || !searchInput.trim()) {
-      return jobs;
-    }
-
-    const searchTerm = searchInput.trim().toLowerCase();
-
-    return jobs.filter((job) => {
-      // Check if jobTitle contains the search term (case insensitive)
-      const jobTitle = job.jobTitle?.toLowerCase() || "";
-      return jobTitle.includes(searchTerm);
-    });
-  };
-
-  // Sort function based on selected tab
-  const sortJobData = (jobs) => {
-    if (!jobs || !Array.isArray(jobs)) return [];
-
-    const sortedJobs = [...jobs]; // Create a copy to avoid mutating original array
-
-    if (selectedTab === "Gợi Ý") {
-      // Sort by formattedDistance (ascending - closest first)
-      return sortedJobs.sort((a, b) => {
-        const distanceA = getDistanceInKm(a.formattedDistance);
-        const distanceB = getDistanceInKm(b.formattedDistance);
-        return distanceA - distanceB;
-      });
-    } else {
-      // Sort by updatedAt (descending - newest first)
-      return sortedJobs.sort((a, b) => {
-        const dateA = new Date(a.updatedAt || 0);
-        const dateB = new Date(b.updatedAt || 0);
-        return dateA - dateB;
-      });
-    }
-  };
-
-  const fetchJobPosts = async (searchPar) => {
-    try {
-      let result;
-
-      if (selectedTab === "Gợi Ý") {
-        showLoading();
-        setLocationLoading(true);
-
-        result = await JobPostService.getRecommendedJobPosts(jobSeekerId, {
-          pageIndex: 0,
-          pageSize: 50, // Increased to get more results before filtering
-          includeScheduleMatching: true,
-          includeDistanceCalculation: true,
-        });
-
-        setLocationLoading(false);
-      } else if (
-        selectedTab === "AcceptedJob" ||
-        selectedTab === "AppliedJob" ||
-        selectedTab === "JobHistory"
-      ) {
-        showLoading();
-        result = await JobApplicationService.getJobApplicationsByAccountId(
-          jobSeekerId,
-          selectedTab,
-          1,
-          10
-        );
-      } else {
-        showLoading();
-        result = await JobPostService.searchJobPosts(searchPar);
-      }
-
-      // Process the data: filter by distance (only for "Gợi Ý"), then filter by title, then sort
-      let rawData = result.success ? result.data.items || [] : [];
-
-      // Filter jobs within 50km only for "Gợi Ý" tab
-      const distanceFilteredData = filterJobsByDistance(rawData);
-
-      // Filter by job title if searchInput is provided
-      const titleFilteredData = filterJobsByTitle(distanceFilteredData);
-
-      if (selectedTab === "Gợi Ý") {
-        console.log(
-          `Filtered to ${distanceFilteredData.length} jobs within 50km`
-        );
-      }
-
-      if (searchInput && searchInput.trim()) {
-        console.log(
-          `Filtered to ${titleFilteredData.length} jobs matching "${searchInput}"`
-        );
-      }
-
-      const sortedData = sortJobData(titleFilteredData);
-      setJobData(sortedData);
-      if (!result.success) {
-        console.error("Error fetching search results:", result.error);
-      }
-    } catch (error) {
-      console.error("Error fetching job posts:", error);
-      setJobData([]);
-    } finally {
-      hideLoading();
-      setLocationLoading(false);
-    }
-  };
-
+  // Debounce search input
   React.useEffect(() => {
-    if (jobSeekerId) {
-      fetchJobPosts(searchParams);
-    }
-  }, [searchParams, selectedTab, jobSeekerId, searchInput]);
+    const currentSearchInput = searchInput || "";
 
-  React.useEffect(() => {
-    if (jobData && jobData.length > 0) {
-      fetchJobPosts(searchParams);
-    }
-  }, [selectedTab, searchInput, jobSeekerId]);
+    if (previousSearchInputRef.current !== currentSearchInput) {
+      previousSearchInputRef.current = currentSearchInput;
 
-  // No data state
-  if (!jobData || !Array.isArray(jobData) || jobData.length === 0) {
-    const noDataMessage = () => {
-      if (searchInput && searchInput.trim()) {
-        return `Không tìm thấy công việc với từ khóa "${searchInput}"`;
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-      return selectedTab === "Gợi Ý"
-        ? "Không có công việc gợi ý trong vòng 50km."
-        : "Không có dữ liệu công việc.";
+
+      debounceTimerRef.current = setTimeout(() => {
+        setDebouncedSearchInput(currentSearchInput);
+      }, DEBOUNCE_DELAY);
+    }
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
     };
+  }, [searchInput, DEBOUNCE_DELAY]);
 
+  // Fetch job posts with new hook
+  const handleFetchJobPosts = useCallback(
+    async (page = 0, isLoadMore = false) => {
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLocationLoading(true);
+      }
+
+      const result = await fetchJobPosts({
+        searchParams,
+        selectedTab,
+        jobSeekerId,
+        employerId,
+        debouncedSearchInput,
+        page,
+        pageSize: PAGE_SIZE,
+        isLoadMore,
+      });
+
+      if (result.success) {
+        if (isLoadMore) {
+          setJobData((prevData) => {
+            const existingIds = new Set(
+              prevData.map((job) => job.jobPostId || job.id)
+            );
+            const newJobs = result.data.filter(
+              (job) => !existingIds.has(job.jobPostId || job.id)
+            );
+            return [...prevData, ...newJobs];
+          });
+        } else {
+          setJobData(result.data);
+        }
+
+        setTotalItems(result.totalCount);
+        setCurrentPage(result.page);
+        setHasMoreData(result.hasMore);
+      } else {
+        console.error("Error fetching job posts:", result.error);
+        if (!isLoadMore) {
+          setJobData([]);
+        }
+        setHasMoreData(false);
+      }
+
+      setLocationLoading(false);
+      setLoadingMore(false);
+    },
+    [
+      fetchJobPosts,
+      searchParams,
+      selectedTab,
+      jobSeekerId,
+      employerId,
+      debouncedSearchInput,
+      PAGE_SIZE,
+    ]
+  );
+  // Load more function
+  const loadMoreJobs = useCallback(async () => {
+    if (loadingMore || !hasMoreData) return;
+
+    const nextPage = currentPage + 1;
+    await handleFetchJobPosts(nextPage, true);
+  }, [loadingMore, hasMoreData, currentPage, handleFetchJobPosts]);
+
+  // Reset and fetch initial data
+  const resetAndFetch = useCallback(async () => {
+    setCurrentPage(0);
+    setHasMoreData(true);
+    setJobData([]);
+    await handleFetchJobPosts(0, false);
+  }, [handleFetchJobPosts]);
+
+  // Effect for initial load and dependencies
+  React.useEffect(() => {
+    if (!jobSeekerId) return;
+    resetAndFetch();
+  }, [searchParams, selectedTab, jobSeekerId, debouncedSearchInput]);
+
+  // Handle scroll to load more
+  const handleScroll = useCallback(
+    (event) => {
+      const { layoutMeasurement, contentOffset, contentSize } =
+        event.nativeEvent;
+      const paddingToBottom = 100;
+      const isCloseToBottom =
+        layoutMeasurement.height + contentOffset.y >=
+        contentSize.height - paddingToBottom;
+
+      if (isCloseToBottom && hasMoreData && !loadingMore) {
+        loadMoreJobs();
+      }
+    },
+    [hasMoreData, loadingMore, loadMoreJobs]
+  );
+  // Show loading or no data states
+
+  const handleFeedbackPress = (job) => {
+    setSelectedJobForFeedback(job);
+    setFeedbackDialogVisible(true);
+  };
+
+  const handleFeedbackSubmitted = () => {
+    // Refresh the job data after feedback is submitted to filter out the job
+    resetAndFetch();
+  };
+
+  const handleCloseFeedbackDialog = () => {
+    setFeedbackDialogVisible(false);
+    setSelectedJobForFeedback(null);
+  };
+
+  if (locationLoading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          padding: 20,
-        }}
-      >
-        <Text style={{ fontSize: 16, color: "gray", textAlign: "center" }}>
-          {noDataMessage()}
-        </Text>
-      </View>
+      <JobCardLoadingStates
+        locationLoading={locationLoading}
+        loadingMore={loadingMore}
+        hasMoreData={hasMoreData}
+        jobDataLength={jobData.length}
+        debouncedSearchInput={debouncedSearchInput}
+        selectedTab={selectedTab}
+      />
     );
   }
 
-  const getDistrict = (location) => {
-    if (!location) return "";
-    const parts = location.split(",");
-    return parts.length > 1 ? parts[parts.length - 2].trim() : "";
-  };
-
-  const getExperienceRequirement = (eR) => {
-    if (!eR) return "";
-    const parts = eR.split(",");
-    return parts.length > 1 ? parts[0].trim() : "";
-  };
-
-  const getTimeAgo = (updateTime) => {
-    if (!updateTime) return "";
-    const updatedDate = new Date(updateTime);
-    const now = new Date();
-
-    updatedDate.setHours(0, 0, 0, 0);
-    now.setHours(0, 0, 0, 0);
-
-    const diffTime = now - updatedDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return "Hôm nay";
-    return `${Math.abs(diffDays)} ngày trước`;
-  };
-
-  const getCity = (location) => {
-    if (!location) return "";
-    const parts = location.split(",");
-    return parts.length > 1 ? parts[parts.length - 1].trim() : "";
-  };
-
-  // Highlight search term in job title
-  const highlightSearchTerm = (text, searchTerm) => {
-    if (!searchTerm || !searchTerm.trim()) {
-      return text;
-    }
-
-    const regex = new RegExp(`(${searchTerm.trim()})`, "gi");
-    const parts = text.split(regex);
-
+  if (!jobData || jobData.length === 0) {
     return (
-      <Text
-        style={{ fontWeight: "bold", fontSize: 18, width: "80%" }}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-      >
-        {parts.map((part, index) => (
-          <Text
-            key={index}
-            style={{
-              backgroundColor: regex.test(part) ? "#ffeb3b" : "transparent",
-              fontWeight: "bold",
-              fontSize: 18,
-            }}
-          >
-            {part}
-          </Text>
-        ))}
-      </Text>
-    );
-  };
-
+      <JobCardLoadingStates
+        locationLoading={locationLoading}
+        loadingMore={loadingMore}
+        hasMoreData={hasMoreData}
+        jobDataLength={jobData.length}
+        debouncedSearchInput={debouncedSearchInput}
+        selectedTab={selectedTab}
+      />
+    );  }
   return (
-    <ScrollView bouncesZoom={true} style={{ marginBottom: marginBottom }}>
-      {jobData.map((job, index) => (
-        <TouchableOpacity
-          key={job.id || `job-${index}`}
-          style={{
-            width: "100%",
-            height: 150,
-            backgroundColor: "white",
-            position: "relative",
-            marginBottom: 20,
-            padding: 20,
-            borderRadius: 20,
-            borderLeftWidth: 3,
-            borderLeftColor: "#2558B6",
-          }}
-          onPress={() => {
-            navigate.navigate("JobDetail", {
-              jobId:
-                selectedTab === "AcceptedJob" ||
-                selectedTab === "AppliedJob" ||
-                selectedTab === "JobHistory"
-                  ? job.id
-                  : job.jobPostId || job.id,
-            });
-          }}
-        >
-          <Ionicons
-            name="bookmark-outline"
-            size={28}
-            color="gray"
-            style={{ position: "absolute", top: 15, right: 15 }}
-          />
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              height: "50%",
-            }}
-          >
-            <Image
-              source={{ uri: job.companyLogo }}
-              style={{
-                width: "17%",
-                height: "100%",
-                borderRadius: 100,
-                marginBottom: 10,
-                backgroundColor: "black",
+    <>
+      <ScrollView
+        bouncesZoom={true}
+        style={[styles.scrollView, { marginBottom: marginBottom }]}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+      >        {jobData.map((job, index) => {
+          // Ensure job object exists and has required properties
+          if (!job || !job.jobTitle) {
+            console.warn('Invalid job data at index:', index, job);
+            return null;
+          }
+          
+          return (
+            <JobCardItem
+              key={job.id || job.jobPostId || `job-${index}`}
+              job={job}
+              index={index}
+              selectedTab={selectedTab}
+              debouncedSearchInput={debouncedSearchInput}
+              onPress={() => {
+                navigate.navigate("JobDetail", {
+                  jobId: getJobId(job, selectedTab),
+                });
               }}
-              resizeMode="cover"
+              onFeedbackPress={() => handleFeedbackPress(job)}
+              getCity={getCity}
+              getTimeAgo={getTimeAgo}
+              getDistrict={getDistrict}
+              getExperienceRequirement={getExperienceRequirement}
             />
-            <View style={{ marginLeft: 10, width: "84%" }}>
-              {/* Highlight search term in job title */}
-              {searchInput && searchInput.trim() ? (
-                highlightSearchTerm(job.jobTitle, searchInput)
-              ) : (
-                <Text
-                  style={{ fontWeight: "bold", fontSize: 18, width: "80%" }}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {job.jobTitle}
-                </Text>
-              )}
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ color: "gray", fontSize: 10 }}>
-                  {job.companyName}
-                </Text>
-                <Text style={{ color: "gray", fontSize: 10 }}> - </Text>
-                <Text style={{ color: "gray", fontSize: 10 }}>
-                  {getCity(job.jobLocation)}
-                </Text>
-                <Text style={{ color: "gray", fontSize: 10 }}> - </Text>
-                <Text style={{ color: "gray", fontSize: 10 }}>
-                  {selectedTab === "Gợi Ý"
-                    ? job.formattedDistance
-                    : getTimeAgo(job.updatedAt)}
-                </Text>
-              </View>
-            </View>
-          </View>
-
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 3,
-              marginTop: 10,
-            }}
-          >
-            <Text
-              style={{ color: "#FF7345", fontSize: 20, fontWeight: "bold" }}
-            >
-              {job.salary?.toLocaleString("vi-VN", {
-                style: "currency",
-                currency: "VND",
-              })}
-            </Text>
-            <Text style={{ color: "gray", fontSize: 20 }}>/</Text>
-            <Text style={{ color: "gray", fontSize: 20, fontWeight: "bold" }}>
-              {job.salaryUnit === "Day"
-                ? "Ngày"
-                : job.salaryUnit === "Shift"
-                ? "Ca"
-                : "Giờ"}
+          );
+        })}
+        
+        {/* Load More Indicator */}
+        {loadingMore && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#FF7345" />
+            <Text style={styles.loadingText}>
+              Đang tải thêm công việc...
             </Text>
           </View>
-          <View style={{ flexDirection: "row", gap: 5, marginTop: "3%" }}>
-            {[
-              getExperienceRequirement(job.experienceRequirement) ===
-              "Không yêu cầu kinh nghiệm"
-                ? "Không yêu cầu kinh nghiệm"
-                : "Yêu cầu kinh nghiệm",
-
-              job.isOutstandingPost ? "Cần gấp" : null,
-              getDistrict(job.jobLocation),
-              job.vacancyCount <= 5 ? `Còn ${job.vacancyCount} vị trí` : null,
-            ]
-              .filter(Boolean)
-              .map((item, tagIndex, arr) => {
-                const displayItems = arr.length > 3 ? arr.slice(0, 3) : arr;
-
-                if (tagIndex >= displayItems.length) return null;
-
-                return (
-                  <View
-                    key={`tag-${index}-${tagIndex}`}
-                    style={{
-                      borderRadius: 10,
-                      alignItems: "center",
-                      paddingHorizontal: 10,
-                      paddingVertical: 3,
-                      borderWidth: 1,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Text style={{ fontSize: 10 }}>{item}</Text>
-                  </View>
-                );
-              })}
-
-            {/* Show "+N" if more than 3 */}
-            {[
-              getExperienceRequirement(job.experienceRequirement) ===
-              "Không yêu cầu kinh nghiệm"
-                ? "Không yêu cầu kinh nghiệm"
-                : "Yêu cầu kinh nghiệm",
-              job.isOutstandingPost ? "Cần gấp" : null,
-              getDistrict(job.jobLocation),
-              job.vacancyCount <= 5 ? `Còn ${job.vacancyCount} vị trí` : null,
-            ].filter(Boolean).length > 3 && (
-              <View
-                key={`extra-${index}`}
-                style={{
-                  borderRadius: 10,
-                  alignItems: "center",
-                  paddingHorizontal: 5,
-                  paddingVertical: 3,
-                  borderWidth: 1,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Text style={{ fontSize: 10 }}>
-                  +
-                  {[
-                    getExperienceRequirement(job.experienceRequirement) ===
-                    "Không yêu cầu kinh nghiệm"
-                      ? "Không yêu cầu kinh nghiệm"
-                      : "Yêu cầu kinh nghiệm",
-                    job.isOutstandingPost ? "Cần gấp" : null,
-                    getDistrict(job.jobLocation),
-                    job.vacancyCount <= 5
-                      ? `Còn ${job.vacancyCount} vị trí`
-                      : null,
-                  ].filter(Boolean).length - 3}
-                </Text>
-              </View>
-            )}
+        )}
+        {/* End of List Indicator */}
+        {!hasMoreData && jobData.length > 0 && (
+          <View style={styles.endOfListContainer}>
+            <Text style={styles.endOfListText}>
+              Đã hiển thị tất cả {jobData.length} công việc
+            </Text>
           </View>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+        )}
+      </ScrollView>
+
+      <FeedbackDialog
+        visible={feedbackDialogVisible}
+        onClose={handleCloseFeedbackDialog}
+        jobData={selectedJobForFeedback}
+        jobSeekerId={jobSeekerId}
+        onFeedbackSubmitted={handleFeedbackSubmitted}
+      />
+    </>
   );
 };
+
+const styles = StyleSheet.create({
+  scrollView: {
+    // marginBottom will be set dynamically
+  },
+  loadingContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: 'gray',
+    fontSize: 14,
+  },
+  endOfListContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  endOfListText: {
+    color: 'gray',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+});
 
 export default JobCard;

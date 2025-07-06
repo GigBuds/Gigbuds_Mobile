@@ -31,6 +31,7 @@ import MembershipRegisterScreen from "../Screen/PaymentScreen/MembershipRegister
 import MyJob from "../Screen/ProfileScreen/MyJob/MyJob";
 import HeaderLayout from "../layout/HeaderLayout";
 import MemberShip from "../Screen/MemberShip/MemberShip";
+import EmployerProfile from "../Screen/EmployerProfile/EmployerProfile";
 import { useNotification } from "../context/notificationContext";
 import { View, Text } from "react-native";
 
@@ -67,6 +68,17 @@ export default function Navigator() {
               <MemberShip />
             </HeaderLayout>
           )}
+        />
+        
+        <Stack.Screen
+          name="EmployerProfile"
+          options={{ headerShown: false }}
+          children={() => (
+            <MyProfileLayout >
+              <EmployerProfile />
+            </MyProfileLayout>
+          )
+          }
         />
       </Stack.Navigator>
     );
@@ -109,6 +121,15 @@ export default function Navigator() {
             <HeaderLayout title={"Đăng ký thành viên"} showBackButton={true}>
               <MemberShip />
             </HeaderLayout>
+          )}
+        />
+        <Stack.Screen
+          name="EmployerProfile"
+          options={{ headerShown: false }}
+          children={() => (
+            <MyProfileLayout>
+              <EmployerProfile />
+            </MyProfileLayout>
           )}
         />
       </Stack.Navigator>
@@ -181,7 +202,7 @@ export default function Navigator() {
           name="Profile"
           options={{ headerShown: false }}
           children={() => (
-            <ProfileLayout>
+            <ProfileLayout >
               <ProfileScreen />
             </ProfileLayout>
           )}
@@ -229,7 +250,7 @@ export default function Navigator() {
           name="Profile"
           options={{ headerShown: false }}
           children={() => (
-            <ProfileLayout>
+            <ProfileLayout showBackButton={false}>
               <ProfileScreen />
             </ProfileLayout>
           )}
@@ -265,6 +286,16 @@ export default function Navigator() {
               <JobDetailScreen />
             </JobDetailLayout>
           )}
+        />
+        <Stack.Screen
+          name="EmployerProfile"
+          options={{ headerShown: false }}
+          children={() => (
+            <MyProfileLayout >
+              <EmployerProfile />
+            </MyProfileLayout>
+          )
+          }
         />
       </Stack.Navigator>
     );

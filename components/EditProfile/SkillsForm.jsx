@@ -24,7 +24,6 @@ const SkillsForm = ({
         const fetchSkills = async () => {
             try {
                 const fetchedSkills = await JobSeekerService.getSkillTags();
-                console.log('Fetched skills:', fetchedSkills.data);
                 setSkills(fetchedSkills.data || []);
             } catch (error) {
                 console.error("Error fetching skills:", error);
@@ -35,8 +34,6 @@ const SkillsForm = ({
     }, []);
 
     const selectSkill = () => {
-        console.log('selectSkill called, Platform:', Platform.OS);
-        console.log('Skills available:', skills.length);
         
         if (skills.length === 0) {
             Alert.alert('Thông báo', 'Không có kỹ năng nào để chọn');
@@ -51,7 +48,6 @@ const SkillsForm = ({
 
         // Check if we're actually on iOS
         if (Platform.OS !== 'ios') {
-            console.log('Not iOS, showing modal instead');
             setIsModalVisible(true);
             return;
         }
@@ -142,6 +138,20 @@ const SkillsForm = ({
         } else {
             Alert.alert('Thông báo', 'Vui lòng chọn một kỹ năng');
         }
+    };
+
+    const handleRemoveSkill = (index) => {
+        console.log('Removing skill at index:', index);
+        if (index < 0 || index >= localSkillTags.length) {
+            console.error('Invalid index for skill removal:', index);
+            return;
+        }
+        const skillToRemove = localSkillTags[index];
+        console.log('Skill to remove:', skillToRemove);
+        const updatedSkills = localSkillTags.filter((_, i) => i !== index);
+        setLocalSkillTags(updatedSkills);
+        onRemoveSkill && onRemoveSkill(skillToRemove, updatedSkills);
+        console.log('Updated skills after removal:', updatedSkills);
     };
 
     const renderSkillModal = () => (

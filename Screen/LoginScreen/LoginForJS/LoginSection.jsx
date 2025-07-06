@@ -174,6 +174,7 @@ const LoginSection = () => {
           <View style={styles.passwordContainer}>
             <TextInput
               secureTextEntry={!showPassword}
+              
               style={[
                 styles.input,
                 styles.passwordInput,
@@ -263,8 +264,9 @@ const styles = StyleSheet.create({
     paddingVertical: 10, // Consistent padding
     paddingHorizontal: 12,
     borderRadius: 8,
-    backgroundColor: "white",
     fontSize: 16, // Readable font size
+    color: "#333", // Text color for better readability
+    backgroundColor: "white", // White background for inputs
   },
   inputError: {
     borderColor: "red",

@@ -11,10 +11,22 @@ class JobApplicationService {
       if (!jobPostId || !accountId) {
         throw new Error("jobPostId, accountId are required");
       }
+      
       const formData = new FormData();
-      formData.append("cvFile", cvFile);
+      formData.append("JobPostId", jobPostId);
+      formData.append("AccountId", accountId);
+      if (cvFile) {
+        formData.append("CvFile", cvFile);
+      }
+      
+      console.log("FormData contents:", {
+        JobPostId: jobPostId,
+        AccountId: accountId,
+        hasCvFile: !!cvFile
+      });
+      
       const response = await api.post(
-        `job-applications/apply?jobPostId=${jobPostId}&accountId=${accountId}`,
+        "job-applications/apply",
         formData,
         {
           headers: {
@@ -32,6 +44,7 @@ class JobApplicationService {
       return {
         success: false,
         error:
+          error.response?.data?.error ||
           error.response?.data?.message ||
           error.message ||
           "Đã xảy ra lỗi khi nộp đơn ứng tuyển.",
@@ -131,7 +144,12 @@ class JobApplicationService {
         status: response.status,
       };
     } catch (error) {
-      console.error("Error in checkIfApplied:", error);
+
+      if(error.response?.status === 409){
+        console.info("Bạn đã ứng tuyển công việc này", error.response);
+      }else{
+        console.error("Error in checkIfApplied:", error);
+      }      
       return {
         success: false,
         error:

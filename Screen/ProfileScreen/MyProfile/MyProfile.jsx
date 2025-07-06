@@ -16,6 +16,7 @@ import SkillsSection from "../../../components/Profile/SkillsSection";
 import ExperienceSection from "../../../components/Profile/ExperienceSection";
 import EducationSection from "../../../components/Profile/EducationSection";
 import PersonalInfoSection from "../../../components/Profile/PersonalInfoSection";
+import FeedbackSection from "../../../components/Profile/FeedbackSection";
 import { useNavigation, useFocusEffect } from "@react-navigation/native"; // Add useFocusEffect
 import { useLoading } from "../../../context/LoadingContext";
 
@@ -105,6 +106,16 @@ const MyProfile = () => {
           <EducationSection educations={userProfile?.educationalLevels || []} />
           
           <PersonalInfoSection userProfile={userProfile} />
+          
+          {userProfile?.id && (
+            <FeedbackSection
+              accountId={userProfile.id}
+              feedbackType="EmployerToJobSeeker"
+              title="Đánh giá từ nhà tuyển dụng"
+              isEmployer={false}
+              existingFeedbacks={userProfile.feedbacks}
+            />
+          )}
         </ScrollView>
       </SafeAreaView>
     </GestureHandlerRootView>

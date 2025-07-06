@@ -20,6 +20,8 @@ import JobSchedule from "../../components/JobDetail/JobSchedule";
 import JobFeedback from "../../components/JobDetail/JobFeedback";
 import GradientButton from "../../components/JobDetail/GradientButton";
 import { useLoading } from "../../context/LoadingContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import JobApplicationService from "../../Services/JobApplicationService/JobApplicationService";
 
 const JobDetailScreen = () => {
   const route = useRoute();
@@ -28,15 +30,13 @@ const JobDetailScreen = () => {
   const { showLoading, hideLoading } = useLoading();
   const [coordinates, setCoordinates] = React.useState(null);
   const [locationLoading, setLocationLoading] = React.useState(false);
+  const [hasApplied, setHasApplied] = React.useState(false);
 
   const fetchJobDetails = async (id) => {
     try {
-      console.log("Fetching job details for job ID:", id);
-      showLoading();
       const response = await JobPostService.getJobPostById(id);
       const jobDetails = await response.data;
       setJobDetails(jobDetails);
-      console.log("Job Details:", jobDetails);
 
       // Convert job location to coordinates after getting job details
       if (jobDetails?.jobLocation) {
@@ -44,23 +44,41 @@ const JobDetailScreen = () => {
       }
     } catch (error) {
       console.error("Error fetching job details:", error);
-    } finally {
-      hideLoading();
     }
   };
+
+   const checkIfApplied = async () => {
+      try {
+        const userId = await AsyncStorage.getItem("userId");
+        if (!userId || !jobId) {
+          setHasApplied(false);
+          return;
+        }
+        const response = await JobApplicationService.checkIfApplied(
+          jobId,
+          userId
+        );
+        if (response.success) {
+          setHasApplied(false); // Assuming API returns hasApplied boolean
+        } else {
+          setHasApplied(true);
+        }
+      } catch (error) {
+        console.error("Error checking application:", error);
+        setHasApplied(false); // Default to false if error occurs
+      } 
+    };
 
   // Convert address to coordinates using expo-location
   const convertAddressToCoordinates = async (address) => {
     try {
       setLocationLoading(true);
-      console.log("Converting address to coordinates:", address);
 
       // Use expo-location geocoding to convert address to coordinates
       const geocodedLocation = await Location.geocodeAsync(address);
 
       if (geocodedLocation && geocodedLocation.length > 0) {
         const { latitude, longitude } = geocodedLocation[0];
-        console.log("Coordinates found:", { latitude, longitude });
 
         setCoordinates({
           latitude,
@@ -93,17 +111,30 @@ const JobDetailScreen = () => {
   };
 
   React.useEffect(() => {
+  const loadJobData = async () => {
     if (jobId) {
-      fetchJobDetails(jobId);
+      showLoading();
+      try {
+        // Wait for both API calls to complete
+        await Promise.all([
+          fetchJobDetails(jobId),
+          checkIfApplied()
+        ]);
+      } catch (error) {
+        console.error("Error loading job data:", error);
+      } finally {
+        hideLoading();
+      }
     } else {
       console.error("No job ID provided in route params");
-      hideLoading();
     }
-  }, [jobId]);
+  };
+
+  loadJobData();
+}, [jobId]);
 
   // Handle button press for applying to job
   const handleApplyPress = () => {
-    console.log("Apply button pressed for job:", jobId);
     // Add your apply logic here
     // For example: navigate to application screen, show modal, etc.
   };
@@ -127,6 +158,7 @@ const JobDetailScreen = () => {
 
         <GradientButton
           jobDetails={jobDetails}
+          hasApplied={hasApplied}
           onPress={handleApplyPress}
         />
 
