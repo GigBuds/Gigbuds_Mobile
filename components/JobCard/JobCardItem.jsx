@@ -51,7 +51,8 @@ const JobCardItem = ({
         <LinearGradient
           colors={getBorderGradient()}
           style={styles.leftBorder}
-        />        {/* Bookmark icon with gradient background */}
+        />
+        {/* Bookmark icon with gradient background */}
         <View style={styles.bookmarkContainer}>
           <Ionicons name="bookmark-outline" size={20} color="#666" />
         </View>
@@ -63,49 +64,50 @@ const JobCardItem = ({
               resizeMode="cover"
             />
           </View>
-
           <View style={styles.jobInfoContainer}>
             <JobCardTitle
               jobTitle={job.jobTitle}
               searchTerm={debouncedSearchInput}
-            />
-
-            <JobCardInfo
+            />            <JobCardInfo
               companyName={job.companyName}
               jobLocation={job.jobLocation}
               selectedTab={selectedTab}
               formattedDistance={job.formattedDistance}
-              updatedAt={job.updatedAt}
+              updatedAt={selectedTab === "EmployerJob" ? (job.startDate || job.updatedAt) : job.updatedAt}
               getCity={getCity}
               getTimeAgo={getTimeAgo}
             />
-          </View>        </View>
-        
+          </View>
+        </View>
         {job.salary && (
           <JobCardSalary salary={job.salary} salaryUnit={job.salaryUnit} />
         )}
-        
         <JobCardTags
           job={job}
           index={index}
           getExperienceRequirement={getExperienceRequirement}
           getDistrict={getDistrict}
-        />
-        {/* Feedback Button for Job History */}
+        />        {/* Feedback Button for Job History */}
         {selectedTab === "JobHistory" && onFeedbackPress && (
           <TouchableOpacity
-            style={styles.feedbackButton}            onPress={(e) => {
+            style={[
+              styles.feedbackButton,
+              job.isJobSeekerFeedback && styles.feedbackButtonDisabled
+            ]}
+            onPress={(e) => {
               e.stopPropagation();
-              onFeedbackPress();
+              if (!job.isJobSeekerFeedback) {
+                onFeedbackPress();
+              }
             }}
+            disabled={job.isJobSeekerFeedback}
           >
-            <Ionicons
-              name="star"
-              size={16}
-              color="white"
-              style={styles.feedbackIcon}
-            />
-            <Text style={styles.feedbackText}>Đánh giá</Text>
+            <Text style={[
+              styles.feedbackText,
+              job.isJobSeekerFeedback && styles.feedbackTextDisabled
+            ]}>
+              {job.isJobSeekerFeedback ? "Đã đánh giá" : "Đánh giá"}
+            </Text>
           </TouchableOpacity>
         )}
       </LinearGradient>
@@ -180,23 +182,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    width:"100%",
     marginTop: 12,
-    alignSelf: "flex-end",
+    alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-  },
-  feedbackIcon: {
-    marginRight: 6,
-  },
-  feedbackText: {
+  },  feedbackText: {
     color: "white",
     fontSize: 14,
     fontWeight: "600",
+  },
+  feedbackButtonDisabled: {
+    backgroundColor: "#9CA3AF",
+    elevation: 0,
+    shadowOpacity: 0,
+  },
+  feedbackTextDisabled: {
+    color: "#D1D5DB",
   },
 });
 

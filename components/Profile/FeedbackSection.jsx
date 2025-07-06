@@ -131,6 +131,7 @@ const FeedbackSection = ({
     }
   };
 
+
   const getDisplayAvatar = (feedback) => {
     if (isEmployer) {
       // For employer profile, show job seeker avatar
@@ -207,27 +208,32 @@ const FeedbackSection = ({
             {averageRating.toFixed(1)} ({safeFeedbacks.length} đánh giá)
           </Text>
         </View>
-      </View>
-
-      <ScrollView 
+      </View>      <ScrollView 
         style={styles.feedbackList} 
         showsVerticalScrollIndicator={false}
         nestedScrollEnabled={true}
       >
         {displayedFeedbacks.map((feedback, index) => (
-          <View key={index} style={styles.feedbackItem}>
+          <View key={index} style={styles.feedbackCard}>
             <View style={styles.feedbackHeader}>
               {renderAvatar(feedback, index)}
               <View style={styles.feedbackInfo}>
                 <Text style={styles.feedbackName}>{getDisplayName(feedback)}</Text>
+                {feedback.jobTitle && (
+                  <Text style={styles.feedbackJobTitle}>{feedback.jobTitle}</Text>
+                )}
                 <View style={styles.feedbackRating}>
-                  {renderStars(feedback.rating)}
-                  <Text style={styles.feedbackDate}>• {formatDate(feedback.createdAt)}</Text>
+                  <View style={styles.starsWrapper}>
+                    {renderStars(feedback.rating)}
+                  </View>
+                  <Text style={styles.feedbackDate}>{formatDate(feedback.createdAt)}</Text>
                 </View>
               </View>
             </View>
             {feedback.comment && (
-              <Text style={styles.feedbackComment}>{feedback.comment}</Text>
+              <View style={styles.commentContainer}>
+                <Text style={styles.feedbackComment}>{feedback.comment}</Text>
+              </View>
             )}
           </View>
         ))}
@@ -264,31 +270,39 @@ const FeedbackSection = ({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 20,
     marginTop: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#f1f3f4',
   },
   header: {
-    marginBottom: 16,
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e9ecef',
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
+    color: '#2c3e50',
+    marginBottom: 12,
   },
   ratingOverview: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    backgroundColor: '#f8f9fa',
+    padding: 12,
+    borderRadius: 8,
   },
   starsContainer: {
     flexDirection: 'row',
@@ -296,10 +310,26 @@ const styles = StyleSheet.create({
   },
   ratingText: {
     fontSize: 14,
-    color: '#666',
+    color: '#495057',
+    fontWeight: '600',
+  },feedbackList: {
+    maxHeight: 400,
   },
-  feedbackList: {
-    maxHeight: 300,
+  feedbackCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
   feedbackItem: {
     marginBottom: 16,
@@ -309,45 +339,69 @@ const styles = StyleSheet.create({
   },
   feedbackHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
   avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     marginRight: 12,
+    borderWidth: 2,
+    borderColor: '#e9ecef',
   },
   feedbackInfo: {
     flex: 1,
   },
   feedbackName: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: '700',
+    color: '#2c3e50',
     marginBottom: 4,
+  },
+  feedbackJobTitle: {
+    fontSize: 13,
+    color: '#6c757d',
+    marginBottom: 6,
+    fontStyle: 'italic',
   },
   feedbackRating: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+  },
+  starsWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   feedbackDate: {
     fontSize: 12,
-    color: '#999',
+    color: '#6c757d',
+    fontWeight: '500',
+  },
+  commentContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#2558B6',
   },
   feedbackComment: {
     fontSize: 14,
-    color: '#666',
+    color: '#495057',
     lineHeight: 20,
-    marginTop: 8,
-  },
-  showMoreButton: {
+    fontStyle: 'italic',
+  },  showMoreButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    marginTop: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
   showMoreText: {
     fontSize: 14,
@@ -359,27 +413,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 24,
+    paddingVertical: 32,
   },
   loadingText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#666',
+    color: '#6c757d',
   },
   errorContainer: {
     alignItems: 'center',
-    paddingVertical: 24,
+    paddingVertical: 32,
+    backgroundColor: '#fff5f5',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#fed7d7',
   },
   errorText: {
     fontSize: 14,
-    color: '#ff6b6b',
-    marginBottom: 8,
+    color: '#e53e3e',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   retryButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     backgroundColor: '#2558B6',
     borderRadius: 8,
+    shadowColor: '#2558B6',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   retryText: {
     color: 'white',
@@ -388,20 +455,29 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 32,
+    paddingVertical: 48,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
   },
   emptyText: {
-    fontSize: 14,
-    color: '#999',
-    marginTop: 8,
+    fontSize: 16,
+    color: '#6c757d',
+    marginTop: 12,
+    fontWeight: '500',
   },
   showAllIndicator: {
     alignItems: 'center',
     paddingVertical: 16,
+    backgroundColor: '#e8f4f8',
+    borderRadius: 8,
+    marginTop: 8,
   },
   showAllText: {
     fontSize: 14,
-    color: '#999',
+    color: '#2558B6',
+    fontWeight: '600',
   },
 });
 

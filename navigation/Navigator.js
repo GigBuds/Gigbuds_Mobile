@@ -74,7 +74,7 @@ export default function Navigator() {
           name="EmployerProfile"
           options={{ headerShown: false }}
           children={() => (
-            <MyProfileLayout showBackButton={false}>
+            <MyProfileLayout >
               <EmployerProfile />
             </MyProfileLayout>
           )
@@ -286,6 +286,16 @@ export default function Navigator() {
               <JobDetailScreen />
             </JobDetailLayout>
           )}
+        />
+        <Stack.Screen
+          name="EmployerProfile"
+          options={{ headerShown: false }}
+          children={() => (
+            <MyProfileLayout >
+              <EmployerProfile />
+            </MyProfileLayout>
+          )
+          }
         />
       </Stack.Navigator>
     );

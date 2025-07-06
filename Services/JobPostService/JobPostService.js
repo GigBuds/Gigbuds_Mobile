@@ -356,14 +356,21 @@ class JobPostService {
                 status: error.response?.status
             };
         }
-    }
-
-    static async getJobPostsByCompanyId(companyId) {
+    }    static async getJobPostsByCompanyId(companyId, params = {}) {
         try {
             if (!companyId) {
                 throw new Error('Company ID is required');
             }
-            const response = await api.get(`job-posts/employer/${companyId}`);
+            
+            // Add pagination parameters if provided
+            const queryParams = new URLSearchParams();
+            if (params.pageIndex) queryParams.append('pageIndex', params.pageIndex);
+            if (params.pageSize) queryParams.append('pageSize', params.pageSize);
+            
+            const queryString = queryParams.toString();
+            const url = `job-posts/employer/${companyId}${queryString ? `?${queryString}` : ''}`;
+            
+            const response = await api.get(url);
             return {
                 success: true,
                 data: response.data,

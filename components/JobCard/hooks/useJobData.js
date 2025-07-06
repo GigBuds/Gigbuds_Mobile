@@ -103,11 +103,20 @@ export const useJobData = (showLoading, hideLoading) => {
           ...(debouncedSearchInput?.trim() && { jobName: debouncedSearchInput.trim() })
         };
         result = await JobPostService.searchJobPosts(paginatedSearchParams);
-      }
-
-      if (result.success) {
-        const rawData = result.data.items || [];
-        const totalCount = result.data.totalCount || result.data.total || 0;
+      }      if (result.success) {
+        // Handle different response structures
+        let rawData = [];
+        let totalCount = 0;
+        
+        if (selectedTab === "EmployerJob") {
+          // For employer jobs, data might be direct array or have items property
+          rawData = Array.isArray(result.data) ? result.data : (result.data.items || []);
+          totalCount = Array.isArray(result.data) ? result.data.length : (result.data.totalCount || result.data.total || 0);
+        } else {
+          // For other tabs, use the standard structure
+          rawData = result.data.items || [];
+          totalCount = result.data.totalCount || result.data.total || 0;
+        }
         
         // Apply filters
         let processedData = rawData;
