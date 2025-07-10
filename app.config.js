@@ -78,6 +78,7 @@ export default {
     },
     extra: {
       eas: {
+        projectId: "ab0b9dff-febb-476b-97bf-c5d0279ee580"
       },
     },
     owner: "giapnq",
