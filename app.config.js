@@ -78,9 +78,8 @@ export default {
     },
     extra: {
       eas: {
-        projectId: "b8a6a536-264a-4187-b7e2-78b31252e315",
       },
     },
-    owner: "oranged_cat",
+    owner: "giapnq",
   },
 };
