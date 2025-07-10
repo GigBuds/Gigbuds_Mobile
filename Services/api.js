@@ -3,7 +3,8 @@ import axios from "axios";
 
 // const baseURL =
 //   process.env.EXPO_PUBLIC_LOCAL_API_URL || "https://localhost:50876/api/v1/";
-const baseURL = "https://sharing-ultimately-crappie.ngrok-free.app/api/v1/";
+const baseURL = "https://gigbuds-c3fagtfwe2brewha.eastasia-01.azurewebsites.net/api/v1/"
+// const baseURL = "https://sharing-ultimately-crappie.ngrok-free.app/api/v1/";
 const config = {
   baseURL,
   timeout: 3000000,
