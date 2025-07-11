@@ -4,6 +4,7 @@ export default {
     name: "Gigbuds",
     slug: "gigbuds",
     version: "1.0.0",
+    scheme: "gigbuds",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -72,6 +73,18 @@ export default {
       package: "com.gigbuds.app",
       googleServicesFile:
         process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
+      intentFilters: [
+          {
+            action: "VIEW",
+            autoVerify: true,
+            data: [
+              {
+                scheme: "gigbuds"
+              }
+            ],
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ]
     },
     web: {
       favicon: "./assets/favicon.png",
