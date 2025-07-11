@@ -17,14 +17,20 @@ import LoginService from '../../Services/LoginService/LoginService';
 const PaymentResultScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { orderCode } = route.params || {};
+  const { orderCode, status: routeStatus } = route.params || {};
   
   const [loading, setLoading] = useState(true);
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [status, setStatus] = useState(null);
+  const [status, setStatus] = useState(routeStatus || null);
   const [renewingToken, setRenewingToken] = useState(false);
+  
+  // New states for payment processing
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [processingMessage, setProcessingMessage] = useState('');
+  const [processingStatus, setProcessingStatus] = useState('loading'); // loading, success, error
+  const [hasProcessedPayment, setHasProcessedPayment] = useState(false);
 
   const renewIdTokenAfterPayment = useCallback(async () => {
     try {
@@ -49,6 +55,54 @@ const PaymentResultScreen = () => {
     }
   }, []);
 
+  // Process payment result with backend API (from web page)
+  const processPaymentResult = useCallback(async () => {
+    if (!orderCode || !status) {
+      setProcessingStatus('error');
+      setProcessingMessage('Missing payment parameters');
+      return false;
+    }
+
+    try {
+      setIsProcessingPayment(true);
+      setProcessingStatus('loading');
+      setProcessingMessage('Processing payment result...');
+
+      console.log('📤 Processing payment with backend API:', { orderCode, status });
+
+      // Call payment service to process mobile payment
+      const result = await PaymentService.processMobilePayment(orderCode, status);
+
+      if (result.success) {
+        setProcessingStatus('success');
+        setProcessingMessage(result.message || 'Payment processed successfully');
+        setHasProcessedPayment(true);
+        
+        console.log('✅ Payment processed successfully:', result);
+        
+        // If payment is successful, renew the ID token to include new membership info
+        if (status?.toUpperCase() === 'PAID') {
+          console.log('✅ Payment successful! Renewing ID token...');
+          await renewIdTokenAfterPayment();
+        }
+        
+        return true;
+      } else {
+        setProcessingStatus('error');
+        setProcessingMessage(result.error || 'Failed to process payment');
+        console.error('❌ Payment processing failed:', result);
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ API call failed:', error);
+      setProcessingStatus('error');
+      setProcessingMessage('Network error occurred');
+      return false;
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  }, [orderCode, status, renewIdTokenAfterPayment]);
+
   const fetchPaymentDetails = useCallback(async () => {
     if (!orderCode) {
       setLoading(false);
@@ -62,17 +116,11 @@ const PaymentResultScreen = () => {
       console.log('💰 Payment Details:', details.data);
       setPaymentDetails(details.data);
       
-      const paymentStatus = details.data.data.status
+      const paymentStatus = details.data.data.status || status;
       setStatus(paymentStatus);
       
       console.log('💰 Payment Status:', paymentStatus);
       console.log('📊 Full Details:', details.data);
-      
-      // If payment is successful, renew the ID token to include new membership info
-      if (paymentStatus?.toUpperCase() === 'PAID') {
-        console.log('✅ Payment successful! Renewing ID token...');
-        await renewIdTokenAfterPayment();
-      }
       
       // Store payment result in AsyncStorage for future reference
       await AsyncStorage.setItem(`payment_${orderCode}`, JSON.stringify({
@@ -102,26 +150,65 @@ const PaymentResultScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [orderCode, renewIdTokenAfterPayment]);
+  }, [orderCode, status]);
+
+  // Process payment first, then fetch details
+  const handlePaymentFlow = useCallback(async () => {
+    if (!orderCode || !status) {
+      setLoading(false);
+      setError('Missing payment parameters');
+      return;
+    }
+
+    console.log('🚀 Starting payment flow with params:', { orderCode, status });
+
+    // First, process the payment with backend API
+    const processingSuccess = await processPaymentResult();
+    
+    // Then fetch payment details
+    await fetchPaymentDetails();
+    
+    // Mark flow as complete
+    console.log('✅ Payment flow completed. Processing success:', processingSuccess);
+  }, [orderCode, status, processPaymentResult, fetchPaymentDetails]);
 
   // Load payment details when screen focuses
   useFocusEffect(
     useCallback(() => {
-      fetchPaymentDetails();
-    }, [fetchPaymentDetails])
+      if (!hasProcessedPayment) {
+        handlePaymentFlow();
+      } else {
+        fetchPaymentDetails();
+      }
+    }, [handlePaymentFlow, fetchPaymentDetails, hasProcessedPayment])
   );
 
-  // Initial load
-  // useEffect(() => {
-  //   if (orderCode) {
-  //     fetchPaymentDetails();
-  //   } else {
-  //     setLoading(false);
-  //     setError('No order code provided');
-  //   }
-  // }, [orderCode, fetchPaymentDetails]);
-
   const getStatusConfig = useCallback(() => {
+    // If still processing payment, show processing state
+    if (isProcessingPayment || (processingStatus === 'loading' && !hasProcessedPayment)) {
+      return {
+        icon: '⏳',
+        title: 'Processing Payment...',
+        message: processingMessage || 'Please wait while we process your payment...',
+        color: '#007bff',
+        backgroundColor: '#e3f2fd',
+        borderColor: '#bbdefb',
+      };
+    }
+
+    // If processing failed
+    if (processingStatus === 'error' && !hasProcessedPayment) {
+      return {
+        icon: '❌',
+        title: 'Processing Failed',
+        message: processingMessage || 'Failed to process payment with our servers.',
+        color: '#dc3545',
+        backgroundColor: '#f8d7da',
+        borderColor: '#f5c6cb',
+      };
+    }
+
+    // Normal status based on payment result
     switch (status?.toUpperCase()) {
       case 'PAID':
         return {
@@ -151,7 +238,7 @@ const PaymentResultScreen = () => {
           borderColor: '#f5c6cb',
         };
     }
-  }, [status]);
+  }, [status, isProcessingPayment, processingStatus, processingMessage, hasProcessedPayment]);
 
   const handleGoBack = useCallback(() => {
     // Navigate to membership or home screen
@@ -165,8 +252,17 @@ const PaymentResultScreen = () => {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchPaymentDetails();
-  }, [fetchPaymentDetails]);
+    if (!hasProcessedPayment) {
+      handlePaymentFlow();
+    } else {
+      fetchPaymentDetails();
+    }
+  }, [handlePaymentFlow, fetchPaymentDetails, hasProcessedPayment]);
+
+  const handleRetryProcessing = useCallback(() => {
+    setHasProcessedPayment(false);
+    handlePaymentFlow();
+  }, [handlePaymentFlow]);
 
   const showPaymentHelp = useCallback(() => {
     Alert.alert(
@@ -220,6 +316,14 @@ const PaymentResultScreen = () => {
           {/* Status Message */}
           <Text style={styles.message}>{statusConfig.message}</Text>
 
+          {/* Processing Indicator */}
+          {isProcessingPayment && (
+            <View style={styles.processingContainer}>
+              <ActivityIndicator size="small" color="#007bff" />
+              <Text style={styles.processingText}>{processingMessage}</Text>
+            </View>
+          )}
+
           {/* Token Renewal Indicator */}
           {renewingToken && (
             <View style={styles.renewingContainer}>
@@ -260,6 +364,14 @@ const PaymentResultScreen = () => {
                   })}
                 </Text>
               </View>
+              {hasProcessedPayment && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Processed:</Text>
+                  <Text style={[styles.infoValue, { color: '#28a745', fontWeight: '600' }]}>
+                    ✓ Completed
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -299,11 +411,18 @@ const PaymentResultScreen = () => {
           )}
 
           {/* Error Message */}
-          {error && (
+          {(error || (processingStatus === 'error' && !hasProcessedPayment)) && (
             <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={handleRefresh}>
-                <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={styles.errorText}>
+                {processingStatus === 'error' && !hasProcessedPayment ? processingMessage : error}
+              </Text>
+              <TouchableOpacity 
+                style={styles.retryButton} 
+                onPress={processingStatus === 'error' && !hasProcessedPayment ? handleRetryProcessing : handleRefresh}
+              >
+                <Text style={styles.retryButtonText}>
+                  {processingStatus === 'error' && !hasProcessedPayment ? 'Retry Processing' : 'Retry'}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -311,15 +430,22 @@ const PaymentResultScreen = () => {
           {/* Action Buttons */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
-              style={[styles.primaryButton, { backgroundColor: statusConfig.color }]} 
+              style={[
+                styles.primaryButton, 
+                { 
+                  backgroundColor: statusConfig.color,
+                  opacity: isProcessingPayment ? 0.7 : 1 
+                }
+              ]} 
               onPress={handleGoBack}
+              disabled={isProcessingPayment}
             >
               <Text style={styles.primaryButtonText}>
-                {status === 'PAID' ? 'Continue to Dashboard' : 'Back to Home'}
+                {status === 'PAID' && hasProcessedPayment ? 'Continue to Dashboard' : 'Back to Home'}
               </Text>
             </TouchableOpacity>
 
-            {status !== 'PAID' && (
+            {status !== 'PAID' && !isProcessingPayment && (
               <TouchableOpacity style={styles.secondaryButton} onPress={handleRetry}>
                 <Text style={styles.secondaryButtonText}>Try Again</Text>
               </TouchableOpacity>
@@ -395,6 +521,22 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     marginBottom: 30,
     paddingHorizontal: 10,
+  },
+  processingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e3f2fd',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  processingText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#1976d2',
+    fontWeight: '500',
   },
   orderInfo: {
     width: '100%',

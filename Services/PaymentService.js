@@ -10,6 +10,7 @@ const PaymentService = {
    */
   async createMobileMembershipPayment(membershipId) {
     try {
+      console.log('🔑 Authen token membership payment:', token);
       const token = await AsyncStorage.getItem('accessToken');
       if (!token) {
         throw new Error('User not authenticated');
@@ -30,6 +31,49 @@ const PaymentService = {
     } catch (error) {
       console.error('Error creating mobile membership payment:', error.response?.data || error.message);
       throw error;
+    }
+  },
+
+  /**
+   * Processes mobile payment result after PayOS completion
+   * @param {string} orderCode - The order code from PayOS
+   * @param {string} status - The payment status from PayOS
+   * @returns {Promise<Object>} Processing result
+   */
+  async processMobilePayment(orderCode, status) {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      console.log('🔑 Authen token:', token);
+      if (!token) {
+        throw new Error('User not authenticated');
+      }
+
+      const response = await api.post(
+        '/Payments/process-mobile-payment',
+        { 
+          orderCode: orderCode,
+          status: status 
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      return {
+        success: true,
+        data: response.data,
+        message: response.data?.message || 'Payment processed successfully',
+      };
+    } catch (error) {
+      console.error('Error processing mobile payment:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to process payment',
+        status: error.response?.status,
+      };
     }
   },
 
