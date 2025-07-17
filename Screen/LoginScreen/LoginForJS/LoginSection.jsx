@@ -174,7 +174,6 @@ const LoginSection = () => {
           <View style={styles.passwordContainer}>
             <TextInput
               secureTextEntry={!showPassword}
-              
               style={[
                 styles.input,
                 styles.passwordInput,

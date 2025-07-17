@@ -1,28 +1,16 @@
 import React from "react";
-import { UserProvider } from "../../context/UserContext";
 import { MessagingProvider } from "../../context/MessagingContext";
-import { DraftProvider } from "../../context/DraftContext";
-import MessagingContainer from "../../components/messaging/MessagingContainer";
+import MessagingContainer from "../../components/Messaging/MessagingContainer";
+import MessagingErrorBoundary from "../../components/Messaging/ErrorBoundary";
 
 const MessageScreen = () => {
   return (
-    <UserProvider>
+    <MessagingErrorBoundary>
       <MessagingProvider>
-        <DraftProvider>
-          <MessagingContainer />
-        </DraftProvider>
+        <MessagingContainer />
       </MessagingProvider>
-    </UserProvider>
+    </MessagingErrorBoundary>
   );
 };
-
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-  },
-});
 
 export default MessageScreen;

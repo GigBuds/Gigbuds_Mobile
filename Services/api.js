@@ -9,6 +9,7 @@ const config = {
 };
 const api = axios.create(config);
 api.defaults.baseURL = baseURL;
+console.log("baseURL", baseURL);
 
 const handleBefore = async (config) => {
   try {
