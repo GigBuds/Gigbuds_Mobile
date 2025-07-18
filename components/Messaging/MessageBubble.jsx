@@ -35,13 +35,13 @@ const MessageBubble = ({
   };
 
   const getDeliveryStatusIcon = () => {
-    if (!message?.deliveryStatus && message?.deliveryStatus !== 0) return "";
+    if (!message?.deliveryStatus) return "";
     switch (message.deliveryStatus) {
-      case 0: // Pending
+      case "Sending": // Pending
         return "";
-      case 1: // Delivered
+      case "Delivered": // Delivered
         return "✓";
-      case 2: // Read
+      case "Read": // Read
         return "✓✓";
       default:
         return "";
@@ -49,14 +49,13 @@ const MessageBubble = ({
   };
 
   const getDeliveryStatusColor = () => {
-    if (!message?.deliveryStatus && message?.deliveryStatus !== 0)
-      return "#999999";
+    if (!message?.deliveryStatus) return "#999999";
     switch (message.deliveryStatus) {
-      case 0: // Pending
+      case "Sending": // Pending
         return "#999999";
-      case 1: // Delivered
+      case "Delivered": // Delivered
         return "#666666";
-      case 2: // Read
+      case "Read": // Read
         return "#007AFF";
       default:
         return "#999999";
@@ -91,40 +90,9 @@ const MessageBubble = ({
           if (onPress) onPress(message);
         }}
         onLongPress={() => {
-          console.log(
-            "MessageBubble onLongPress fired for message:",
-            message?.messageId,
-            message?.content
-          );
           // Only allow long press on own messages that aren't deleted
-          console.log(
-            `🔔 Long press triggered on message ${
-              message?.messageId
-            }, isOwnMessage: ${isOwnMessage}, isDeleted: ${
-              message?.isDeleted
-            }, hasHandler: ${!!onLongPress}`
-          );
-          console.log(`🔍 Message data:`, {
-            messageId: message?.messageId,
-            senderId: message?.senderId,
-            currentUserId: currentUser?.id,
-            senderIdType: typeof message?.senderId,
-            currentUserIdType: typeof currentUser?.id,
-            isDeleted: message?.isDeleted,
-            content: message?.content,
-          });
-
           if (isOwnMessage && !message?.isDeleted && onLongPress) {
-            console.log(
-              `✅ Executing long press handler for message ${message?.messageId}`
-            );
             onLongPress(message);
-          } else {
-            console.log(`❌ Long press not executed - conditions not met:`, {
-              isOwnMessage,
-              isDeleted: message?.isDeleted,
-              hasHandler: !!onLongPress,
-            });
           }
         }}
         activeOpacity={message?.isDeleted ? 1 : 0.7}
@@ -185,40 +153,40 @@ const MessageBubble = ({
   );
 };
 
-const MessageBubbleGroup = ({
-  messages,
-  currentUser,
-  onMessageLongPress,
-  onMessagePress,
-}) => {
-  if (!messages || !Array.isArray(messages) || messages.length === 0)
-    return null;
+// const MessageBubbleGroup = ({
+//   messages,
+//   currentUser,
+//   onMessageLongPress,
+//   onMessagePress,
+// }) => {
+//   if (!messages || !Array.isArray(messages) || messages.length === 0)
+//     return null;
 
-  return (
-    <View style={styles.groupContainer}>
-      {messages.map((message, index) => {
-        if (!message || !message.messageId) return null;
+//   return (
+//     <View style={styles.groupContainer}>
+//       {messages.map((message, index) => {
+//         if (!message || !message.messageId) return null;
 
-        const isFirst = index === 0;
-        const isLast = index === messages.length - 1;
-        const showAvatar = isLast && message?.senderId !== currentUser?.id;
-        const showTimestamp = isLast;
+//         const isFirst = index === 0;
+//         const isLast = index === messages.length - 1;
+//         const showAvatar = isLast && message?.senderId !== currentUser?.id;
+//         const showTimestamp = isLast;
 
-        return (
-          <MessageBubble
-            key={message.messageId}
-            message={message}
-            currentUser={currentUser}
-            showAvatar={showAvatar}
-            showTimestamp={showTimestamp}
-            onLongPress={() => onMessageLongPress?.(message)}
-            onPress={() => onMessagePress?.(message)}
-          />
-        );
-      })}
-    </View>
-  );
-};
+//         return (
+//           <MessageBubble
+//             key={message.messageId}
+//             message={message}
+//             currentUser={currentUser}
+//             showAvatar={showAvatar}
+//             showTimestamp={showTimestamp}
+//             onLongPress={() => onMessageLongPress?.(message)}
+//             onPress={() => onMessagePress?.(message)}
+//           />
+//         );
+//       })}
+//     </View>
+//   );
+// };
 
 const styles = StyleSheet.create({
   container: {
@@ -316,5 +284,6 @@ const styles = StyleSheet.create({
   },
 });
 
-export { MessageBubble, MessageBubbleGroup };
+export { MessageBubble };
+// export { MessageBubble, MessageBubbleGroup };
 export default MessageBubble;

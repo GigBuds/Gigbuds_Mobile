@@ -18,7 +18,8 @@ const MessagingContainer = () => {
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [showUserSearch, setShowUserSearch] = useState(false); // New state for the search modal
 
-  const { createConversation, isConnected, currentUser } = useMessaging();
+  const { createConversation, isConnected, currentUser, conversations } =
+    useMessaging();
 
   const handleConversationSelect = useCallback((conversation) => {
     setSelectedConversationId(conversation.id);
@@ -30,8 +31,27 @@ const MessagingContainer = () => {
 
   // New handler to create a conversation with a selected user
   const handleCreateConversationWithUser = async (selectedUser) => {
-    console.log("Attempting to create conversation with user:", selectedUser); // Log selected user
+    // Access conversations and currentUser from context
+    // (Assume they are already available in this component)
     try {
+      // Check for existing conversation
+      const existingConversation = conversations.find((conv) => {
+        // Handle members as array of user objects
+        const memberIds = Array.isArray(conv.members)
+          ? conv.members.map((m) => m.userId?.toString())
+          : Object.keys(conv.members);
+        return (
+          memberIds.includes(currentUser.id.toString()) &&
+          memberIds.includes(selectedUser.userId.toString())
+        );
+      });
+
+      if (existingConversation) {
+        setShowUserSearch(false);
+        setSelectedConversationId(existingConversation.id);
+        return;
+      }
+
       // Prepare the conversation data according to API spec
       const conversationData = {
         creatorId: currentUser?.id?.toString(),
@@ -77,7 +97,6 @@ const MessagingContainer = () => {
         isConnected={isConnected}
       />
       <ConversationList onConversationSelect={handleConversationSelect} />
-      <ServerDataDemoScreen />
 
       {/* New User Search Modal */}
       <Modal

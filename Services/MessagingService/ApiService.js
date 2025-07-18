@@ -193,7 +193,7 @@ class ApiService {
    */
   async getConversationMessages(conversationId, options = {}) {
     try {
-      const { searchTerm = null, pageIndex = 1, pageSize = 5 } = options;
+      const { searchTerm = null, pageIndex = 1, pageSize = 10 } = options;
 
       console.log(
         `💬 Fetching messages for conversation ${conversationId} (page ${pageIndex}${
@@ -230,7 +230,7 @@ class ApiService {
         readByNames: Array.isArray(msg.readByNames) ? msg.readByNames : [],
         isDeleted: Boolean(msg.isDeleted),
         timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
-        deliveryStatus: msg.deliveryStatus || 0, // 0=Sending, 1=Delivered, 2=Read, 3=Failed
+        deliveryStatus: msg.deliveryStatus || "Sending", 
         content: msg.content || "",
         // Legacy field for compatibility
         messageContent: msg.content || "",
@@ -354,7 +354,7 @@ class ApiService {
    * @param {string[]} messageData.readByNames - Updated read receipts
    * @param {boolean} messageData.isDeleted - Deletion status
    * @param {Date|string} messageData.timestamp - Original timestamp
-   * @param {number} messageData.deliveryStatus - Updated delivery status (0=Sending, 1=Delivered, 2=Read, 3=Failed)
+   * @param {string} messageData.deliveryStatus - Updated delivery status (0=Sending, 1=Delivered, 2=Read, 3=Failed)
    * @param {string} messageData.content - Updated message content
    * @returns {Promise<void>}
    */
@@ -518,10 +518,10 @@ class ApiService {
    * DeliveryStatus enum values according to API specification
    */
   static DeliveryStatus = {
-    SENDING: 0,
-    DELIVERED: 1,
-    READ: 2,
-    FAILED: 3,
+    SENDING: "Sending",
+    DELIVERED: "Delivered",
+    READ: "Read",
+    FAILED: "Failed",
   };
 
   /**
@@ -530,14 +530,14 @@ class ApiService {
    * @returns {string} Human-readable status
    */
   getDeliveryStatusText(status) {
-    switch (Number(status)) {
-      case 0:
+    switch (status) {
+      case "Sending":
         return "Sending";
-      case 1:
+      case "Delivered":
         return "Delivered";
-      case 2:
+      case "Read":
         return "Read";
-      case 3:
+      case "Failed":
         return "Failed";
       default:
         return "Unknown";
@@ -656,10 +656,10 @@ class ApiService {
     }
 
     if (messageData.deliveryStatus !== undefined) {
-      const validStatuses = [0, 1, 2, 3];
-      if (!validStatuses.includes(Number(messageData.deliveryStatus))) {
+      const validStatuses = ["Sending", "Delivered", "Read", "Failed"];
+      if (!validStatuses.includes(messageData.deliveryStatus)) {
         throw new Error(
-          "Invalid delivery status. Must be 0-3 (Sending, Delivered, Read, Failed)"
+          "Invalid delivery status. Must be Sending, Delivered, Read, or Failed"
         );
       }
     }

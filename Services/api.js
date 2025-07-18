@@ -12,6 +12,7 @@ api.defaults.baseURL = baseURL;
 console.log("baseURL", baseURL);
 
 const handleBefore = async (config) => {
+  console.log("handleBefore", config.url);
   try {
     const accessToken = await AsyncStorage.getItem("accessToken");
     if (accessToken) {

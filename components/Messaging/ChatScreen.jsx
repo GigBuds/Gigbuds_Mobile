@@ -13,6 +13,8 @@ import {
   Modal,
   Animated,
   Dimensions,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { useMessaging } from "../../context/MessagingContext";
 import { MessageBubble } from "./MessageBubble";
@@ -51,7 +53,11 @@ const ChatScreen = ({ conversationId, onBack }) => {
     signalRService,
   } = useMessaging();
 
-  const conversationMessages = messages[conversationId] || [];
+  const conversationMessages = (messages[conversationId] || [])
+    .slice()
+    .sort((a, b) => Number(a.messageId) - Number(b.messageId));
+
+  console.log("CHATSCREEN: conversationMessages", conversationMessages);
   const isLoading = messagesLoading[conversationId] || false;
   const error = messagesError[conversationId];
   const conversation = conversations.find((c) => c?.id === conversationId);
@@ -96,7 +102,7 @@ const ChatScreen = ({ conversationId, onBack }) => {
 
     // Only auto-scroll when new messages are added (not initial load or loading more)
     if (
-      validMessages.length > previousMessageCountRef.current &&
+      conversationMessages.length > previousMessageCountRef.current &&
       previousMessageCountRef.current > 0 &&
       !shouldPreventScroll &&
       !isLoading
@@ -108,9 +114,9 @@ const ChatScreen = ({ conversationId, onBack }) => {
       }, 100);
     }
 
-    previousMessageCountRef.current = validMessages.length;
+    previousMessageCountRef.current = conversationMessages.length;
   }, [
-    validMessages.length,
+    conversationMessages.length,
     pullToLoadMore,
     pagination.isLoadingMore,
     isLoading,
@@ -118,7 +124,7 @@ const ChatScreen = ({ conversationId, onBack }) => {
 
   // Initial scroll when entering a conversation (only once)
   useEffect(() => {
-    if (conversationId && validMessages.length > 0 && !isLoading) {
+    if (conversationId && conversationMessages.length > 0 && !isLoading) {
       console.log(
         `🔄 Initial scroll to bottom for conversation ${conversationId}`
       );
@@ -132,9 +138,9 @@ const ChatScreen = ({ conversationId, onBack }) => {
 
   // Helper function to scroll to newest messages (at bottom)
   const scrollToNewest = (animated = true) => {
-    if (flatListRef.current && validMessages.length > 0) {
+    if (flatListRef.current && conversationMessages.length > 0) {
       console.log(
-        `📜 Scrolling to newest messages at bottom (${validMessages.length} messages, animated: ${animated})`
+        `📜 Scrolling to newest messages at bottom (${conversationMessages.length} messages, animated: ${animated})`
       );
       flatListRef.current.scrollToEnd({ animated });
     }
@@ -144,29 +150,14 @@ const ChatScreen = ({ conversationId, onBack }) => {
   const handleFlatListLayout = () => {
     // Only scroll on initial layout, not on every re-render
     if (
-      validMessages.length > 0 &&
-      previousMessageCountRef.current === validMessages.length
+      conversationMessages.length > 0 &&
+      previousMessageCountRef.current === conversationMessages.length
     ) {
       console.log("📜 FlatList initial layout - scrolling to bottom");
       setTimeout(() => {
         scrollToNewest(false);
       }, 50);
     }
-  };
-
-  // Handle loading more messages when scrolling to top
-  const handleLoadMore = async () => {
-    if (!conversationId || !pagination.hasMore || pagination.isLoadingMore) {
-      console.log(
-        `⚠️ Skipping load more: hasMore=${pagination.hasMore}, isLoading=${pagination.isLoadingMore}`
-      );
-      return;
-    }
-
-    console.log(
-      `📜 User scrolled to top, loading more messages for conversation ${conversationId}`
-    );
-    await loadMoreMessages(conversationId);
   };
 
   // Handle refresh (reload current messages)
@@ -183,6 +174,11 @@ const ChatScreen = ({ conversationId, onBack }) => {
 
   // Handle pull-to-load-more (load older messages)
   const handlePullToLoadMore = async () => {
+    console.log(
+      `⚠️ Skipping pull-to-load-more: conversationId=${!!conversationId}, hasMore=${
+        pagination.hasMore
+      }, isLoadingMore=${pagination.isLoadingMore}, refreshing=${refreshing}`
+    );
     if (
       !conversationId ||
       !pagination.hasMore ||
@@ -224,14 +220,7 @@ const ChatScreen = ({ conversationId, onBack }) => {
     const isOwnMessage =
       message?.senderId?.toString() === currentUser?.id?.toString();
 
-    console.log(`🔍 Message ownership check:`, {
-      senderId: message?.senderId?.toString(),
-      currentUserId: currentUser?.id?.toString(),
-      isOwnMessage,
-    });
-
     if (isOwnMessage) {
-      console.log(`✅ Showing message menu for message ${message?.messageId}`);
       setSelectedMessage(message);
       setShowMessageMenu(true);
 
@@ -362,87 +351,21 @@ const ChatScreen = ({ conversationId, onBack }) => {
     }, 200);
   };
 
-  // Group consecutive messages from the same sender
-  const groupMessages = (messages) => {
-    if (!messages || !Array.isArray(messages)) return [];
-
-    const groups = [];
-    let currentGroup = [];
-    let lastSenderId = null;
-    let lastTimestamp = null;
-
-    for (const message of messages) {
-      if (!message || !message.messageId) continue; // Skip invalid messages
-
-      const timeDiff =
-        lastTimestamp && message.timestamp
-          ? (new Date(message.timestamp) - new Date(lastTimestamp)) /
-            (1000 * 60)
-          : 0;
-
-      // Start new group if different sender or messages are more than 5 minutes apart
-      if (message.senderId !== lastSenderId || timeDiff > 5) {
-        if (currentGroup.length > 0) {
-          groups.push({
-            id: `group-${currentGroup[0].messageId}`,
-            messages: [...currentGroup],
-          });
-        }
-        currentGroup = [message];
-      } else {
-        currentGroup.push(message);
-      }
-
-      lastSenderId = message.senderId;
-      lastTimestamp = message.timestamp;
-    }
-
-    if (currentGroup.length > 0) {
-      groups.push({
-        id: `group-${currentGroup[0].messageId}`,
-        messages: [...currentGroup],
-      });
-    }
-
-    return groups;
-  };
-
-  // Render message group
-  const renderMessageGroup = ({ item: messageGroup, index }) => {
-    // Handle both old array format and new object format
-    const messages = messageGroup?.messages || messageGroup;
-
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return null;
-    }
-
-    const firstMessage = messages[0];
-    if (!firstMessage) return null;
+  // Render individual message
+  const renderMessage = ({ item: message }) => {
+    if (!message || !message.messageId) return null;
 
     const isOwnMessage =
-      firstMessage?.senderId?.toString() === currentUser?.id?.toString();
+      message?.senderId?.toString() === currentUser?.id?.toString();
 
     return (
-      <View style={styles.messageGroupContainer}>
-        {messages.map((message, messageIndex) => {
-          if (!message || !message.messageId) return null;
-
-          const isLast = messageIndex === messages.length - 1;
-          const showAvatar = !isOwnMessage && isLast;
-          const showTimestamp = isLast;
-
-          return (
-            <MessageBubble
-              key={message.messageId}
-              message={message}
-              currentUser={currentUser}
-              showAvatar={showAvatar}
-              showTimestamp={showTimestamp}
-              onLongPress={handleMessageOptions}
-            />
-          );
-        })}
-      </View>
+      <MessageBubble
+        message={message}
+        currentUser={currentUser}
+        showAvatar={!isOwnMessage} // Always show avatar for non-own messages
+        showTimestamp={true} // Always show timestamp
+        onLongPress={handleMessageOptions}
+      />
     );
   };
 
@@ -494,10 +417,7 @@ const ChatScreen = ({ conversationId, onBack }) => {
     );
   }
 
-  const messageGroups = useMemo(
-    () => groupMessages(validMessages),
-    [validMessages]
-  );
+  const messageInputRef = useRef(null);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -508,81 +428,91 @@ const ChatScreen = ({ conversationId, onBack }) => {
         conversation={conversation}
       />
 
-      <View style={styles.messagesContainer}>
-        {isLoading && validMessages.length === 0 ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Loading messages...</Text>
-          </View>
-        ) : (
-          <FlatList
-            ref={flatListRef}
-            data={messageGroups}
-            renderItem={renderMessageGroup}
-            keyExtractor={(item) =>
-              item?.id || `group-${item?.messages?.[0]?.messageId || "unknown"}`
-            }
-            showsVerticalScrollIndicator={false}
-            scrollEnabled={true}
-            removeClippedSubviews={true}
-            windowSize={5}
-            initialNumToRender={10}
-            maxToRenderPerBatch={5}
-            updateCellsBatchingPeriod={100}
-            getItemLayout={null}
-            legacyImplementation={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={pullToLoadMore}
-                onRefresh={handlePullToLoadMore}
-                enabled={pagination.hasMore}
-                title={
-                  pagination.hasMore
-                    ? pullToLoadMore
-                      ? "Loading older messages..."
-                      : "Pull to load older messages"
-                    : "No more messages"
-                }
-                tintColor="#007AFF"
-                titleColor="#666666"
-              />
-            }
-            onLayout={handleFlatListLayout}
-            // onEndReached={handleLoadMore}  // Disabled automatic loading
-            // onEndReachedThreshold={0.01}  // Disabled automatic loading
-            // Traditional chat: oldest at top, newest at bottom
-            contentContainerStyle={styles.messagesList}
-            // maintainVisibleContentPosition={{
-            //   minIndexForVisible: 0,
-            //   autoscrollToTopThreshold: 10,
-            // }}
-            ListHeaderComponent={
-              pagination.isLoadingMore && !pullToLoadMore ? (
-                <View style={styles.loadMoreContainer}>
-                  <ActivityIndicator size="small" color="#007AFF" />
-                  <Text style={styles.loadMoreText}>
-                    Loading older messages...
+      {/* Wrap chat area in TouchableWithoutFeedback to dismiss keyboard */}
+      <TouchableWithoutFeedback
+        onPress={() => {
+          Keyboard.dismiss();
+          messageInputRef.current?.blur();
+        }}
+        accessible={false}
+      >
+        <View style={styles.messagesContainer}>
+          {isLoading && validMessages.length === 0 ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#007AFF" />
+              <Text style={styles.loadingText}>Loading messages...</Text>
+            </View>
+          ) : (
+            <FlatList
+              ref={flatListRef}
+              data={validMessages}
+              renderItem={renderMessage}
+              keyExtractor={(item) => item?.messageId?.toString() || "unknown"}
+              showsVerticalScrollIndicator={false}
+              scrollEnabled={true}
+              removeClippedSubviews={true}
+              windowSize={5}
+              initialNumToRender={10}
+              maxToRenderPerBatch={5}
+              updateCellsBatchingPeriod={100}
+              getItemLayout={null}
+              legacyImplementation={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={pullToLoadMore}
+                  onRefresh={handlePullToLoadMore}
+                  enabled={pagination.hasMore}
+                  title={
+                    pagination.hasMore
+                      ? pullToLoadMore
+                        ? "Loading older messages..."
+                        : "Pull to load older messages"
+                      : "No more messages"
+                  }
+                  tintColor="#007AFF"
+                  titleColor="#666666"
+                />
+              }
+              onLayout={handleFlatListLayout}
+              // onEndReached={handleLoadMore}  // Disabled automatic loading
+              // onEndReachedThreshold={0.01}  // Disabled automatic loading
+              // Traditional chat: oldest at top, newest at bottom
+              contentContainerStyle={styles.messagesList}
+              // maintainVisibleContentPosition={{
+              //   minIndexForVisible: 0,
+              //   autoscrollToTopThreshold: 10,
+              // }}
+              ListHeaderComponent={
+                pagination.isLoadingMore && !pullToLoadMore ? (
+                  <View style={styles.loadMoreContainer}>
+                    <ActivityIndicator size="small" color="#007AFF" />
+                    <Text style={styles.loadMoreText}>
+                      Loading older messages...
+                    </Text>
+                  </View>
+                ) : null
+              }
+              ListEmptyComponent={
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No messages yet</Text>
+                  <Text style={styles.emptySubtext}>
+                    Start the conversation!
                   </Text>
                 </View>
-              ) : null
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No messages yet</Text>
-                <Text style={styles.emptySubtext}>Start the conversation!</Text>
-              </View>
-            }
-          />
-        )}
+              }
+            />
+          )}
 
-        <TypingIndicator
-          typingUsers={typingUsers}
-          conversationId={conversationId}
-          currentUser={currentUser}
-        />
-      </View>
+          <TypingIndicator
+            typingUsers={typingUsers}
+            conversationId={conversationId}
+            currentUser={currentUser}
+          />
+        </View>
+      </TouchableWithoutFeedback>
 
       <MessageInput
+        ref={messageInputRef}
         conversationId={conversationId}
         disabled={!currentUser || !conversationId}
       />
@@ -816,9 +746,6 @@ const styles = StyleSheet.create({
   messagesList: {
     paddingVertical: 8,
     flexGrow: 1,
-  },
-  messageGroupContainer: {
-    marginBottom: 8,
   },
   loadingContainer: {
     flex: 1,

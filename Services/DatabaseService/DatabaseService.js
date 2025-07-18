@@ -439,7 +439,7 @@ class DatabaseService {
   /**
    * Update message delivery status
    * @param {string} messageId - ID of the message
-   * @param {string} deliveryStatus - New delivery status ('sending', 'delivered', 'read', 'failed')
+   * @param {string} deliveryStatus - New delivery status ('Sending', 'Delivered', 'Read', 'Failed')
    */
   async updateMessageStatus(messageId, deliveryStatus) {
     await this.checkInitialized();

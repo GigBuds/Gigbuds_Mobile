@@ -8,7 +8,6 @@ import {
   ScrollView,
 } from "react-native";
 import { databaseService } from "../Services/DatabaseService/DatabaseService";
-import { testDatabaseService } from "../Services/DatabaseService/DatabaseTest";
 
 export default function ServerDataDemoScreen() {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,10 +18,10 @@ export default function ServerDataDemoScreen() {
     setResults("Running database tests...\n");
 
     try {
-      const success = await testDatabaseService();
+      const success = await databaseService.checkInitialized();
       setResults(
         (prev) => prev + `\nDatabase test ${success ? "PASSED" : "FAILED"}\n`
-      );
+      ); 
     } catch (error) {
       setResults((prev) => prev + `\nDatabase test FAILED: ${error.message}\n`);
     } finally {

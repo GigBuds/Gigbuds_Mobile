@@ -59,6 +59,10 @@ const UserSearchScreen = ({ onSelectUser, onClose }) => {
       style={styles.userItem}
       onPress={() => onSelectUser(item)}
     >
+      <Image
+        source={{ uri: item.avatar || "https://via.placeholder.com/50" }}
+        style={styles.avatar}
+      />
       <View style={styles.userInfo}>
         <Text style={styles.userName}>{item.fullName}</Text>
       </View>

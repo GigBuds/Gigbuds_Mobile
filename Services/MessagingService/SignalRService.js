@@ -374,12 +374,12 @@ class SignalRService {
    * @param {number} conversationId - ID of the conversation
    * @param {string} messageContent - Message text content
    * @param {Object} metadata - Additional message metadata (optional)
-   * @returns {Promise<boolean>} True if sent successfully
+   * @returns {Promise<Object>} New message object if sent successfully, null otherwise
    */
   async sendMessage(conversationId, messageContent, metadata = {}) {
     if (!this.isConnected()) {
       console.error("❌ Cannot send message: SignalR not connected");
-      return false;
+      return null;
     }
 
     try {
@@ -393,15 +393,20 @@ class SignalRService {
         senderAvatar: metadata.senderAvatar || "", // Required field
         content: messageContent.trim(),
         readByNames: [],
-        deliveryStatus: "sending",
+        deliveryStatus: "Sending",
         isDeleted: false,
         // messageId and timestamp will be set by server
       };
 
       // Send single message object (matching TypeScript example)
-      await this.connection.invoke("SendMessage", messageData);
-      console.log(`✅ Message sent to conversation ${conversationId}`);
-      return true;
+      const newMessage = await this.connection.invoke(
+        "SendMessage",
+        messageData
+      );
+
+      newMessage.timestamp = new Date(newMessage.timestamp);
+      console.log(`✅ Message sent to conversation ${conversationId}:`, newMessage);
+      return newMessage;
     } catch (error) {
       console.error(
         `❌ Failed to send message to conversation ${conversationId}:`,

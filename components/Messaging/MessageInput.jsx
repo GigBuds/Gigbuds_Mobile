@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import {
   View,
   TextInput,
@@ -10,167 +16,176 @@ import {
 } from "react-native";
 import { useMessaging } from "../../context/MessagingContext";
 
-const MessageInput = ({
-  conversationId,
-  placeholder = "Nhập tin nhắn...",
-  onSend,
-  disabled = false,
-}) => {
-  const [message, setMessage] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const textInputRef = useRef(null);
-  const typingTimeoutRef = useRef(null);
+// Refactor MessageInput to use forwardRef
+const MessageInput = forwardRef(
+  (
+    { conversationId, placeholder = "Nhập tin nhắn...", disabled = false },
+    ref
+  ) => {
+    const [message, setMessage] = useState("");
+    const [isTyping, setIsTyping] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const textInputRef = useRef(null);
+    const typingTimeoutRef = useRef(null);
 
-  const { sendMessage, startTyping, stopTyping, isConnected, currentUser } =
-    useMessaging();
+    // Expose blur method to parent
+    useImperativeHandle(ref, () => ({
+      blur: () => {
+        if (textInputRef.current) {
+          textInputRef.current.blur();
+        }
+      },
+    }));
 
-  // Keyboard handling
-  useEffect(() => {
-    const keyboardDidShowListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => setKeyboardHeight(e.endCoordinates.height)
-    );
-    const keyboardDidHideListener = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => setKeyboardHeight(0)
-    );
+    const { sendMessage, startTyping, stopTyping, isConnected, currentUser } =
+      useMessaging();
 
-    return () => {
-      keyboardDidShowListener.remove();
-      keyboardDidHideListener.remove();
+    // Keyboard handling
+    useEffect(() => {
+      const keyboardDidShowListener = Keyboard.addListener(
+        Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+        (e) => setKeyboardHeight(e.endCoordinates.height)
+      );
+      const keyboardDidHideListener = Keyboard.addListener(
+        Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+        () => setKeyboardHeight(0)
+      );
+
+      return () => {
+        keyboardDidShowListener.remove();
+        keyboardDidHideListener.remove();
+      };
+    }, []);
+
+    // Handle text changes and typing indicators
+    const handleTextChange = (text) => {
+      setMessage(text);
+
+      if (!conversationId || !isConnected) return;
+
+      // Start typing indicator
+      if (text.length > 0 && !isTyping) {
+        setIsTyping(true);
+        startTyping(conversationId);
+      }
+
+      // Reset typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Stop typing after 3 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        if (isTyping) {
+          setIsTyping(false);
+          stopTyping(conversationId);
+        }
+      }, 3000);
+
+      // Stop typing immediately if message is empty
+      if (text.length === 0 && isTyping) {
+        setIsTyping(false);
+        stopTyping(conversationId);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+      }
     };
-  }, []);
 
-  // Handle text changes and typing indicators
-  const handleTextChange = (text) => {
-    setMessage(text);
+    // Handle send message
+    const handleSend = async () => {
+      if (!message.trim() || !conversationId || disabled) return;
 
-    if (!conversationId || !isConnected) return;
+      const messageText = message.trim();
 
-    // Start typing indicator
-    if (text.length > 0 && !isTyping) {
-      setIsTyping(true);
-      startTyping(conversationId);
-    }
-
-    // Reset typing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    // Stop typing after 3 seconds of inactivity
-    typingTimeoutRef.current = setTimeout(() => {
+      // Stop typing indicator
       if (isTyping) {
         setIsTyping(false);
         stopTyping(conversationId);
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
       }
-    }, 3000);
 
-    // Stop typing immediately if message is empty
-    if (text.length === 0 && isTyping) {
-      setIsTyping(false);
-      stopTyping(conversationId);
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    }
-  };
+      try {
+        // Clear input immediately for better UX
+        setMessage("");
 
-  // Handle send message
-  const handleSend = async () => {
-    if (!message.trim() || !conversationId || disabled) return;
-
-    const messageText = message.trim();
-
-    // Stop typing indicator
-    if (isTyping) {
-      setIsTyping(false);
-      stopTyping(conversationId);
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-    }
-
-    try {
-      // Clear input immediately for better UX
-      setMessage("");
-
-      await sendMessage(conversationId, messageText);
-      onSend?.(messageText);
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      // Restore message on error
-      setMessage(messageText);
-      // Could show error toast here
-    }
-  };
-
-  // Cleanup typing on unmount
-  useEffect(() => {
-    return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      if (isTyping && conversationId) {
-        stopTyping(conversationId);
+        await sendMessage(conversationId, messageText);
+      } catch (error) {
+        console.error("Failed to send message:", error);
+        // Restore message on error
+        setMessage(messageText);
+        // Could show error toast here
       }
     };
-  }, []);
 
-  // More resilient send check - allow sending even if connection is temporarily down
-  const canSend = message.trim().length > 0 && currentUser && !disabled;
+    // Cleanup typing on unmount
+    useEffect(() => {
+      return () => {
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        if (isTyping && conversationId) {
+          stopTyping(conversationId);
+        }
+      };
+    }, []);
 
-  return (
-    <View style={[styles.container, { marginBottom: keyboardHeight }]}>
-      <View style={styles.inputContainer}>
-        <TextInput
-          ref={textInputRef}
-          style={styles.textInput}
-          value={message}
-          onChangeText={handleTextChange}
-          placeholder={placeholder}
-          placeholderTextColor="#999999"
-          multiline={true}
-          maxLength={1000}
-          editable={!disabled}
-          onSubmitEditing={handleSend}
-          blurOnSubmit={false}
-        />
+    // More resilient send check - allow sending even if connection is temporarily down
+    const canSend = message.trim().length > 0 && currentUser && !disabled;
 
-        <TouchableOpacity
-          style={[
-            styles.sendButton,
-            canSend ? styles.sendButtonActive : styles.sendButtonDisabled,
-          ]}
-          onPress={handleSend}
-          disabled={!canSend}
-          activeOpacity={0.7}
-        >
-          <Text
+    return (
+      <View style={[styles.container, { marginBottom: keyboardHeight }]}>
+        <View style={styles.inputContainer}>
+          <TextInput
+            ref={textInputRef}
+            style={styles.textInput}
+            value={message}
+            onChangeText={handleTextChange}
+            placeholder={placeholder}
+            placeholderTextColor="#999999"
+            multiline={true}
+            maxLength={1000}
+            editable={!disabled}
+            onSubmitEditing={handleSend}
+            blurOnSubmit={false}
+          />
+
+          <TouchableOpacity
             style={[
-              styles.sendButtonText,
-              canSend
-                ? styles.sendButtonTextActive
-                : styles.sendButtonTextDisabled,
+              styles.sendButton,
+              canSend ? styles.sendButtonActive : styles.sendButtonDisabled,
             ]}
+            onPress={handleSend}
+            disabled={!canSend}
+            activeOpacity={0.7}
           >
-            Gửi
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Connection status indicator */}
-      {!isConnected && currentUser && (
-        <View style={styles.statusContainer}>
-          <Text style={styles.statusText}>
-            Đang kết nối lại • Tin nhắn sẽ được gửi khi có kết nối
-          </Text>
+            <Text
+              style={[
+                styles.sendButtonText,
+                canSend
+                  ? styles.sendButtonTextActive
+                  : styles.sendButtonTextDisabled,
+              ]}
+            >
+              Gửi
+            </Text>
+          </TouchableOpacity>
         </View>
-      )}
-    </View>
-  );
-};
+
+        {/* Connection status indicator */}
+        {!isConnected && currentUser && (
+          <View style={styles.statusContainer}>
+            <Text style={styles.statusText}>
+              Đang kết nối lại • Tin nhắn sẽ được gửi khi có kết nối
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  }
+);
 
 // Typing indicator component
 const TypingIndicator = ({ typingUsers, conversationId, currentUser }) => {

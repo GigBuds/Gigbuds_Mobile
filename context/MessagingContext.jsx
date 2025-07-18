@@ -4,6 +4,8 @@ import React, {
   useReducer,
   useEffect,
   useRef,
+  useCallback,
+  useMemo,
 } from "react";
 import { InteractionManager, AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -315,16 +317,8 @@ function messagingReducer(state, action) {
         }
       );
 
-      // Filter out any duplicates before prepending
-      const newMessages = olderMessages.filter(
-        (newMsg) =>
-          !existingMessages.some(
-            (existingMsg) => existingMsg.messageId === newMsg.messageId
-          )
-      );
-
       // Prepend older messages to the beginning (they are older than existing messages)
-      const finalMessages = [...newMessages, ...existingMessages];
+      const finalMessages = [...existingMessages, ...olderMessages];
 
       return {
         ...state,
@@ -571,12 +565,11 @@ function messagingReducer(state, action) {
 
 export const MessagingProvider = ({ children }) => {
   const [state, dispatch] = useReducer(messagingReducer, initialState);
-  const typingTimeouts = useRef({});
   const initializationPromise = useRef(null);
 
   // ==================== INITIALIZATION ====================
 
-  const initialize = async () => {
+  const initialize = useCallback(async () => {
     if (initializationPromise.current) {
       return initializationPromise.current;
     }
@@ -646,7 +639,7 @@ export const MessagingProvider = ({ children }) => {
     })();
 
     return initializationPromise.current;
-  };
+  }, []);
 
   // ==================== SIGNALR EVENT HANDLERS ====================
 
@@ -666,7 +659,7 @@ export const MessagingProvider = ({ children }) => {
           senderName: chatHistory.senderName,
           content: chatHistory.content,
           timestamp: chatHistory.timestamp,
-          deliveryStatus: 1, // Delivered
+          deliveryStatus: "Delivered", // Delivered
         })
         .catch((error) =>
           console.error("❌ Failed to save received message:", error)
@@ -697,33 +690,7 @@ export const MessagingProvider = ({ children }) => {
             },
           });
         });
-
-        // Auto-clear typing after 3 seconds
-        const key = `${conversationId}-${typerName}`;
-        if (typingTimeouts.current[key]) {
-          clearTimeout(typingTimeouts.current[key]);
-        }
-
-        typingTimeouts.current[key] = setTimeout(() => {
-          InteractionManager.runAfterInteractions(() => {
-            dispatch({
-              type: ActionTypes.USER_STOPPED_TYPING,
-              payload: {
-                conversationId,
-                userId: typerName, // Use typerName as unique key
-                userName: typerName,
-              },
-            });
-          });
-          delete typingTimeouts.current[key];
-        }, 3000);
       } else {
-        const key = `${conversationId}-${typerName}`;
-        if (typingTimeouts.current[key]) {
-          clearTimeout(typingTimeouts.current[key]);
-          delete typingTimeouts.current[key];
-        }
-
         InteractionManager.runAfterInteractions(() => {
           dispatch({
             type: ActionTypes.USER_STOPPED_TYPING,
@@ -809,7 +776,7 @@ export const MessagingProvider = ({ children }) => {
 
   // ==================== CONNECTION MANAGEMENT ====================
 
-  const connect = async () => {
+  const connect = useCallback(async () => {
     try {
       if (!state.isAuthenticated) {
         throw new Error("User must be authenticated to connect");
@@ -837,179 +804,144 @@ export const MessagingProvider = ({ children }) => {
         payload: { error: error.message },
       });
     }
-  };
+  }, [state.isAuthenticated, state.conversations]);
 
-  const disconnect = async () => {
+  const disconnect = useCallback(async () => {
     try {
       await signalRService.disconnect();
     } catch (error) {
       console.error("❌ Failed to disconnect:", error);
     }
-  };
+  }, []);
 
-  // ==================== USER MANAGEMENT ====================
-
-  // const setUser = async (user) => {
-  //   try {
-  //     // Save to storage
-  //     await AsyncStorage.setItem("user", JSON.stringify(user));
-
-  //     // Update state
-  //     dispatch({ type: ActionTypes.SET_USER, payload: { user } });
-
-  //     console.log("✅ User set:", user.id);
-
-  //     // 🔥 CRITICAL FIX: Auto-load conversations on authentication
-  //     // This removes the race condition with SignalR
-  //     // This removes the race condition with SignalR
-  //     setTimeout(() => {
-  //       loadConversations().catch((error) => {
-  //         console.warn("⚠️ Auto-load conversations failed:", error.message);
-  //         // Don't throw - allow user to manually retry
-  //       });
-  //     }, 100); // Small delay to ensure state is updated
-  //   } catch (error) {
-  //     console.error("❌ Failed to set user:", error);
-  //     throw error;
-  //   }
-  // };
-
-  // const clearUser = async () => {
-  //   try {
-  //     // Disconnect first
-  //     await disconnect();
-
-  //     // Clear storage
-  //     await AsyncStorage.removeItem("user");
-
-  //     // Update state
-  //     dispatch({ type: ActionTypes.CLEAR_USER });
-
-  //     console.log("✅ User cleared");
-  //   } catch (error) {
-  //     console.error("❌ Failed to clear user:", error);
-  //   }
-  // };
 
   // ==================== CONVERSATION MANAGEMENT ====================
 
-  const loadConversations = async (options = {}) => {
-    try {
-      if (!state.currentUser) {
-        console.warn("⚠️ No authenticated user found");
-        return;
-      }
-
-      dispatch({ type: ActionTypes.CONVERSATIONS_LOADING });
-      console.log("📋 Loading conversations for user:", state.currentUser.id);
-
-      // 🚀 OPTIMIZATION: Load from cache first (offline-first strategy)
-      const localConversations = await databaseService.getConversations();
-
-      if (localConversations.length > 0) {
-        dispatch({
-          type: ActionTypes.CONVERSATIONS_SUCCESS,
-          payload: { conversations: localConversations },
-        });
-        console.log(
-          `✅ Loaded ${localConversations.length} conversations from cache`
-        );
-        console.log("localConversations", localConversations);
-      }
-
-      // 🌐 Server sync with enhanced error handling
+  const loadConversations = useCallback(
+    async (options = {}) => {
       try {
-        const serverResult = await apiService.getConversationMetadata(
-          state.currentUser.id,
-          {
-            pageSize: 20, // Optimize initial load
-            ...options,
-          }
-        );
-
-        // 💾 Cache server data
-        for (const conversation of serverResult.data) {
-          await databaseService.saveConversation(conversation);
+        if (!state.currentUser) {
+          console.warn("⚠️ No authenticated user found");
+          return;
         }
 
+        dispatch({ type: ActionTypes.CONVERSATIONS_LOADING });
+        console.log("📋 Loading conversations for user:", state.currentUser.id);
+
+        // 🚀 OPTIMIZATION: Load from cache first (offline-first strategy)
+        const localConversations = await databaseService.getConversations();
+
+        if (localConversations.length > 0) {
+          dispatch({
+            type: ActionTypes.CONVERSATIONS_SUCCESS,
+            payload: { conversations: localConversations },
+          });
+          console.log(
+            `✅ Loaded ${localConversations.length} conversations from cache`
+          );
+          console.log("localConversations", localConversations);
+        }
+
+        // 🌐 Server sync with enhanced error handling
+        try {
+          const serverResult = await apiService.getConversationMetadata(
+            state.currentUser.id,
+            {
+              pageSize: 10, // Optimize initial load
+              ...options,
+            }
+          );
+
+          // 💾 Cache server data
+          for (const conversation of serverResult.data) {
+            await databaseService.saveConversation(conversation);
+          }
+
+          dispatch({
+            type: ActionTypes.CONVERSATIONS_SUCCESS,
+            payload: { conversations: serverResult.data },
+          });
+
+          console.log(
+            `✅ Synced ${serverResult.data.length} conversations from server`
+          );
+        } catch (apiError) {
+          console.warn("⚠️ Server sync failed:", apiError.message);
+
+          // 🧠 INTELLIGENT ERROR HANDLING
+          if (localConversations.length === 0) {
+            // No cached data - this is a real error
+            throw new Error(
+              `Failed to load conversations: ${apiError.message}`
+            );
+          } else {
+            // We have cached data - just log the warning
+            console.log("📱 Using cached conversations due to network issue");
+          }
+        }
+      } catch (error) {
+        console.error("❌ Failed to load conversations:", error);
         dispatch({
-          type: ActionTypes.CONVERSATIONS_SUCCESS,
-          payload: { conversations: serverResult.data },
+          type: ActionTypes.CONVERSATIONS_ERROR,
+          payload: { error: error.message },
         });
 
-        console.log(
-          `✅ Synced ${serverResult.data.length} conversations from server`
-        );
-      } catch (apiError) {
-        console.warn("⚠️ Server sync failed:", apiError.message);
-
-        // 🧠 INTELLIGENT ERROR HANDLING
-        if (localConversations.length === 0) {
-          // No cached data - this is a real error
-          throw new Error(`Failed to load conversations: ${apiError.message}`);
-        } else {
-          // We have cached data - just log the warning
-          console.log("📱 Using cached conversations due to network issue");
+        // 🔄 AUTO-RETRY logic for critical failures
+        if (!error.message.includes("No authenticated user")) {
+          console.log("🔄 Will retry conversation loading in 5 seconds...");
+          setTimeout(() => {
+            if (state.currentUser) {
+              loadConversations(options);
+            }
+          }, 5000);
         }
       }
-    } catch (error) {
-      console.error("❌ Failed to load conversations:", error);
-      dispatch({
-        type: ActionTypes.CONVERSATIONS_ERROR,
-        payload: { error: error.message },
-      });
+    },
+    [state.currentUser]
+  );
 
-      // 🔄 AUTO-RETRY logic for critical failures
-      if (!error.message.includes("No authenticated user")) {
-        console.log("🔄 Will retry conversation loading in 5 seconds...");
-        setTimeout(() => {
-          if (state.currentUser) {
-            loadConversations(options);
-          }
-        }, 5000);
+  const createConversation = useCallback(
+    async (conversationData) => {
+      try {
+        console.log("🆕 Creating conversation...");
+
+        // Create on server first
+        const newConversation = await apiService.createConversation(
+          conversationData
+        );
+
+        // Save to local database
+        await databaseService.saveConversation(newConversation);
+
+        // Update state
+        dispatch({
+          type: ActionTypes.CONVERSATION_ADDED,
+          payload: { conversation: newConversation },
+        });
+
+        // Join the conversation via SignalR
+        if (state.isConnected) {
+          await signalRService.joinConversation(newConversation.id);
+        }
+
+        console.log(`✅ Created conversation ${newConversation.id}`);
+        return newConversation;
+      } catch (error) {
+        console.error("❌ Failed to create conversation:", error);
+        throw error;
       }
-    }
-  };
+    },
+    [state.isConnected]
+  );
 
-  const createConversation = async (conversationData) => {
-    try {
-      console.log("🆕 Creating conversation...");
-
-      // Create on server first
-      const newConversation = await apiService.createConversation(
-        conversationData
-      );
-
-      // Save to local database
-      await databaseService.saveConversation(newConversation);
-
-      // Update state
-      dispatch({
-        type: ActionTypes.CONVERSATION_ADDED,
-        payload: { conversation: newConversation },
-      });
-
-      // Join the conversation via SignalR
-      if (state.isConnected) {
-        await signalRService.joinConversation(newConversation.id);
-      }
-
-      console.log(`✅ Created conversation ${newConversation.id}`);
-      return newConversation;
-    } catch (error) {
-      console.error("❌ Failed to create conversation:", error);
-      throw error;
-    }
-  };
-
-  const selectConversation = (conversationId) => {
+  const selectConversation = useCallback((conversationId) => {
     dispatch({
       type: ActionTypes.CONVERSATION_SELECTED,
       payload: { conversationId },
     });
-  };
+  }, []);
 
-  const deleteConversation = async (conversationId) => {
+  const deleteConversation = useCallback(async (conversationId) => {
     try {
       console.log(`🗑️ Deleting conversation ${conversationId}...`);
 
@@ -1030,11 +962,11 @@ export const MessagingProvider = ({ children }) => {
       );
       throw error;
     }
-  };
+  }, []);
 
   // ==================== MESSAGE MANAGEMENT ====================
 
-  const loadMessages = async (conversationId, options = {}) => {
+  const loadMessages = useCallback(async (conversationId, options = {}) => {
     try {
       dispatch({
         type: ActionTypes.MESSAGES_LOADING,
@@ -1119,383 +1051,396 @@ export const MessagingProvider = ({ children }) => {
         payload: { conversationId, error: error.message },
       });
     }
-  };
+  }, []);
 
-  const loadMoreMessages = async (conversationId) => {
-    const pagination = state.messagesPagination[conversationId];
+  const loadMoreMessages = useCallback(
+    async (conversationId) => {
+      const pagination = state.messagesPagination[conversationId];
 
-    // Don't load if already loading or no more messages
-    if (!pagination || pagination.isLoadingMore || !pagination.hasMore) {
-      console.log(
-        `⚠️ Cannot load more messages for conversation ${conversationId}: loading=${pagination?.isLoadingMore}, hasMore=${pagination?.hasMore}`
-      );
-      return;
-    }
-
-    try {
-      dispatch({
-        type: ActionTypes.MESSAGES_LOAD_MORE_START,
-        payload: { conversationId },
-      });
-
-      const nextPage = pagination.currentPage + 1;
-
-      // API call to get older messages with pagination
-      console.log(
-        "📜 Loading more messages for conversation",
-        conversationId,
-        "page",
-        nextPage
-      );
-
-      const result = await apiService.getConversationMessages(conversationId, {
-        pageIndex: nextPage,
-        pageSize: 10,
-      });
-
-      console.log("💬 Result:", result);
-
-      if (result.data && result.data.length > 0) {
-        // Save new messages to local database
-        for (const message of result.data) {
-          await databaseService.saveMessage(message);
-        }
-
-        dispatch({
-          type: ActionTypes.MESSAGES_LOAD_MORE_SUCCESS,
-          payload: {
-            conversationId,
-            messages: result.data,
-            pageIndex: nextPage,
-            hasMore: result.data.length === 10, // Has more if we got a full page
-            totalCount: result.count,
-          },
-        });
-
+      // Don't load if already loading or no more messages
+      if (!pagination || pagination.isLoadingMore || !pagination.hasMore) {
         console.log(
-          `✅ Loaded ${result.data.length} more messages from server (page ${nextPage})`
+          `⚠️ Cannot load more messages for conversation ${conversationId}: loading=${pagination?.isLoadingMore}, hasMore=${pagination?.hasMore}`
         );
-      } else {
-        // No more messages available
-        dispatch({
-          type: ActionTypes.MESSAGES_LOAD_MORE_SUCCESS,
-          payload: {
-            conversationId,
-            messages: [],
-            pageIndex: nextPage,
-            hasMore: false, // No more messages
-            totalCount: result.count || 0,
-          },
-        });
-
-        console.log(
-          `📭 No more messages available for conversation ${conversationId}`
-        );
-      }
-    } catch (error) {
-      console.error(
-        `❌ Failed to load more messages for conversation ${conversationId}:`,
-        error
-      );
-      dispatch({
-        type: ActionTypes.MESSAGES_LOAD_MORE_ERROR,
-        payload: { conversationId, error: error.message },
-      });
-    }
-  };
-
-  const sendMessage = async (conversationId, content, tempId = null) => {
-    try {
-      if (!content.trim()) {
-        throw new Error("Message content cannot be empty");
+        return;
       }
 
-      const messageId = tempId || `temp_${Date.now()}`;
-      const timestamp = new Date();
+      try {
+        dispatch({
+          type: ActionTypes.MESSAGES_LOAD_MORE_START,
+          payload: { conversationId },
+        });
 
-      // Create optimistic message for immediate UI update
-      const optimisticMessage = {
-        messageId,
-        conversationId: Number(conversationId),
-        senderId: state.currentUser.id,
-        senderName: state.currentUser.name,
-        content: content.trim(),
-        timestamp,
-        deliveryStatus: 0, // Sending
-        isDeleted: false,
-        readByNames: [],
-      };
+        const nextPage = pagination.currentPage + 1;
 
-      // Add to state immediately (optimistic update)
-      dispatch({
-        type: ActionTypes.MESSAGE_SENT,
-        payload: { message: optimisticMessage, tempId: messageId },
-      });
+        // API call to get older messages with pagination
+        console.log(
+          "📜 Loading more messages for conversation",
+          conversationId,
+          "page",
+          nextPage
+        );
 
-      // Save to local database
-      await databaseService.saveMessage(optimisticMessage);
+        const result = await apiService.getConversationMessages(
+          conversationId,
+          {
+            pageIndex: nextPage,
+            pageSize: 10,
+          }
+        );
 
-      // Send via SignalR if connected
-      if (state.isConnected) {
-        try {
-          // Pass required metadata for ChatHistory structure
-          const messageMetadata = {
-            senderName: state.currentUser.name,
-            senderAvatar:
-              state.currentUser.avatar || "https://via.placeholder.com/50",
-          };
+        console.log("💬 Result:", result);
 
-          await signalRService.sendMessage(
-            conversationId,
-            content,
-            messageMetadata
-          );
-          console.log(`✅ Message sent via SignalR: ${messageId}`);
-        } catch (signalrError) {
-          console.warn(
-            "⚠️ SignalR send failed, will sync later:",
-            signalrError.message
-          );
-          // Add to pending messages for later sync
+        if (result.data && result.data.length > 0) {
+          // Save new messages to local database
+          for (const message of result.data) {
+            await databaseService.saveMessage(message);
+          }
+
           dispatch({
-            type: ActionTypes.ADD_NOTIFICATION,
+            type: ActionTypes.MESSAGES_LOAD_MORE_SUCCESS,
             payload: {
-              notification: {
-                type: "warning",
-                message: "Message will be sent when connection is restored",
-              },
+              conversationId,
+              messages: result.data,
+              pageIndex: nextPage,
+              hasMore: result.data.length === 10, // Has more if we got a full page
+              totalCount: result.count,
             },
           });
-        }
-      } else {
-        console.log("📤 Message queued for sending when connected");
-        // Add to pending messages
-        // This would be handled by a sync mechanism
-      }
 
-      return optimisticMessage;
-    } catch (error) {
-      console.error("❌ Failed to send message:", error);
-      throw error;
-    }
-  };
+          console.log(
+            `✅ Loaded ${result.data.length} more messages from server (page ${nextPage})`
+          );
+        } else {
+          // No more messages available
+          dispatch({
+            type: ActionTypes.MESSAGES_LOAD_MORE_SUCCESS,
+            payload: {
+              conversationId,
+              messages: [],
+              pageIndex: nextPage,
+              hasMore: false, // No more messages
+              totalCount: result.count || 0,
+            },
+          });
+
+          console.log(
+            `📭 No more messages available for conversation ${conversationId}`
+          );
+        }
+      } catch (error) {
+        console.error(
+          `❌ Failed to load more messages for conversation ${conversationId}:`,
+          error
+        );
+        dispatch({
+          type: ActionTypes.MESSAGES_LOAD_MORE_ERROR,
+          payload: { conversationId, error: error.message },
+        });
+      }
+    },
+    [state.messagesPagination]
+  );
+
+  const sendMessage = useCallback(
+    async (conversationId, content, tempId = null) => {
+      try {
+        if (!content.trim()) {
+          throw new Error("Message content cannot be empty");
+        }
+
+        const messageId = tempId || `temp_${Date.now()}`;
+        const timestamp = new Date();
+
+        // Create optimistic message for immediate UI update
+        const optimisticMessage = {
+          messageId,
+          conversationId: Number(conversationId),
+          senderId: state.currentUser.id,
+          senderName: state.currentUser.name,
+          content: content.trim(),
+          timestamp,
+          deliveryStatus: "Sending", // Sending
+          isDeleted: false,
+          readByNames: [],
+        };
+
+        // Add to state immediately (optimistic update)
+        dispatch({
+          type: ActionTypes.MESSAGE_SENT,
+          payload: { message: optimisticMessage, tempId: messageId },
+        });
+
+        // Send via SignalR if connected
+        if (state.isConnected) {
+          try {
+            // Pass required metadata for ChatHistory structure
+            const messageMetadata = {
+              senderName: state.currentUser.name,
+              senderAvatar:
+                state.currentUser.avatar || "https://via.placeholder.com/50",
+            };
+
+            const newMessage = await signalRService.sendMessage(
+              conversationId,
+              content,
+              messageMetadata
+            );
+
+            console.log(`✅ Message sent via SignalR: ${newMessage}`);
+            await databaseService.saveMessage(newMessage);
+          } catch (signalrError) {
+            console.warn(
+              "⚠️ SignalR send failed, will sync later:",
+              signalrError.message
+            );
+            // Add to pending messages for later sync
+            dispatch({
+              type: ActionTypes.ADD_NOTIFICATION,
+              payload: {
+                notification: {
+                  type: "warning",
+                  message: "Message will be sent when connection is restored",
+                },
+              },
+            });
+          }
+        } else {
+          console.log("📤 Message queued for sending when connected");
+          // Add to pending messages
+          // This would be handled by a sync mechanism
+        }
+
+        return optimisticMessage;
+      } catch (error) {
+        console.error("❌ Failed to send message:", error);
+        throw error;
+      }
+    },
+    [state.currentUser, state.isConnected]
+  );
 
   // ==================== MESSAGE EDIT/DELETE ====================
 
-  const editMessage = async (messageId, conversationId, newContent) => {
-    try {
-      if (!newContent.trim()) {
-        throw new Error("Message content cannot be empty");
-      }
-
-      console.log(
-        `✏️ Editing message ${messageId} in conversation ${conversationId}`
-      );
-
-      // Get the original message for optimistic update
-      const conversationMessages = state.messages[conversationId] || [];
-      const originalMessage = conversationMessages.find(
-        (msg) => msg.messageId === messageId
-      );
-
-      if (!originalMessage) {
-        throw new Error("Message not found");
-      }
-
-      // Check if user owns the message
-      if (originalMessage.senderId !== state.currentUser.id) {
-        throw new Error("You can only edit your own messages");
-      }
-
-      // Optimistic update - immediately update UI
-      dispatch({
-        type: ActionTypes.MESSAGE_UPDATED,
-        payload: { messageId, conversationId, newContent: newContent.trim() },
-      });
-
-      // --- FIX: Ensure deliveryStatus is always a valid integer (0-3) ---
-      let deliveryStatus = Number(originalMessage.deliveryStatus);
-      if (![0, 1, 2, 3].includes(deliveryStatus)) {
-        deliveryStatus = 1; // Default to Delivered
-      }
-      // ---------------------------------------------------------------
-
-      // Prepare updated message data for API
-      const updatedMessage = {
-        ...originalMessage,
-        content: newContent.trim(),
-        isEdited: true,
-        deliveryStatus, // Always valid
-      };
-
-      // Update via API
-      await apiService.updateMessage(updatedMessage);
-
-      // Update local database
-      await databaseService.saveMessage(updatedMessage);
-
-      // Send via SignalR if connected to notify other users
-      if (state.isConnected) {
-        try {
-          await signalRService.editMessage(
-            messageId,
-            conversationId,
-            newContent.trim()
-          );
-          console.log(`✅ Message edit sent via SignalR: ${messageId}`);
-        } catch (signalrError) {
-          console.warn("⚠️ SignalR edit failed:", signalrError.message);
+  const editMessage = useCallback(
+    async (messageId, conversationId, newContent) => {
+      try {
+        if (!newContent.trim()) {
+          throw new Error("Message content cannot be empty");
         }
-      }
 
-      console.log(`✅ Message ${messageId} edited successfully`);
-      return true;
-    } catch (error) {
-      console.error(`❌ Failed to edit message ${messageId}:`, error);
+        console.log(
+          `✏️ Editing message ${messageId} in conversation ${conversationId}`
+        );
 
-      // Revert optimistic update on error
-      // You might want to keep the original content and show an error
-      throw error;
-    }
-  };
+        // Get the original message for optimistic update
+        const conversationMessages = state.messages[conversationId] || [];
+        const originalMessage = conversationMessages.find(
+          (msg) => msg.messageId === messageId
+        );
 
-  const deleteMessage = async (messageId, conversationId) => {
-    try {
-      console.log(
-        `🗑️ Deleting message ${messageId} in conversation ${conversationId}`
-      );
-
-      // Get the original message
-      const conversationMessages = state.messages[conversationId] || [];
-      const originalMessage = conversationMessages.find(
-        (msg) => msg.messageId === messageId
-      );
-
-      if (!originalMessage) {
-        throw new Error("Message not found");
-      }
-
-      // Check if user owns the message
-      if (originalMessage.senderId !== state.currentUser.id) {
-        throw new Error("You can only delete your own messages");
-      }
-
-      // Optimistic update - immediately mark as deleted in UI
-      dispatch({
-        type: ActionTypes.MESSAGE_DELETED,
-        payload: { messageId, conversationId },
-      });
-
-      // Delete via API
-      await apiService.deleteMessage(messageId);
-
-      // Update local database (mark as deleted)
-      const deletedMessage = {
-        ...originalMessage,
-        isDeleted: true,
-        content: "This message was deleted",
-      };
-      await databaseService.saveMessage(deletedMessage);
-
-      // Send via SignalR if connected to notify other users
-      if (state.isConnected) {
-        try {
-          await signalRService.deleteMessage(messageId, conversationId);
-          console.log(`✅ Message deletion sent via SignalR: ${messageId}`);
-        } catch (signalrError) {
-          console.warn("⚠️ SignalR delete failed:", signalrError.message);
+        if (!originalMessage) {
+          throw new Error("Message not found");
         }
+
+        // Check if user owns the message
+        if (originalMessage.senderId !== state.currentUser.id) {
+          throw new Error("You can only edit your own messages");
+        }
+
+        // Optimistic update - immediately update UI
+        dispatch({
+          type: ActionTypes.MESSAGE_UPDATED,
+          payload: { messageId, conversationId, newContent: newContent.trim() },
+        });
+
+        // Prepare updated message data for API
+        const updatedMessage = {
+          ...originalMessage,
+          content: newContent.trim(),
+          isEdited: true,
+          deliveryStatus: "Delivered", // Always valid
+        };
+
+        // Update via API
+        await apiService.updateMessage(updatedMessage);
+
+        // Update local database
+        await databaseService.saveMessage(updatedMessage);
+
+        // Send via SignalR if connected to notify other users
+        if (state.isConnected) {
+          try {
+            await signalRService.editMessage(
+              messageId,
+              conversationId,
+              newContent.trim()
+            );
+            console.log(`✅ Message edit sent via SignalR: ${messageId}`);
+          } catch (signalrError) {
+            console.warn("⚠️ SignalR edit failed:", signalrError.message);
+          }
+        }
+
+        console.log(`✅ Message ${messageId} edited successfully`);
+        return true;
+      } catch (error) {
+        console.error(`❌ Failed to edit message ${messageId}:`, error);
+
+        // Revert optimistic update on error
+        // You might want to keep the original content and show an error
+        throw error;
       }
+    },
+    [state.currentUser, state.isConnected, state.messages]
+  );
 
-      console.log(`✅ Message ${messageId} deleted successfully`);
-      return true;
-    } catch (error) {
-      console.error(`❌ Failed to delete message ${messageId}:`, error);
+  const deleteMessage = useCallback(
+    async (messageId, conversationId) => {
+      try {
+        console.log(
+          `🗑️ Deleting message ${messageId} in conversation ${conversationId}`
+        );
 
-      // Revert optimistic update on error
-      // You might want to restore the original message and show an error
-      throw error;
-    }
-  };
+        // Get the original message
+        const conversationMessages = state.messages[conversationId] || [];
+        const originalMessage = conversationMessages.find(
+          (msg) => msg.messageId === messageId
+        );
+
+        if (!originalMessage) {
+          throw new Error("Message not found");
+        }
+
+        // Check if user owns the message
+        if (originalMessage.senderId !== state.currentUser.id) {
+          throw new Error("You can only delete your own messages");
+        }
+
+        // Optimistic update - immediately mark as deleted in UI
+        dispatch({
+          type: ActionTypes.MESSAGE_DELETED,
+          payload: { messageId, conversationId },
+        });
+
+        // Delete via API
+        await apiService.deleteMessage(messageId);
+
+        // Update local database (mark as deleted)
+        const deletedMessage = {
+          ...originalMessage,
+          isDeleted: true,
+          content: "This message was deleted",
+        };
+        await databaseService.saveMessage(deletedMessage);
+
+        // Send via SignalR if connected to notify other users
+        if (state.isConnected) {
+          try {
+            await signalRService.deleteMessage(messageId, conversationId);
+            console.log(`✅ Message deletion sent via SignalR: ${messageId}`);
+          } catch (signalrError) {
+            console.warn("⚠️ SignalR delete failed:", signalrError.message);
+          }
+        }
+
+        console.log(`✅ Message ${messageId} deleted successfully`);
+        return true;
+      } catch (error) {
+        console.error(`❌ Failed to delete message ${messageId}:`, error);
+
+        // Revert optimistic update on error
+        // You might want to restore the original message and show an error
+        throw error;
+      }
+    },
+    [state.currentUser, state.isConnected, state.messages]
+  );
 
   // ==================== REAL-TIME FEATURES ====================
 
-  const startTyping = (conversationId) => {
-    // Check both context state and SignalR service state
-    const contextConnected = state.isConnected;
-    const signalRConnected = signalRService?.isConnected() || false;
-    const isReallyConnected = contextConnected && signalRConnected;
+  const startTyping = useCallback(
+    (conversationId) => {
+      // Check both context state and SignalR service state
+      const contextConnected = state.isConnected;
+      const signalRConnected = signalRService?.isConnected() || false;
+      const isReallyConnected = contextConnected && signalRConnected;
 
-    console.log("🔍 Typing indicator check:", {
-      conversationId,
-      contextConnected,
-      signalRConnected,
-      isReallyConnected,
-      currentUser: state.currentUser?.id,
-      isAuthenticated: state.isAuthenticated,
-    });
-
-    if (!isReallyConnected) {
-      console.warn("⚠️ Cannot send typing indicator: not connected", {
+      console.log("🔍 Typing indicator check:", {
+        conversationId,
         contextConnected,
         signalRConnected,
-        reason: !contextConnected
-          ? "Context not connected"
-          : "SignalR not connected",
-      });
-      return Promise.resolve(false);
-    }
-
-    // Make this non-blocking by not awaiting
-    signalRService
-      .startTyping(conversationId)
-      .then(() => {
-        console.log(
-          `✅ Started typing indicator for conversation ${conversationId}`
-        );
-      })
-      .catch((error) => {
-        console.warn("⚠️ Failed to send typing indicator:", error.message);
+        isReallyConnected,
+        currentUser: state.currentUser?.id,
+        isAuthenticated: state.isAuthenticated,
       });
 
-    return Promise.resolve(true);
-  };
+      if (!isReallyConnected) {
+        console.warn("⚠️ Cannot send typing indicator: not connected", {
+          contextConnected,
+          signalRConnected,
+          reason: !contextConnected
+            ? "Context not connected"
+            : "SignalR not connected",
+        });
+        return Promise.resolve(false);
+      }
 
-  const stopTyping = (conversationId) => {
-    // Check both context state and SignalR service state
-    const contextConnected = state.isConnected;
-    const signalRConnected = signalRService?.isConnected() || false;
-    const isReallyConnected = contextConnected && signalRConnected;
+      // Make this non-blocking by not awaiting
+      signalRService
+        .startTyping(conversationId)
+        .then(() => {
+          console.log(
+            `✅ Started typing indicator for conversation ${conversationId}`
+          );
+        })
+        .catch((error) => {
+          console.warn("⚠️ Failed to send typing indicator:", error.message);
+        });
 
-    if (!isReallyConnected) {
-      console.warn("⚠️ Cannot stop typing indicator: not connected", {
-        contextConnected,
-        signalRConnected,
-        reason: !contextConnected
-          ? "Context not connected"
-          : "SignalR not connected",
-      });
-      return Promise.resolve(false);
-    }
+      return Promise.resolve(true);
+    },
+    [state.isConnected]
+  );
 
-    // Make this non-blocking by not awaiting
-    signalRService
-      .stopTyping(conversationId)
-      .then(() => {
-        console.log(
-          `✅ Stopped typing indicator for conversation ${conversationId}`
-        );
-      })
-      .catch((error) => {
-        console.warn("⚠️ Failed to stop typing indicator:", error.message);
-      });
+  const stopTyping = useCallback(
+    (conversationId) => {
+      // Check both context state and SignalR service state
+      const contextConnected = state.isConnected;
+      const signalRConnected = signalRService?.isConnected() || false;
+      const isReallyConnected = contextConnected && signalRConnected;
 
-    return Promise.resolve(true);
-  };
+      if (!isReallyConnected) {
+        console.warn("⚠️ Cannot stop typing indicator: not connected", {
+          contextConnected,
+          signalRConnected,
+          reason: !contextConnected
+            ? "Context not connected"
+            : "SignalR not connected",
+        });
+        return Promise.resolve(false);
+      }
+
+      // Make this non-blocking by not awaiting
+      signalRService
+        .stopTyping(conversationId)
+        .then(() => {
+          console.log(
+            `✅ Stopped typing indicator for conversation ${conversationId}`
+          );
+        })
+        .catch((error) => {
+          console.warn("⚠️ Failed to stop typing indicator:", error.message);
+        });
+
+      return Promise.resolve(true);
+    },
+    [state.isConnected]
+  );
 
   // ==================== SYNC MANAGEMENT ====================
 
-  const syncWithServer = async () => {
+  const syncWithServer = useCallback(async () => {
     try {
       if (!state.currentUser || state.isSyncing) {
         return;
@@ -1519,13 +1464,19 @@ export const MessagingProvider = ({ children }) => {
       console.error("❌ Sync failed:", error);
       dispatch({ type: ActionTypes.SYNC_ERROR });
     }
-  };
+  }, [
+    state.currentUser,
+    state.isSyncing,
+    state.conversations,
+    loadConversations,
+    loadMessages,
+  ]);
 
   // ==================== EFFECTS ====================
 
   useEffect(() => {
     initialize();
-  }, []);
+  }, [initialize]);
 
   // Auto-connect when user is set (with debouncing)
   useEffect(() => {
@@ -1537,7 +1488,7 @@ export const MessagingProvider = ({ children }) => {
 
       return () => clearTimeout(connectTimer);
     }
-  }, [state.isAuthenticated]);
+  }, [state.isAuthenticated, state.isConnected, state.isConnecting, connect]);
 
   // Auto-sync periodically (DISABLED)
   // useEffect(() => {
@@ -1592,15 +1543,12 @@ export const MessagingProvider = ({ children }) => {
     return () => {
       subscription?.remove();
     };
-  }, [state.isAuthenticated, state.isConnected]);
+  }, [state.isAuthenticated, state.isConnected, connect]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       console.log("🔄 MessagingContext cleanup starting...");
-
-      // Clear all typing timeouts
-      Object.values(typingTimeouts.current).forEach(clearTimeout);
 
       // Check out of all active conversations before disconnecting
       if (signalRService && signalRService.isConnected()) {
@@ -1636,31 +1584,30 @@ export const MessagingProvider = ({ children }) => {
         console.log("📱 No active connection to clean up");
       }
     };
-  }, [state.isConnected]);
+  }, [state.isConnected, disconnect]);
 
   // ==================== USER SEARCH ====================
 
-  const searchUsers = async (query, pageIndex = 1, pageSize = 10) => {
-    try {
-      console.log(`🔍 Searching users for "${query}"...`);
+  const searchUsers = useCallback(
+    async (query, pageIndex = 1, pageSize = 10) => {
+      try {
+        console.log(`🔍 Searching users for "${query}"...`);
 
-      // Note: No reducer dispatch needed, this is a direct API call
-      return apiService.searchUsers(query, pageIndex, pageSize);
-    } catch (error) {
-      console.error(`❌ Failed to search users for "${query}":`, error);
-      throw error; // Re-throw to be handled by the UI
-    }
-  };
+        // Note: No reducer dispatch needed, this is a direct API call
+        return apiService.searchUsers(query, pageIndex, pageSize);
+      } catch (error) {
+        console.error(`❌ Failed to search users for "${query}":`, error);
+        throw error; // Re-throw to be handled by the UI
+      }
+    },
+    []
+  );
 
   // ==================== VALUE ====================
 
   const value = {
     // State
     ...state,
-
-    // User management
-    // setUser,
-    // clearUser,
 
     // Connection management
     connect,
