@@ -18,6 +18,15 @@ export default function App() {
     prefixes: [prefix, "gigbuds://"],
     config: {
       screens: {
+        MainApp: {
+          screens: {
+            "Trang chủ": {
+              screens: {
+                Home: "home",
+              },
+            },
+          },
+        },
         PaymentResult: {
           path: "payment-result",
           parse: {
