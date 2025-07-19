@@ -39,7 +39,6 @@ const LoginSection = () => {
           const decodedUserInfo = LoginService.decodeToken(idToken);
           setUserInfo(decodedUserInfo);
           console.log("Decoded idToken:", decodedUserInfo);
-          await connect();
 
           // Extract membership information from ID token
           const memberships = LoginService.extractMembershipsFromToken(idToken);
