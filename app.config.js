@@ -94,6 +94,6 @@ export default {
         projectId: "ab0b9dff-febb-476b-97bf-c5d0279ee580"
       },
     },
-    owner: "giapnq",
+    owner: "oranged_cat",
   },
 };

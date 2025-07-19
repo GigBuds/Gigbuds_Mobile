@@ -50,3 +50,4 @@ ACTION_PLAN.md
 package-lock.json
 .idea/caches/deviceStreaming.xml
 REACT_NATIVE_MESSAGING_IMPLEMENTATION.md
+app.config.js
