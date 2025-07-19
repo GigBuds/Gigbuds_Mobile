@@ -33,11 +33,11 @@ const NotificationScreen = () => {
       case "message":
         console.log("Navigate to messages:", notification);
         break;
-      case "schedule":
-        console.log("Navigate to schedule:", notification);
-        break;
       case "application":
         console.log("Navigate to applications:", notification);
+        navigate.navigate("JobDetail", {
+          jobId: notification.additionalPayload?.jobApplicationId,
+        });
         break;
       case "feedback":
         console.log("Navigate to feedback:", notification);
@@ -45,8 +45,6 @@ const NotificationScreen = () => {
       case "profile":
         console.log("Navigate to profile:", notification);
         break;
-      default:
-        console.log("Default notification action:", notification);
     }
   };
 

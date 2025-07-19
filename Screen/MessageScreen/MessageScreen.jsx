@@ -1,12 +1,16 @@
-import { View, Text } from 'react-native'
-import React from 'react'
+import React from "react";
+import { MessagingProvider } from "../../context/MessagingContext";
+import MessagingContainer from "../../components/Messaging/MessagingContainer";
+import MessagingErrorBoundary from "../../components/Messaging/ErrorBoundary";
 
 const MessageScreen = () => {
   return (
-    <View>
-      <Text>MessageScreen</Text>
-    </View>
-  )
-}
+    <MessagingErrorBoundary>
+      <MessagingProvider>
+        <MessagingContainer />
+      </MessagingProvider>
+    </MessagingErrorBoundary>
+  );
+};
 
-export default MessageScreen
+export default MessageScreen;

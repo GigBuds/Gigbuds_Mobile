@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/vector-icons": "^14.1.0",
     "@microsoft/signalr": "^8.0.7",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-community/datetimepicker": "8.4.1",
@@ -30,6 +31,7 @@
     "expo-location": "~18.1.5",
     "expo-notifications": "~0.31.4",
     "expo-secure-store": "~14.2.3",
+    "expo-sqlite": "^15.2.14",
     "expo-status-bar": "~2.2.3",
     "jwt-decode": "^4.0.0",
     "lodash": "^4.17.21",
@@ -41,7 +43,9 @@
     "react-native-gesture-handler": "~2.24.0",
     "react-native-infinite-pager": "^0.3.18",
     "react-native-ios-picker": "^1.0.0",
+    "react-native-keyboard-aware-scroll-view": "^0.9.5",
     "react-native-maps": "1.20.1",
+    "react-native-modal": "^14.0.0-rc.1",
     "react-native-modal-datetime-picker": "^18.0.0",
     "react-native-pager-view": "6.7.1",
     "react-native-paper": "^5.14.5",

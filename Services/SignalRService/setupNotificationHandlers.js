@@ -19,19 +19,16 @@ export function setupNotificationHandlers(connection, triggerCallback) {
   });
 
   connection.on("NotifyJobApplicationAccepted", (data) => {
-    // TODO
     console.log("SignalR: Job application accepted", data);
     triggerCallback("onNotificationReceived", data);
   });
 
   connection.on("NotifyJobApplicationRejected", (data) => {
-    // TODO
     console.log("SignalR: Job application rejected", data);
     triggerCallback("onNotificationReceived", data);
   });
 
   connection.on("NotifyJobApplicationRemovedFromApproved", (data) => {
-    // TODO
     console.log("SignalR: Job application removed from approved", data);
     triggerCallback("onNotificationReceived", data);
   });
