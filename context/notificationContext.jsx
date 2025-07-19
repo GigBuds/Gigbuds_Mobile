@@ -41,7 +41,7 @@ export const PushNotificationProvider = ({ children }) => {
     console.log("🔔 Notification Provider");
 
     const getNotifications = async () => {
-      await AsyncStorage.clear();
+      // await AsyncStorage.clear();
       console.log("🔔 Get notifications");
       const storedNotifications =
         await SignalRCallbackExtensions.LoadStoredNotificationsAsync();
@@ -77,6 +77,7 @@ export const PushNotificationProvider = ({ children }) => {
         );
       }
     });
+
     getNotifications().then(() => {
       console.log("🔔 Notifications: ", notifications);
     });

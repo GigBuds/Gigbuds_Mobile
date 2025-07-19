@@ -4,6 +4,7 @@ export default {
     name: "Gigbuds",
     slug: "gigbuds",
     version: "1.0.0",
+    scheme: "gigbuds",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -72,15 +73,27 @@ export default {
       package: "com.gigbuds.app",
       googleServicesFile:
         process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
+      intentFilters: [
+          {
+            action: "VIEW",
+            autoVerify: true,
+            data: [
+              {
+                scheme: "gigbuds"
+              }
+            ],
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ]
     },
     web: {
       favicon: "./assets/favicon.png",
     },
     extra: {
       eas: {
-        projectId: "b8a6a536-264a-4187-b7e2-78b31252e315",
+        projectId: "ab0b9dff-febb-476b-97bf-c5d0279ee580"
       },
     },
-    owner: "oranged_cat",
+    owner: "giapnq",
   },
 };

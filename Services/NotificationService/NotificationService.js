@@ -56,7 +56,17 @@ class NotificationService {
   static async getMissedNotifications() {
     const deviceId = await NotificationService.getDeviceId();
     try {
-      const response = await api.get(`/notifications/stored/${deviceId}`);
+      const response = await api.get(`/notifications/stored/${deviceId}`)
+        .catch((error) => {
+          if (error.response) {
+            console.log("Error status:", error.response.status);
+            console.log("Error data:", error.response.data);
+          } else if (error.request) {
+            console.log("No response received:", error.request);
+          } else {
+            console.log("Request error:", error.message);
+          }
+        });
       return response.data;
     } catch (error) {
       console.error("Error getting stored notifications", error);

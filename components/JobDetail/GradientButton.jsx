@@ -21,6 +21,7 @@ const GradientButton = ({
   end = { x: 1.5, y: 0 },
   hasApplied,
 }) => {
+
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPDF, setSelectedPDF] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
@@ -370,3 +371,4 @@ const styles = StyleSheet.create({
 });
 
 export default GradientButton;
+
