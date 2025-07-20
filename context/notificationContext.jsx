@@ -77,6 +77,7 @@ export const PushNotificationProvider = ({ children }) => {
         );
       }
     });
+
     getNotifications().then(() => {
       console.log("🔔 Notifications: ", notifications);
     });
